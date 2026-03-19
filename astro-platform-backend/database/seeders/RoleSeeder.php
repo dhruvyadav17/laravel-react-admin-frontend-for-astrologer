@@ -16,6 +16,7 @@ class RoleSeeder extends Seeder
             'admin',
             'manager', // 🔥 NEW
             'user',
+            'astrologer',
         ];
 
         foreach ($roles as $role) {
