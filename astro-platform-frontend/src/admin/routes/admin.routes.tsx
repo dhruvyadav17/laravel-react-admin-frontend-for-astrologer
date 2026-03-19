@@ -8,6 +8,7 @@ import UsersPage  from "../features/users/UsersPage";
 import RolesPage from "../features/roles/RolesPage";
 import PermissionsPage from "../features/permissions/PermissionsPage";
 import AdminProfilePage from "../features/profile/AdminProfilePage";
+import AstrologersPage from "../features/astrologers/AstrologersPage";
 
 export const adminRoutes: RouteObject[] = [
   {
@@ -26,6 +27,8 @@ export const adminRoutes: RouteObject[] = [
           { path: "users", element: <UsersPage /> },
           { path: "roles", element: <RolesPage /> },
           { path: "permissions", element: <PermissionsPage /> },
+
+          { path: "astrologers", element: <AstrologersPage /> },
         ],
       },
     ],

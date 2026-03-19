@@ -50,4 +50,23 @@ return [
         ],
     ],
 
+    [
+        'label' => 'Astrology',
+        'icon'  => 'fas fa-star-and-crescent',
+        'children' => [
+            [
+                'label' => 'Astrologers',
+                'route' => '/admin/astrologers',
+            ],
+            [
+                'label' => 'Consultations',
+                'route' => '/admin/consultations',
+            ],
+            [
+                'label' => 'Transactions',
+                'route' => '/admin/transactions',
+            ],
+        ],
+    ],
+
 ];

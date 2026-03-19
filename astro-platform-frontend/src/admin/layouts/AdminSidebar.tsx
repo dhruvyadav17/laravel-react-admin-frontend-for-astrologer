@@ -23,9 +23,15 @@ export default function AdminSidebar() {
   return (
     <div className="sidebar" ref={sidebarRef}>
       {/* BRAND */}
-      <a href="/admin/dashboard" className="brand-link">
-        <span className="brand-text">
-          <b>Admin</b>LTE 4
+      <a href="/admin/dashboard" className="brand-link brand-link-custom">
+        <img
+          src="/images/logo.png"
+          alt="Astro"
+          className="brand-logo"
+        />
+
+        <span className="brand-text-custom">
+          AstroPanel
         </span>
       </a>
 

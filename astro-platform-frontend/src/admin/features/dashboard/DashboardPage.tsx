@@ -1,16 +1,11 @@
 import { useMemo } from "react";
 
-import { useAuth } from "../../../auth/hooks/useAuth";
 import { useGetDashboardStatsQuery } from "../../../store/api";
 
 import AdminPage from "../../components/page/AdminPage";
 import AdminCard from "../../components/ui/AdminCard";
 import InfoBox from "../../components/ui/InfoBox";
-
-import { ICONS } from "../../../constants/ui";
-
 export default function DashboardPage() {
-  const { user, permissions } = useAuth();
   const { data: stats, isLoading } = useGetDashboardStatsQuery();
 
   const widgets = useMemo(
@@ -18,31 +13,38 @@ export default function DashboardPage() {
       {
         title: "Total Users",
         value: stats?.total_users ?? 0,
-        icon: ICONS.USER,
+        icon: "fas fa-users",
         color: "primary",
       },
       {
-        title: "Permissions",
-        value: permissions.length,
-        icon: ICONS.PERMISSION,
+        title: "Astrologers",
+        value: stats?.total_astrologers ?? 0,
+        icon: "fas fa-user-astronaut",
         color: "success",
       },
       {
-        title: "Roles",
-        value: user?.roles?.length ?? 0,
-        icon: ICONS.ROLE,
+        title: "Consultations",
+        value: stats?.total_consultations ?? 0,
+        icon: "fas fa-comments",
         color: "warning",
+      },
+      {
+        title: "Revenue",
+        value: "₹" + (stats?.revenue ?? 0),
+        icon: "fas fa-rupee-sign",
+        color: "danger",
       },
     ],
     [
       stats?.total_users,
-      permissions.length,
-      user?.roles?.length,
+      stats?.total_astrologers,
+      stats?.total_consultations,
+      stats?.revenue,
     ]
   );
 
   return (
-    <AdminPage title="Admin Dashboard">
+    <AdminPage title="Astrology Dashboard">
       <AdminCard loading={isLoading}>
         <div className="row g-3">
           {widgets.map(({ title, ...rest }) => (

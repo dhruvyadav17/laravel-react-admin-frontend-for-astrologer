@@ -108,6 +108,39 @@
   z-index: 9999;
 }
 
+
+
+/* 🔮 BRAND LINK */
+.brand-link-custom {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 10px 12px;
+}
+
+/* LOGO */
+.brand-logo {
+  height: 38px;
+  width: 38px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 10px;
+}
+
+/* TEXT */
+.brand-text-custom {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  /* color: #fff; */
+}
+
+/* OPTIONAL HOVER EFFECT */
+.brand-link-custom:hover {
+  opacity: 0.9;
+}
+
+
 /* ================= MOBILE ================= */
 @media (max-width: 992px) {
   .app-sidebar {

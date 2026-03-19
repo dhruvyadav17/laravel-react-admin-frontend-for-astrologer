@@ -9,7 +9,7 @@ export default function AdminNavbar({ onToggle }: Props) {
   return (
     <>
       {/* LEFT */}
-      <ul className="navbar-nav">
+      <ul className="navbar-nav align-items-center">
         <li className="nav-item">
           <button
             type="button"
@@ -20,27 +20,35 @@ export default function AdminNavbar({ onToggle }: Props) {
           </button>
         </li>
 
-        <li className="nav-item d-none d-md-inline-block">
-          <NavLink to="/admin/dashboard" className="nav-link">
-            Home
-          </NavLink>
+        {/* 🔮 Title */}
+        <li className="nav-item d-none d-md-flex align-items-center">
+          <i className="fas fa-star text-warning me-2" />
+
+          <span className="nav-link fw-semibold mb-0">
+            Astrology Dashboard
+          </span>
         </li>
       </ul>
 
       {/* RIGHT */}
-      <ul className="navbar-nav ms-auto">
+      <ul className="navbar-nav ms-auto align-items-center">
         <li className="nav-item dropdown">
-          <a className="nav-link" data-bs-toggle="dropdown" href="#">
+          <button
+            className="nav-link btn btn-link"
+            data-bs-toggle="dropdown"
+          >
             <i className="far fa-user" />
-          </a>
+          </button>
 
           <div className="dropdown-menu dropdown-menu-end">
             <NavLink to="/admin/profile" className="dropdown-item">
+              <i className="fas fa-user me-2" />
               Profile
             </NavLink>
 
             <div className="dropdown-divider" />
-              <AdminLogoutButton variant="dropdown" />
+
+            <AdminLogoutButton variant="dropdown" />
           </div>
         </li>
       </ul>

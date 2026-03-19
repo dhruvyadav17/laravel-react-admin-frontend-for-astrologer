@@ -5,7 +5,7 @@ import FormModal from "../../../components/common/FormModal";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useRowActions } from "../../hooks/useRowActions";
-import { useCrudForm } from "../../../hooks/useCrudForm";
+// import { useCrudForm } from "../../../hooks/useCrudForm";
 
 type PermissionsConfig = {
   create?: string;
@@ -62,13 +62,13 @@ export default function AdminCrudPage<T extends { id?: number }>({
     ? deleteHook()
     : [null];
 
-  const form = useCrudForm({
-    initialValues,
-    create: createMutation,
-    update: updateMutation,
-    remove: deleteMutation,
-    onSuccess: () => setEditing(null),
-  });
+  // const form = useCrudForm({
+  //   initialValues,
+  //   create: createMutation,
+  //   update: updateMutation,
+  //   remove: deleteMutation,
+  //   onSuccess: () => setEditing(null),
+  // });
 
   const handleDelete = (item: T) => {
     if (!deleteMutation) return;
