@@ -1,5 +1,5 @@
 import { RouteObject, Navigate } from "react-router-dom";
-import AdminGuard from "../../guards/AdminGuard";
+import AdminGuard from "../../routes/guards/AdminGuard";
 import AdminLayout from "../layouts/AdminLayout";
 
 import DashboardPage from "../features/dashboard/DashboardPage";

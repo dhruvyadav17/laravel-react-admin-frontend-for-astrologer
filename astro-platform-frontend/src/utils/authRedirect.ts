@@ -1,21 +1,30 @@
 import type { User } from "../types/models";
 
-/**
- * FINAL RULE:
- * - [] or ["user"]        → Frontend User (/profile)
- * - anything else         → Admin Panel (/admin/dashboard)
- */
 export function resolveLoginRedirect(
   user: User | null,
   fromAdminLogin: boolean = false
 ): string {
-  if (!user) return "/login";
+  if (!user) return "/";
 
   const roles = Array.isArray(user.roles) ? user.roles : [];
 
-  const isFrontendUser =
-    roles.length === 0 || roles.every((r) => r === "user");
+  const isAdmin = roles.some((r) =>
+    ["admin", "super-admin", "manager"].includes(r)
+  );
 
+  const isFrontendUser =
+    roles.length === 0 ||
+    roles.includes("user") ||
+    roles.includes("astrologer");
+
+  /* ================= ADMIN LOGIN ================= */
+  if (fromAdminLogin) {
+    return isAdmin
+      ? "/admin/dashboard"
+      : "/profile";
+  }
+
+  /* ================= FRONTEND LOGIN ================= */
   return isFrontendUser
     ? "/profile"
     : "/admin/dashboard";

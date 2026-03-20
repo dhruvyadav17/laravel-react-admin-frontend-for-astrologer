@@ -11,8 +11,17 @@ export default function Login({ admin = false }: Props) {
   const { isAuth, user } = useAuth();
 
   if (isAuth) {
-    return <Navigate to={resolveLoginRedirect(user, admin)} replace />;
+    return (
+      <Navigate
+        to={resolveLoginRedirect(user, admin)}
+        replace
+      />
+    );
   }
 
-  return <LoginForm title={admin ? "Admin Login" : "User Login"} />;
+  return (
+    <LoginForm
+      title={admin ? "Admin Login" : "User Login"}
+    />
+  );
 }

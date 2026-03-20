@@ -4,23 +4,11 @@ import api from "../api/axios";
 
 /* =====================================================
    AUTH SERVICES
-   -----------------------------------------------------
-   RULES:
-   - ONLY authentication related endpoints
-   - No token mutation here
-   - No refresh-token logic here
-   - No admin APIs here
 ===================================================== */
 
 /* ================= LOGIN ================= */
 /**
  * POST /login
- *
- * Returns:
- * {
- *   token: string
- *   refresh_token?: string
- * }
  */
 export const loginService = (
   email: string,
@@ -34,35 +22,27 @@ export const loginService = (
 
 /* ================= PROFILE ================= */
 /**
- * GET /profile
+ * GET /app/profile
  *
- * SINGLE SOURCE OF TRUTH
- * {
- *   user: User
- *   permissions: string[]
- * }
+ * 🔥 FIXED: correct route prefix
  */
 export const profileService = () => {
-  return api.get("/profile");
+  return api.get("/app/profile");
 };
 
 /* ================= LOGOUT ================= */
 /**
- * POST /logout
+ * POST /app/logout
  *
- * Best-effort backend logout
- * (frontend state already cleared)
+ * 🔥 FIXED: correct route prefix
  */
 export const logoutService = () => {
-  return api.post("/logout");
+  return api.post("/app/logout");
 };
 
 /* ================= REGISTER ================= */
 /**
  * POST /register
- *
- * USER registration only
- * ❌ Admin creation NOT allowed here
  */
 export const registerService = (data: {
   name: string;

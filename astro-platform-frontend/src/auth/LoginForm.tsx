@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import {
   loginThunk,
@@ -19,6 +19,7 @@ type Props = {
 export default function LoginForm({ title }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const loading = useSelector(
     (s: RootState) => s.auth.loading
@@ -35,44 +36,38 @@ export default function LoginForm({ title }: Props) {
     );
 
     if (loginThunk.rejected.match(loginRes)) {
-      showError(
-        loginRes.payload || loginRes.error
-      );
+      showError(loginRes.payload || loginRes.error);
       return;
     }
 
-    const profileRes = await dispatch(
-      fetchProfileThunk()
-    );
+    const profileRes = await dispatch(fetchProfileThunk());
 
-    if (
-      fetchProfileThunk.rejected.match(
-        profileRes
-      )
-    ) {
-      showError(
-        profileRes.payload || profileRes.error
-      );
+    if (fetchProfileThunk.rejected.match(profileRes)) {
+      showError(profileRes.payload || profileRes.error);
       return;
     }
+
+    const user = profileRes.payload?.user ?? null;
+
+    if (!user) {
+      showError("Invalid profile response");
+      return;
+    }
+
+    // 🔥 detect admin login
+    const fromAdminLogin = location.pathname.includes("/admin");
 
     const redirectTo = resolveLoginRedirect(
-      profileRes.payload.user
+      user,
+      fromAdminLogin
     );
 
-    navigate(redirectTo, {
-      replace: true,
-    });
+    navigate(redirectTo, { replace: true });
   };
 
   return (
-    <div
-      className="container mt-5"
-      style={{ maxWidth: 420 }}
-    >
-      <h4 className="mb-3 text-center">
-        {title}
-      </h4>
+    <div className="container mt-5" style={{ maxWidth: 420 }}>
+      <h4 className="mb-3 text-center">{title}</h4>
 
       <form onSubmit={submit}>
         <input
@@ -81,9 +76,7 @@ export default function LoginForm({ title }: Props) {
           placeholder="Email"
           value={email}
           required
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
@@ -92,24 +85,17 @@ export default function LoginForm({ title }: Props) {
           placeholder="Password"
           value={password}
           required
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
+          onChange={(e) => setPassword(e.target.value)}
         />
 
         <button
           className="btn btn-primary w-100"
           disabled={loading}
         >
-          {loading
-            ? "Logging in..."
-            : "Login"}
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        <Link
-          to="/forgot-password"
-          className="d-block mt-2"
-        >
+        <Link to="/forgot-password" className="d-block mt-2">
           Forgot password?
         </Link>
       </form>

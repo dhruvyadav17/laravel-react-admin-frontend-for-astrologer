@@ -1,0 +1,44 @@
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Laravel (astro-platform-backend)
+# =========================
+astro-platform-backend/vendor/
+astro-platform-backend/node_modules/
+astro-platform-backend/.env
+astro-platform-backend/.env.*
+astro-platform-backend/storage/*.key
+astro-platform-backend/storage/app/*
+!astro-platform-backend/storage/app/public
+astro-platform-backend/storage/framework/cache/*
+astro-platform-backend/storage/framework/sessions/*
+astro-platform-backend/storage/framework/views/*
+astro-platform-backend/storage/logs/*
+astro-platform-backend/bootstrap/cache/*
+astro-platform-backend/public/storage
+astro-platform-backend/.phpunit.result.cache
+
+# =========================
+# React (astro-platform-frontend)
+# =========================
+project-bkp/
+astro-platform-frontend/node_modules/
+astro-platform-frontend/dist/
+astro-platform-frontend/build/
+astro-platform-frontend/.env
+astro-platform-frontend/.env.*
+astro-platform-frontend/.vite/
+astro-platform-frontend/.cache/
+astro-platform-frontend/npm-debug.log*
+astro-platform-frontend/yarn-error.log*
+
+# =========================
+# Logs
+# =========================
+*.log

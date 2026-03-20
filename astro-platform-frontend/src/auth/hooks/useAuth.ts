@@ -13,8 +13,10 @@ export function useAuth() {
   const isSuperAdmin = roles.includes("super-admin");
 
   const isAdmin =
-    isSuperAdmin ||
-    roles.some((r) => ADMIN_ROLES.includes(r as any));
+    isSuperAdmin || roles.some((r) => ADMIN_ROLES.includes(r as any));
+
+  // 🔥 NEW (IMPORTANT)
+  const isFrontendUser = isAuth && !isAdmin;
 
   const hasRole = (role: string): boolean =>
     isSuperAdmin || roles.includes(role);
@@ -36,6 +38,9 @@ export function useAuth() {
     isAuth,
     isAdmin,
     isSuperAdmin,
+
+    // 🔥 NEW
+    isFrontendUser,
 
     hasRole,
     hasAnyRole,

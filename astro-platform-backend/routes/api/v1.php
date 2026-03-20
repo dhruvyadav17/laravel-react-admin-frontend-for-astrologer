@@ -35,20 +35,11 @@ use App\Http\Controllers\Api\{
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
-Route::post('/register', RegisterController::class)
-    ->name('auth.register');
-
-Route::post('/login', LoginController::class)
-    ->name('auth.login');
-
-Route::post('/forgot-password', ForgotPasswordController::class)
-    ->name('auth.password.forgot');
-
-Route::post('/reset-password', ResetPasswordController::class)
-    ->name('auth.password.reset');
-
-Route::post('/refresh-token', RefreshTokenController::class)
-    ->name('auth.token.refresh');
+Route::post('/register', RegisterController::class)->name('auth.register');
+Route::post('/login', LoginController::class)->name('auth.login');
+Route::post('/forgot-password', ForgotPasswordController::class)->name('auth.password.forgot');
+Route::post('/reset-password', ResetPasswordController::class)->name('auth.password.reset');
+Route::post('/refresh-token', RefreshTokenController::class)->name('auth.token.refresh');
 
 /*
 |--------------------------------------------------------------------------
@@ -57,34 +48,41 @@ Route::post('/refresh-token', RefreshTokenController::class)
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    /* ================= AUTH ================= */
-    Route::get('/profile', ProfileController::class)
-        ->name('auth.profile');
+    /*
+    |--------------------------------------------------------------------------
+    | FRONTEND (USER + ASTROLOGER)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('app')->group(function () {
 
-    Route::post('/logout', LogoutController::class)
-        ->name('auth.logout');
+        /* ================= PROFILE ================= */
+        Route::get('/profile', ProfileController::class)
+            ->name('app.profile');
 
-    /* ================= EMAIL VERIFICATION ================= */
-    Route::get(
-        '/email/verify/{id}/{hash}',
-        [EmailVerificationController::class, 'verify']
-    )->name('auth.email.verify');
+        Route::post('/logout', LogoutController::class)
+            ->name('app.logout');
 
-    Route::post(
-        '/email/resend',
-        [EmailVerificationController::class, 'resend']
-    )->name('auth.email.resend');
+        /* ================= EMAIL ================= */
+        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->name('app.email.verify');
+
+        Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
+            ->name('app.email.resend');
+
+        // 🔮 FUTURE
+        // Route::get('/astrologers', ...);
+        // Route::get('/astrologers/{id}', ...);
+    });
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN ROUTES
+    | ADMIN PANEL
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')->name('admin.')->group(function () {
 
         /* ================= DASHBOARD ================= */
-        Route::get('/sidebar', SidebarController::class)
-            ->name('sidebar');
+        Route::get('/sidebar', SidebarController::class)->name('sidebar');
 
         Route::get('/dashboard/stats', [DashboardController::class, 'stats'])
             ->name('dashboard.stats');
@@ -137,17 +135,10 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('roles.')
             ->group(function () {
 
-                Route::get('/', [RoleController::class, 'index'])
-                    ->name('index');
-
-                Route::post('/', [RoleController::class, 'store'])
-                    ->name('store');
-
-                Route::put('/{role}', [RoleController::class, 'update'])
-                    ->name('update');
-
-                Route::delete('/{role}', [RoleController::class, 'destroy'])
-                    ->name('destroy');
+                Route::get('/', [RoleController::class, 'index'])->name('index');
+                Route::post('/', [RoleController::class, 'store'])->name('store');
+                Route::put('/{role}', [RoleController::class, 'update'])->name('update');
+                Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
 
                 Route::get('/{role}/permissions', [RoleController::class, 'permissions'])
                     ->name('permissions.list');
@@ -162,20 +153,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('permissions.')
             ->group(function () {
 
-                Route::get('/', [PermissionController::class, 'index'])
-                    ->name('index');
-
-                Route::post('/', [PermissionController::class, 'store'])
-                    ->name('store');
-
-                Route::get('/{permission}', [PermissionController::class, 'show'])
-                    ->name('show');
-
-                Route::put('/{permission}', [PermissionController::class, 'update'])
-                    ->name('update');
-
-                Route::delete('/{permission}', [PermissionController::class, 'destroy'])
-                    ->name('destroy');
+                Route::get('/', [PermissionController::class, 'index'])->name('index');
+                Route::post('/', [PermissionController::class, 'store'])->name('store');
+                Route::get('/{permission}', [PermissionController::class, 'show'])->name('show');
+                Route::put('/{permission}', [PermissionController::class, 'update'])->name('update');
+                Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy');
             });
     });
 });

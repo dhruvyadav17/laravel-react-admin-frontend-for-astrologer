@@ -1,8 +1,15 @@
 // src/store/authSlice.ts
 
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
-import { loginService, profileService } from "../services/authService";
+import {
+  loginService,
+  profileService,
+} from "../services/authService";
 
 import type { User } from "../types/models";
 import { emitLogoutEvent } from "../utils/authEvents";
@@ -19,15 +26,15 @@ export type AuthState = {
 };
 
 /* =====================================================
-   INITIAL STATE
-   - Safe rehydration
-   - No business logic here
+   INITIAL STATE (SAFE)
 ===================================================== */
 
 const initialState: AuthState = {
   user: (() => {
     try {
-      return JSON.parse(localStorage.getItem("user") || "null");
+      return JSON.parse(
+        localStorage.getItem("user") || "null"
+      );
     } catch {
       return null;
     }
@@ -35,7 +42,9 @@ const initialState: AuthState = {
 
   permissions: (() => {
     try {
-      return JSON.parse(localStorage.getItem("permissions") || "[]");
+      return JSON.parse(
+        localStorage.getItem("permissions") || "[]"
+      );
     } catch {
       return [];
     }
@@ -51,10 +60,6 @@ const initialState: AuthState = {
 
 /**
  * LOGIN
- * -------------------------------------------------
- * - Auth only
- * - Tokens handled here
- * - Profile fetched separately
  */
 export const loginThunk = createAsyncThunk<
   { token: string; refresh_token?: string },
@@ -62,18 +67,29 @@ export const loginThunk = createAsyncThunk<
   { rejectValue: string }
 >("auth/login", async (data, { rejectWithValue }) => {
   try {
-    const res = await loginService(data.email, data.password);
-    return res.data.data;
+    const res = await loginService(
+      data.email,
+      data.password
+    );
+
+    // 🔥 SAFE ACCESS
+    const payload = res?.data?.data;
+
+    if (!payload?.token) {
+      return rejectWithValue("Invalid login response");
+    }
+
+    return payload;
   } catch (e: any) {
-    return rejectWithValue(e.response?.data?.message || "Invalid credentials");
+    return rejectWithValue(
+      e.response?.data?.message ||
+        "Invalid credentials"
+    );
   }
 });
 
 /**
  * PROFILE
- * -------------------------------------------------
- * - SINGLE SOURCE OF TRUTH
- * - user + permissions only
  */
 export const fetchProfileThunk = createAsyncThunk<
   { user: User; permissions: string[] },
@@ -82,27 +98,39 @@ export const fetchProfileThunk = createAsyncThunk<
 >("auth/profile", async (_, { rejectWithValue }) => {
   try {
     const res = await profileService();
-    return res.data.data;
+
+    const payload = res?.data?.data;
+
+    if (!payload?.user) {
+      return rejectWithValue(
+        "Invalid profile response"
+      );
+    }
+
+    return payload;
   } catch {
-    return rejectWithValue("Failed to load profile");
+    return rejectWithValue(
+      "Failed to load profile"
+    );
   }
 });
 
 /**
  * LOGOUT
- * -------------------------------------------------
- * - Clear state
- * - Clear storage
- * - Multi-tab sync
  */
-export const logoutThunk = createAsyncThunk("auth/logout", async () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("refresh_token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("permissions");
-  emitLogoutEvent();
-  return true;
-});
+export const logoutThunk = createAsyncThunk(
+  "auth/logout",
+  async () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("permissions");
+
+    emitLogoutEvent();
+
+    return true;
+  }
+);
 
 /* =====================================================
    SLICE
@@ -113,34 +141,50 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
-    /**
-     * OPTIONAL
-     * Manual permission override (rare / admin only)
-     */
-    setPermissions(state, action: PayloadAction<string[]>) {
+    setPermissions(
+      state,
+      action: PayloadAction<string[]>
+    ) {
       state.permissions = action.payload;
-      localStorage.setItem("permissions", JSON.stringify(action.payload));
+
+      localStorage.setItem(
+        "permissions",
+        JSON.stringify(action.payload)
+      );
     },
   },
 
   extraReducers: (builder) => {
     builder
+
       /* ================= LOGIN ================= */
 
       .addCase(loginThunk.pending, (state) => {
         state.loading = true;
       })
 
-      .addCase(loginThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.token = action.payload.token;
+      .addCase(
+        loginThunk.fulfilled,
+        (state, action) => {
+          state.loading = false;
 
-        localStorage.setItem("token", action.payload.token);
+          const token =
+            action.payload?.token ?? null;
 
-        if (action.payload.refresh_token) {
-          localStorage.setItem("refresh_token", action.payload.refresh_token);
+          state.token = token;
+
+          if (token) {
+            localStorage.setItem("token", token);
+          }
+
+          if (action.payload?.refresh_token) {
+            localStorage.setItem(
+              "refresh_token",
+              action.payload.refresh_token
+            );
+          }
         }
-      })
+      )
 
       .addCase(loginThunk.rejected, (state) => {
         state.loading = false;
@@ -148,31 +192,49 @@ const authSlice = createSlice({
 
       /* ================= PROFILE ================= */
 
-      .addCase(fetchProfileThunk.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.permissions = action.payload.permissions;
+      .addCase(
+        fetchProfileThunk.fulfilled,
+        (state, action) => {
+          const user =
+            action.payload?.user ?? null;
 
-        localStorage.setItem("user", JSON.stringify(action.payload.user));
+          const permissions =
+            action.payload?.permissions ?? [];
 
-        localStorage.setItem(
-          "permissions",
-          JSON.stringify(action.payload.permissions),
-        );
-      })
+          state.user = user;
+          state.permissions = permissions;
 
-      .addCase(fetchProfileThunk.rejected, (state) => {
-        state.user = null;
-        state.permissions = [];
-      })
+          localStorage.setItem(
+            "user",
+            JSON.stringify(user)
+          );
+
+          localStorage.setItem(
+            "permissions",
+            JSON.stringify(permissions)
+          );
+        }
+      )
+
+      .addCase(
+        fetchProfileThunk.rejected,
+        (state) => {
+          state.user = null;
+          state.permissions = [];
+        }
+      )
 
       /* ================= LOGOUT ================= */
 
-      .addCase(logoutThunk.fulfilled, (state) => {
-        state.user = null;
-        state.permissions = [];
-        state.token = null;
-        state.loading = false;
-      });
+      .addCase(
+        logoutThunk.fulfilled,
+        (state) => {
+          state.user = null;
+          state.permissions = [];
+          state.token = null;
+          state.loading = false;
+        }
+      );
   },
 });
 
@@ -180,5 +242,7 @@ const authSlice = createSlice({
    EXPORTS
 ===================================================== */
 
-export const { setPermissions } = authSlice.actions;
+export const { setPermissions } =
+  authSlice.actions;
+
 export default authSlice.reducer;

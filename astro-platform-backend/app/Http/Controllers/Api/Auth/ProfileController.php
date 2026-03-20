@@ -15,6 +15,9 @@ class ProfileController extends Controller
 
         return $this->success('Profile fetched', [
             'user' => UserResource::make($user),
+
+            'roles' => $user->getRoleNames()->values(),
+
             'permissions' => $user
                 ->getAllPermissions()
                 ->pluck('name')
