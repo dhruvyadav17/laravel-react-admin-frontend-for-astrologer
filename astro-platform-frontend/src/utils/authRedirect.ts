@@ -4,6 +4,7 @@ export function resolveLoginRedirect(
   user: User | null,
   fromAdminLogin: boolean = false
 ): string {
+  /* ❌ No user */
   if (!user) return "/";
 
   const roles = Array.isArray(user.roles) ? user.roles : [];
@@ -21,11 +22,11 @@ export function resolveLoginRedirect(
   if (fromAdminLogin) {
     return isAdmin
       ? "/admin/dashboard"
-      : "/profile";
+      : "/"; // 🔥 fallback to welcome
   }
 
   /* ================= FRONTEND LOGIN ================= */
   return isFrontendUser
-    ? "/profile"
+    ? "/home" // 🔥 IMPORTANT CHANGE
     : "/admin/dashboard";
 }

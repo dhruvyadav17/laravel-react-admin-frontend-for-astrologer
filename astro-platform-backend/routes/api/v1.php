@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\{
     PermissionController
 };
 
+use App\Http\Controllers\Api\App\AstrologerController;
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
@@ -46,6 +47,18 @@ Route::post('/refresh-token', RefreshTokenController::class)->name('auth.token.r
 | AUTHENTICATED ROUTES
 |--------------------------------------------------------------------------
 */
+
+
+/* ================= FRONTEND (APP) ================= */
+
+Route::prefix('app')->group(function () {
+
+    /* 🔮 ASTROLOGERS */
+
+    Route::get('/astrologers', [AstrologerController::class, 'index']);
+
+    Route::get('/astrologers/{user}', [AstrologerController::class, 'show']);
+});
 Route::middleware('auth:sanctum')->group(function () {
 
     /*
