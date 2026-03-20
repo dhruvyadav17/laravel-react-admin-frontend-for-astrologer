@@ -77,7 +77,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
       message: `Are you sure you want to delete this ${entity}?`,
       confirmLabel: `Delete ${entity}`,
       onConfirm: async () => {
-        await form.remove(item.id);
+        await deleteMutation(item.id);
       },
     });
   };

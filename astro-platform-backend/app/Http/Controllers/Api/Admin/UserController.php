@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\Permission; 
+use App\Models\Permission;
 use App\Services\User\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -102,32 +102,47 @@ class UserController extends Controller
         );
     }
 
-public function assignPermissions(Request $request, User $user)
-{
-    $data = $request->validate([
-        'permissions'   => ['nullable', 'array'],
-        'permissions.*' => ['string', 'exists:permissions,name'],
-    ]);
+    public function assignPermissions(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'permissions'   => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+        ]);
 
-    $permissions = $data['permissions'] ?? [];
+        $permissions = $data['permissions'] ?? [];
 
-    $this->service->assignPermissions($user, $permissions);
+        $this->service->assignPermissions($user, $permissions);
 
-    // 🔥 Reload fresh permissions
-    $user->load('permissions');
+        // 🔥 Reload fresh permissions
+        $user->load('permissions');
 
-    Log::info('Assigned permissions to user', [
-        'user_id'     => $user->id,
-        'permissions' => $permissions,
-    ]);
+        Log::info('Assigned permissions to user', [
+            'user_id'     => $user->id,
+            'permissions' => $permissions,
+        ]);
 
-    return $this->success(
-        'Permissions assigned successfully.',
-        [
-            'assigned' => $user->permissions
-                ->pluck('name')
-                ->values(),
-        ]
-    );
-}
+        return $this->success(
+            'Permissions assigned successfully.',
+            [
+                'assigned' => $user->permissions
+                    ->pluck('name')
+                    ->values(),
+            ]
+        );
+    }
+
+    /* ================= UPDATE ================= */
+
+    public function update(UserRequest $request, User $user)
+    {
+        $updatedUser = $this->service->update(
+            $user,
+            $request->validated()
+        );
+
+        return $this->success(
+            'User updated successfully',
+            new UserResource($updatedUser)
+        );
+    }
 }

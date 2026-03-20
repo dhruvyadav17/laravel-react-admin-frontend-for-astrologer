@@ -22,9 +22,9 @@ class UserService
             ->with('roles')
             ->when(
                 $request->filled('search'),
-                fn ($q) =>
-                    $q->where('name', 'like', "%{$request->search}%")
-                      ->orWhere('email', 'like', "%{$request->search}%")
+                fn($q) =>
+                $q->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('email', 'like', "%{$request->search}%")
             )
             ->latest()
             ->paginate(10);
@@ -162,5 +162,39 @@ class UserService
                 ->pluck('name')
                 ->values(),
         ];
+    }
+
+
+    /* ================= UPDATE ================= */
+
+    public function update(User $user, array $data): User
+    {
+        // 🔥 Password optional handling
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        // 🔥 Prevent email overwrite issues (optional safety)
+        if (isset($data['email'])) {
+            $data['email'] = strtolower($data['email']);
+        }
+
+        // 🔥 Update user
+        $user->update([
+            'name'  => $data['name'],
+            'email' => $data['email'],
+            ...$data
+        ]);
+
+        // 🔥 Reload relations
+        $user->load('roles');
+
+        Log::info('User updated', [
+            'user_id' => $user->id,
+        ]);
+
+        return $user;
     }
 }
