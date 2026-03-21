@@ -4,16 +4,15 @@ import { useAuth } from "../../auth/hooks/useAuth";
 export default function UserGuard() {
   const { isAuth, isAdmin } = useAuth();
 
-  // ❌ Not logged in
+  // ❌ Not logged in → Welcome page
   if (!isAuth) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  // ❌ Admin ko frontend se block
+  // ❌ Admin block from frontend
   if (isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // ✅ Frontend users allowed (user + astrologer)
   return <Outlet />;
 }
