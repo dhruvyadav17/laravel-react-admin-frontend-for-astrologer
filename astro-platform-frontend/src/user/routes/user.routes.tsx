@@ -14,7 +14,7 @@ export const userRoutes = [
         children: [
           /* ================= HOME ================= */
           { path: "/home", element: <HomePage /> },
-
+          
           /* ================= PROFILE ================= */
           { path: "/profile", element: <ProfilePage /> },
 

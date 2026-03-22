@@ -1,32 +1,23 @@
-import type { User } from "../types/models";
+export function resolveLoginRedirect(user: any, loginFrom: "admin" | "user") {
+  if (!user) return "/login";
 
-export function resolveLoginRedirect(
-  user: User | null,
-  fromAdminLogin: boolean = false
-): string {
-  /* ❌ No user */
-  if (!user) return "/";
-
-  const roles = Array.isArray(user.roles) ? user.roles : [];
-
-  const isAdmin = roles.some((r) =>
-    ["admin", "super-admin", "manager"].includes(r)
-  );
-
-  const isFrontendUser =
-    roles.length === 0 ||
-    roles.includes("user") ||
-    roles.includes("astrologer");
-
-  /* ================= ADMIN LOGIN ================= */
-  if (fromAdminLogin) {
-    return isAdmin
-      ? "/admin/dashboard"
-      : "/"; // 🔥 fallback to welcome
+  // 🔥 अगर user panel से login हुआ
+  if (loginFrom === "user") {
+    return "/";
   }
 
-  /* ================= FRONTEND LOGIN ================= */
-  return isFrontendUser
-    ? "/home" // 🔥 IMPORTANT CHANGE
-    : "/admin/dashboard";
+  // 🔥 अगर admin panel से login हुआ
+  if (loginFrom === "admin") {
+    if (
+      user.roles?.includes("admin") ||
+      user.roles?.includes("super-admin")
+    ) {
+      return "/admin/dashboard";
+    }
+
+    // fallback (अगर गलती से user admin से login करे)
+    return "/";
+  }
+
+  return "/";
 }
