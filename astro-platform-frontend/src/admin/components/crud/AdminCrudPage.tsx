@@ -42,10 +42,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   const { data, isLoading, isError, refetch } = queryHook();
 
-  const items: T[] = useMemo(
-    () => (transformData ? transformData(data) : data ?? []),
-    [data]
-  );
+  const items: T[] = useMemo(() => data?.data ?? data ?? [], [data]);
 
   const [editing, setEditing] = useState<T | null>(null);
 
@@ -97,8 +94,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
       },
       delete: {
         enabled:
-          !!deleteMutation &&
-          (!permissions?.delete || can(permissions.delete)),
+          !!deleteMutation && (!permissions?.delete || can(permissions.delete)),
         onClick: handleDelete,
       },
     });

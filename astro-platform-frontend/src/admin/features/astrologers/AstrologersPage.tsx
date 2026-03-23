@@ -10,7 +10,7 @@ export default function AstrologersPage() {
     <AdminCrudPage
       entity="Astrologer"
       queryHook={() =>
-        useGetUsersQuery({ type: "astrologer" })
+        useGetUsersQuery({ page: 1, search: "", type: "astrologer" })
       }
       createHook={useCreateUserMutation}
       updateHook={useUpdateUserMutation}

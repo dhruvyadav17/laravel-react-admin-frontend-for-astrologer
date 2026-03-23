@@ -2,15 +2,10 @@ import { baseApi } from "./baseApi";
 import { createCrudEndpoints } from "../crudBuilder";
 import type { User, Role, Permission } from "../../types/models";
 
-/* ======================================================
-   ADMIN API
-====================================================== */
-
 export const adminApi = baseApi.injectEndpoints({
   overrideExisting: false,
 
   endpoints: (builder) => ({
-
     /* ================= GENERIC CRUD ================= */
 
     ...createCrudEndpoints<User>(builder, {
@@ -71,7 +66,7 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: "Users", id }],
     }),
 
-    /* ================= ROLES EXTRA ================= */
+    /* ================= ROLES ================= */
 
     getRolePermissions: builder.query<
       { permissions: Permission[]; assigned: string[] },
@@ -109,14 +104,17 @@ export const adminApi = baseApi.injectEndpoints({
       void
     >({
       query: () => "/admin/dashboard/stats",
-      transformResponse: (res: any) => res.data,
+      transformResponse: (res: any) => res.data ?? {},
     }),
-
   }),
 });
-export const {
 
-  /* ===== USERS ===== */
+/* ======================================================
+   🔥 EXPORT ALL HOOKS (VERY IMPORTANT)
+====================================================== */
+
+export const {
+  /* USERS */
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -127,7 +125,7 @@ export const {
   useGetUserPermissionsQuery,
   useAssignUserPermissionsMutation,
 
-  /* ===== ROLES ===== */
+  /* ROLES */
   useGetRolesQuery,
   useCreateRoleMutation,
   useUpdateRoleMutation,
@@ -135,16 +133,15 @@ export const {
   useGetRolePermissionsQuery,
   useAssignRolePermissionsMutation,
 
-  /* ===== PERMISSIONS ===== */
+  /* PERMISSIONS */
   useGetPermissionsQuery,
   useCreatePermissionMutation,
   useUpdatePermissionMutation,
   useDeletePermissionMutation,
 
-  /* ===== SIDEBAR ===== */
+  /* SIDEBAR */
   useGetSidebarQuery,
 
-  /* ===== DASHBOARD ===== */
+  /* DASHBOARD */
   useGetDashboardStatsQuery,
-
 } = adminApi;
