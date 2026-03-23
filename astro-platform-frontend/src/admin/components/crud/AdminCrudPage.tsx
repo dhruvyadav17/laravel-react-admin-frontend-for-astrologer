@@ -14,44 +14,61 @@ type PermissionsConfig = {
 
 type Props<T> = {
   entity: string;
-  queryHook: any;
-  createHook: any;
-  updateHook?: any;
-  deleteHook?: any;
+
+  api: {
+    list: any;
+    create: any;
+    update?: any;
+    delete?: any;
+  };
+
   columns: React.ReactNode;
   fields: any[];
   initialValues: T;
+
   permissions?: PermissionsConfig;
-  transformData?: (data: any) => T[];
+
+  /** optional custom row render */
+  renderRow?: (item: T, actions: any[]) => React.ReactNode;
+
+  /** optional extra content (search etc.) */
+  topContent?: React.ReactNode;
 };
 
 export default function AdminCrudPage<T extends { id?: number }>({
   entity,
-  queryHook,
-  createHook,
-  updateHook,
-  deleteHook,
+  api,
   columns,
   fields,
   initialValues,
   permissions,
-  transformData,
+  renderRow,
+  topContent,
 }: Props<T>) {
   const { can } = useAuth();
   const confirmAction = useConfirmAction();
 
-  const { data, isLoading, isError, refetch } = queryHook();
+  /* ================= QUERY ================= */
 
-  const items: T[] = useMemo(() => data?.data ?? data ?? [], [data]);
+  const { data, isLoading, isError, refetch } = api.list();
+
+  const items: T[] = useMemo(
+    () => data?.data ?? data ?? [],
+    [data]
+  );
+
+  /* ================= STATE ================= */
 
   const [editing, setEditing] = useState<T | null>(null);
 
-  // 🔥 RTK hooks
-  const [createMutation] = createHook();
-  const [updateMutation] = updateHook ? updateHook() : [null];
-  const [deleteMutation] = deleteHook ? deleteHook() : [null];
+  /* ================= MUTATIONS ================= */
 
-  // ✅ SINGLE SOURCE OF TRUTH
+  const [createMutation] = api.create();
+  const [updateMutation] = api.update ? api.update() : [null];
+  const [deleteMutation] = api.delete ? api.delete() : [null];
+
+  /* ================= CRUD ================= */
+
   const crud = useCrudActions<T>({
     create: createMutation,
     update: updateMutation,
@@ -62,7 +79,8 @@ export default function AdminCrudPage<T extends { id?: number }>({
     },
   });
 
-  // ✅ FORM SUBMIT
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = (values: T) => {
     if (editing?.id) {
       crud.update(editing.id, values);
@@ -71,7 +89,8 @@ export default function AdminCrudPage<T extends { id?: number }>({
     }
   };
 
-  // ✅ DELETE
+  /* ================= DELETE ================= */
+
   const handleDelete = (item: T) => {
     if (!deleteMutation || !item.id) return;
 
@@ -85,6 +104,8 @@ export default function AdminCrudPage<T extends { id?: number }>({
     });
   };
 
+  /* ================= ROW ACTIONS ================= */
+
   const getRowActions = (item: T) =>
     useRowActions({
       row: item,
@@ -94,10 +115,13 @@ export default function AdminCrudPage<T extends { id?: number }>({
       },
       delete: {
         enabled:
-          !!deleteMutation && (!permissions?.delete || can(permissions.delete)),
+          !!deleteMutation &&
+          (!permissions?.delete || can(permissions.delete)),
         onClick: handleDelete,
       },
     });
+
+  /* ================= RENDER ================= */
 
   return (
     <>
@@ -111,26 +135,33 @@ export default function AdminCrudPage<T extends { id?: number }>({
         onRetry={refetch}
         empty={!isLoading && !isError && items.length === 0}
         columns={columns}
+        topContent={topContent}
       >
         {!isLoading &&
           !isError &&
-          items.map((item) => (
-            <tr key={item.id}>
-              {Object.keys(item)
-                .filter((k) => k !== "id")
-                .map((key) => (
-                  <td key={key}>{(item as any)[key]}</td>
-                ))}
-              <td className="text-end">
-                <RowActions actions={getRowActions(item)} />
-              </td>
-            </tr>
-          ))}
+          items.map((item) =>
+            renderRow ? (
+              renderRow(item, getRowActions(item))
+            ) : (
+              <tr key={item.id}>
+                {Object.keys(item)
+                  .filter((k) => k !== "id")
+                  .map((key) => (
+                    <td key={key}>{(item as any)[key]}</td>
+                  ))}
+                <td className="text-end">
+                  <RowActions actions={getRowActions(item)} />
+                </td>
+              </tr>
+            )
+          )}
       </AdminTablePage>
+
+      {/* ================= FORM ================= */}
 
       {editing && (
         <FormModal
-          title={entity}
+          title={editing.id ? `Edit ${entity}` : `Add ${entity}`}
           entity={editing}
           initialValues={editing.id ? editing : initialValues}
           fields={fields}

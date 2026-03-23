@@ -22,10 +22,12 @@ function RolesPage() {
   return (
     <AdminCrudPage
       entity="Role"
-      queryHook={useGetRolesQuery}
-      createHook={useCreateRoleMutation}
-      updateHook={useUpdateRoleMutation}
-      deleteHook={useDeleteRoleMutation}
+      api={{
+        list: useGetRolesQuery,
+        create: useCreateRoleMutation,
+        update: useUpdateRoleMutation,
+        delete: useDeleteRoleMutation,
+      }}
       columns={columns}
       initialValues={{ name: "" }}
       fields={[

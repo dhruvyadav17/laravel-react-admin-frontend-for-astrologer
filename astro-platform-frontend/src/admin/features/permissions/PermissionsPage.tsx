@@ -22,10 +22,12 @@ function PermissionsPage() {
   return (
     <AdminCrudPage
       entity="Permission"
-      queryHook={useGetPermissionsQuery}
-      createHook={useCreatePermissionMutation}
-      updateHook={useUpdatePermissionMutation}
-      deleteHook={useDeletePermissionMutation}
+      api={{
+        list: useGetPermissionsQuery,
+        create: useCreatePermissionMutation,
+        update: useUpdatePermissionMutation,
+        delete: useDeletePermissionMutation,
+      }}
       columns={columns}
       initialValues={{ name: "" }}
       fields={[
