@@ -5,25 +5,16 @@ import { adminRoutes } from "../admin/routes/admin.routes";
 import { userRoutes } from "../user/routes/user.routes";
 import { errorRoutes } from "./error.routes";
 
-import WelcomePage from "../user/features/home/WelcomePage";
-
 export default function AppRoutes() {
-  const routes = useRoutes([
-    {
-      path: "/",
-      element: <WelcomePage />, // 🔥 DEFAULT ENTRY
-    },
-
-    ...authRoutes,
-    ...userRoutes,
-    ...adminRoutes,
-    ...errorRoutes,
+  return useRoutes([
+    ...authRoutes,     // ✅ login routes
+    ...userRoutes,     // ✅ frontend user panel
+    ...adminRoutes,    // ✅ admin panel
+    ...errorRoutes,    // ✅ error pages
 
     {
       path: "*",
-      element: <Navigate to="/" />,
+      element: <Navigate to="/" replace />,
     },
   ]);
-
-  return routes;
 }

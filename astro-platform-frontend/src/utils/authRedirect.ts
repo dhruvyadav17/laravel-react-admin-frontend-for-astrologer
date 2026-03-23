@@ -1,21 +1,23 @@
-export function resolveLoginRedirect(user: any, loginFrom: "admin" | "user") {
+export function resolveLoginRedirect(
+  user: any,
+  loginFrom: "admin" | "user"
+) {
   if (!user) return "/login";
 
-  // 🔥 अगर user panel से login हुआ
+  const roles = user.roles || [];
+
+  const isAdmin =
+    roles.includes("admin") || roles.includes("super-admin");
+
+  /* ================= FRONTEND LOGIN ================= */
   if (loginFrom === "user") {
     return "/";
   }
 
-  // 🔥 अगर admin panel से login हुआ
+  /* ================= ADMIN LOGIN ================= */
   if (loginFrom === "admin") {
-    if (
-      user.roles?.includes("admin") ||
-      user.roles?.includes("super-admin")
-    ) {
-      return "/admin/dashboard";
-    }
+    if (isAdmin) return "/admin/dashboard";
 
-    // fallback (अगर गलती से user admin से login करे)
     return "/";
   }
 

@@ -2,10 +2,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
-import {
-  loginThunk,
-  fetchProfileThunk,
-} from "../store/authSlice";
+import { loginThunk, fetchProfileThunk } from "../store/authSlice";
 
 import type { RootState, AppDispatch } from "../store";
 
@@ -21,9 +18,7 @@ export default function LoginForm({ title }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const loading = useSelector(
-    (s: RootState) => s.auth.loading
-  );
+  const loading = useSelector((s: RootState) => s.auth.loading);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,9 +26,7 @@ export default function LoginForm({ title }: Props) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const loginRes = await dispatch(
-      loginThunk({ email, password })
-    );
+    const loginRes = await dispatch(loginThunk({ email, password }));
 
     if (loginThunk.rejected.match(loginRes)) {
       showError(loginRes.payload || loginRes.error);
@@ -59,7 +52,7 @@ export default function LoginForm({ title }: Props) {
 
     const redirectTo = resolveLoginRedirect(
       user,
-      fromAdminLogin
+      fromAdminLogin ? "admin" : "user", // ✅ FIX
     );
 
     navigate(redirectTo, { replace: true });
@@ -88,10 +81,7 @@ export default function LoginForm({ title }: Props) {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button
-          className="btn btn-primary w-100"
-          disabled={loading}
-        >
+        <button className="btn btn-primary w-100" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
 

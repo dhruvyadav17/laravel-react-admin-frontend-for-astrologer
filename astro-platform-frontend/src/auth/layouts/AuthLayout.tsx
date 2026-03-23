@@ -1,14 +1,20 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { resolveLoginRedirect } from "../../utils/authRedirect";
 
 export default function AuthLayout() {
   const { isAuth, user } = useAuth();
+  const location = useLocation();
 
-  if (isAuth) {
+  if (isAuth && user) {
+    const isAdminLogin = location.pathname.includes("/admin");
+
     return (
       <Navigate
-        to={resolveLoginRedirect(user, false)}
+        to={resolveLoginRedirect(
+          user,
+          isAdminLogin ? "admin" : "user"
+        )}
         replace
       />
     );

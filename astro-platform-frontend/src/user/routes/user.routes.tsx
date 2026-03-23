@@ -1,26 +1,28 @@
-import UserGuard from "../../routes/guards/UserGuard";
 import UserLayout from "../layouts/UserLayout";
-
+import HomePage from "../pages/HomePage";
 import ProfilePage from "../features/profile/ProfilePage";
-import HomePage from "../features/home/HomePage";
-import AstrologerDetailPage from "../features/astrologers/AstrologerDetailPage";
-
+import PanchangPage from "../pages/PanchangPage";
+import AstrologersPage from "../pages/AstrologersPage";
 export const userRoutes = [
   {
-    element: <UserGuard />,
+    path: "/",
+    element: <UserLayout />,
     children: [
       {
-        element: <UserLayout />,
-        children: [
-          /* ================= HOME ================= */
-          { path: "/home", element: <HomePage /> },
-          
-          /* ================= PROFILE ================= */
-          { path: "/profile", element: <ProfilePage /> },
-
-          /* ================= ASTRO DETAIL ================= */
-          { path: "/astrologers/:id", element: <AstrologerDetailPage /> },
-        ],
+        index: true,
+        element: <HomePage />, // ✅ dashboard
+      },
+       {
+        path: "profile",
+        element: <ProfilePage />,
+      },
+            {
+        path: "panchang",
+        element: <PanchangPage />,
+      },
+      {
+        path: "astrologers",
+        element: <AstrologersPage />,
       },
     ],
   },
