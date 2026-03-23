@@ -1,85 +1,98 @@
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useGetAstrologersQuery } from "../../../store/api/user.api";
-import { useAuth } from "../../../auth/hooks/useAuth";
+import { Link } from "react-router-dom";
+
+const services = [
+  {
+    title: "Panchang",
+    desc: "Daily Panchang",
+    icon: "📅",
+    path: "/panchang",
+  },
+  {
+    title: "Astrologers",
+    desc: "Talk to experts",
+    icon: "🔮",
+    path: "/astrologers",
+  },
+  {
+    title: "Horoscope",
+    desc: "Daily Predictions",
+    icon: "🌙",
+    path: "/horoscope",
+  },
+  {
+    title: "Call Now",
+    desc: "Talk instantly",
+    icon: "📞",
+    path: "/consult",
+  },
+];
 
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  return (
+    <div>
 
-  const { data = [], isLoading } = useGetAstrologersQuery();
+      {/* ================= HERO ================= */}
+      <section className="bg-light py-5 text-center rounded">
+        <div className="container">
+          <h1 className="text-danger fw-bold mb-3">
+            Welcome to AstroPandit 🔱
+          </h1>
 
-  const astrologers = data; // ✅ FIX
+          <p className="text-muted fs-5">
+            Talk to astrologers & know your future
+          </p>
+        </div>
+      </section>
 
-  /* ================= ROLE CHECK ================= */
+      {/* ================= SERVICES ================= */}
+      <section className="container py-5">
+        <div className="row g-4">
 
-  const roles = user?.roles || [];
+          {services.map((item) => (
+            <div className="col-md-3" key={item.title}>
+              <Link to={item.path} className="text-decoration-none">
 
-  const isAstrologer = roles.includes("astrologer");
-  const isUser = roles.includes("user") || roles.length === 0;
+                <div className="card p-4 text-center shadow-sm h-100 service-card">
 
-  /* ================= AUTO REDIRECT ================= */
+                  <div style={{ fontSize: "40px" }}>
+                    {item.icon}
+                  </div>
 
-  useEffect(() => {
-    if (!isLoading && isUser && astrologers.length === 1) {
-      navigate(`/astrologers/${astrologers[0].id}`);
-    }
-  }, [isLoading, astrologers, isUser, navigate]);
+                  <h5 className="text-danger mt-3">
+                    {item.title}
+                  </h5>
 
-  /* ================= ASTROLOGER VIEW ================= */
+                  <p className="text-muted small">
+                    {item.desc}
+                  </p>
 
-  if (isAstrologer) {
-    return (
-      <div>
-        <h3>My Profile (Astrologer)</h3>
-        <p><strong>Name:</strong> {user?.name}</p>
-        <p><strong>Email:</strong> {user?.email}</p>
-
-        <button
-          className="btn btn-primary btn-sm mt-2"
-          onClick={() => navigate("/profile")}
-        >
-          Edit Profile
-        </button>
-      </div>
-    );
-  }
-
-  /* ================= USER VIEW ================= */
-
-  if (isUser) {
-    return (
-      <div>
-        <h4 className="mb-3">Astrologers</h4>
-
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className="row">
-            {astrologers.map((astro: any) => (
-              <div key={astro.id} className="col-md-3 mb-3">
-                <div className="card p-3 shadow-sm">
-                  <h5>{astro.name}</h5>
-                  <p className="text-muted">{astro.email}</p>
-
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() =>
-                      navigate(`/astrologers/${astro.id}`)
-                    }
-                  >
-                    View Profile
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
 
-  /* ================= FALLBACK ================= */
+              </Link>
+            </div>
+          ))}
 
-  return <p>No role assigned</p>;
+        </div>
+      </section>
+
+      {/* ================= EXTRA SECTION (ASTRO STYLE) ================= */}
+      <section className="bg-danger text-white text-center py-5 rounded">
+        <div className="container">
+          <h3 className="fw-bold mb-3">
+            🔮 Get Personalized Guidance
+          </h3>
+
+          <p>
+            Connect with top astrologers and get solutions for love,
+            career, health and more.
+          </p>
+
+          <Link to="/astrologers" className="btn btn-light mt-3">
+            Talk to Astrologer
+          </Link>
+        </div>
+      </section>
+
+    </div>
+  );
 }

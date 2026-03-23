@@ -1,4 +1,4 @@
-import { useGetAstrologersQuery } from "../../store/api/user.api";
+import { useGetAstrologersQuery } from "../../../store/api/user.api";
 
 export default function AstrologersPage() {
   const { data = [], isLoading } = useGetAstrologersQuery();

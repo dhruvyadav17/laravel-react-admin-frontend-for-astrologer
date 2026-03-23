@@ -1,8 +1,8 @@
 import UserLayout from "../layouts/UserLayout";
-import HomePage from "../pages/HomePage";
+import HomePage from "../features/home/HomePage";
 import ProfilePage from "../features/profile/ProfilePage";
 import PanchangPage from "../pages/PanchangPage";
-import AstrologersPage from "../pages/AstrologersPage";
+import AstrologersPage from "../features/astrologers/AstrologersPage";
 export const userRoutes = [
   {
     path: "/",
