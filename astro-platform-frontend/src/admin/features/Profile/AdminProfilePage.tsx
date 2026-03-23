@@ -1,6 +1,6 @@
 import { useAuth } from "../../../auth/hooks/useAuth";
 
-import AdminPage from "../../components/page/AdminPage";
+import AdminPage from "../../components/layout/AdminPage";
 import AdminCard from "../../components/ui/AdminCard";
 
 export default function AdminProfilePage() {
