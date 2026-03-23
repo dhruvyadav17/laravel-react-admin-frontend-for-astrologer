@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import AdminTablePage from "../layout/AdminTablePage";
+import AdminTablePage from "../page/AdminTablePage";
 import RowActions from "../../../components/table/RowActions";
 import FormModal from "../../../components/form/FormModal";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";

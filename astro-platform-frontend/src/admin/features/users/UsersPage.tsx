@@ -5,7 +5,7 @@ import { usePagination } from "../../../hooks/usePagination";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
 import { useCrudActions } from "../../../hooks/useCrudActions";
 
-import AdminTablePage from "../../components/layout/AdminTablePage";
+import AdminTablePage from "../../components/page/AdminTablePage";
 import RowActions from "../../../components/table/RowActions";
 import AssignModal from "../../components/modals/AssignModal";
 import FormModal from "../../../components/form/FormModal";
@@ -14,7 +14,7 @@ import Pagination from "../../../components/table/Pagination";
 import {
   TableSearch,
   StatusBadge,
-} from "../../../components/table/TableUtils";
+} from "../../../components/table/table.helpers";
 
 import { useRowActions } from "../../hooks/useRowActions";
 

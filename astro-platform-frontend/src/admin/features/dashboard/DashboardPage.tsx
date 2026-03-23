@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useGetDashboardStatsQuery } from "../../../store/api";
 
-import AdminPage from "../../components/layout/AdminPage";
+import AdminPage from "../../components/page/AdminPage";
 import AdminCard from "../../components/ui/AdminCard";
 import InfoBox from "../../components/ui/InfoBox";
 export default function DashboardPage() {
