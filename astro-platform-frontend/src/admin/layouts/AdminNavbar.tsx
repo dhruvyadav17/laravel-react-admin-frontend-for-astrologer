@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import AdminLogoutButton from "../components/common/AdminLogoutButton";
+import AdminLogoutButton from "../components/shared/AdminLogoutButton";
 
 type Props = {
   onToggle: () => void;

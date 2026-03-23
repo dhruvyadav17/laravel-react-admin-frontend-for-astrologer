@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { SidebarGroup } from "../../types/sidebar";
-import AdminLogoutButton from "../common/AdminLogoutButton";
+import AdminLogoutButton from "../shared/AdminLogoutButton";
 
 type Props = {
   group: SidebarGroup;
