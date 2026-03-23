@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import AdminTablePage from "../page/AdminTablePage";
-import RowActions from "../table/RowActions";
-import FormModal from "../../../components/common/FormModal";
+import RowActions from "../../../components/table/RowActions";
+import FormModal from "../../../components/form/FormModal";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useRowActions } from "../../hooks/useRowActions";
-// import { useCrudForm } from "../../../hooks/useCrudForm";
+import { useCrudActions } from "../../../hooks/useCrudActions";
 
 type PermissionsConfig = {
   create?: string;
@@ -40,44 +40,50 @@ export default function AdminCrudPage<T extends { id?: number }>({
   const { can } = useAuth();
   const confirmAction = useConfirmAction();
 
-  const { data, isLoading, isError, refetch } =
-    queryHook();
+  const { data, isLoading, isError, refetch } = queryHook();
 
   const items: T[] = useMemo(
-    () =>
-      transformData
-        ? transformData(data)
-        : data ?? [],
+    () => (transformData ? transformData(data) : data ?? []),
     [data]
   );
 
-  const [editing, setEditing] =
-    useState<T | null>(null);
+  const [editing, setEditing] = useState<T | null>(null);
 
+  // 🔥 RTK hooks
   const [createMutation] = createHook();
-  const [updateMutation] = updateHook
-    ? updateHook()
-    : [null];
-  const [deleteMutation] = deleteHook
-    ? deleteHook()
-    : [null];
+  const [updateMutation] = updateHook ? updateHook() : [null];
+  const [deleteMutation] = deleteHook ? deleteHook() : [null];
 
-  // const form = useCrudForm({
-  //   initialValues,
-  //   create: createMutation,
-  //   update: updateMutation,
-  //   remove: deleteMutation,
-  //   onSuccess: () => setEditing(null),
-  // });
+  // ✅ SINGLE SOURCE OF TRUTH
+  const crud = useCrudActions<T>({
+    create: createMutation,
+    update: updateMutation,
+    remove: deleteMutation,
+    onSuccess: () => {
+      setEditing(null);
+      refetch();
+    },
+  });
 
+  // ✅ FORM SUBMIT
+  const handleSubmit = (values: T) => {
+    if (editing?.id) {
+      crud.update(editing.id, values);
+    } else {
+      crud.create(values);
+    }
+  };
+
+  // ✅ DELETE
   const handleDelete = (item: T) => {
-    if (!deleteMutation) return;
+    if (!deleteMutation || !item.id) return;
 
     confirmAction({
       message: `Are you sure you want to delete this ${entity}?`,
       confirmLabel: `Delete ${entity}`,
       onConfirm: async () => {
-        await deleteMutation(item.id);
+        await crud.remove(item.id!);
+        refetch();
       },
     });
   };
@@ -92,8 +98,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
       delete: {
         enabled:
           !!deleteMutation &&
-          (!permissions?.delete ||
-            can(permissions.delete)),
+          (!permissions?.delete || can(permissions.delete)),
         onClick: handleDelete,
       },
     });
@@ -108,11 +113,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
         loading={isLoading}
         error={isError}
         onRetry={refetch}
-        empty={
-          !isLoading &&
-          !isError &&
-          items.length === 0
-        }
+        empty={!isLoading && !isError && items.length === 0}
         columns={columns}
       >
         {!isLoading &&
@@ -122,14 +123,10 @@ export default function AdminCrudPage<T extends { id?: number }>({
               {Object.keys(item)
                 .filter((k) => k !== "id")
                 .map((key) => (
-                  <td key={key}>
-                    {(item as any)[key]}
-                  </td>
+                  <td key={key}>{(item as any)[key]}</td>
                 ))}
               <td className="text-end">
-                <RowActions
-                  actions={getRowActions(item)}
-                />
+                <RowActions actions={getRowActions(item)} />
               </td>
             </tr>
           ))}
@@ -139,9 +136,10 @@ export default function AdminCrudPage<T extends { id?: number }>({
         <FormModal
           title={entity}
           entity={editing}
-          initialValues={initialValues}
-          form={form}
+          initialValues={editing.id ? editing : initialValues}
           fields={fields}
+          loading={crud.loading}
+          onSubmit={handleSubmit}
           onClose={() => setEditing(null)}
         />
       )}

@@ -1,5 +1,5 @@
-import CrudModal from "../../../components/common/CrudModal";
-import CheckboxGrid from "../../../components/common/CheckboxGrid";
+import CrudModal from "../../../components/form/CrudModal";
+import CheckboxGrid from "../../../components/form/CheckboxGrid";
 import { useAssignLogic } from "../../hooks/useAssignLogic";
 import { execute } from "../../../utils/feedback";
 

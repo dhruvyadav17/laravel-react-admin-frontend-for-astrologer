@@ -7,7 +7,7 @@ import App from "./App";
 import { store } from "./store";
 import { setStore } from "./store/storeAccessor";
 
-import ErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorBoundary from "./components/feedback/ErrorBoundary";
 
 import { listenAuthEvents } from "./utils/authEvents";
 import { logoutThunk } from "./store/authSlice";

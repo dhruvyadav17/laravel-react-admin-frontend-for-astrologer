@@ -1,6 +1,6 @@
 import { Card, CardHeader } from "../../../components/ui/Card";
-import Button from "../../../components/common/Button";
-import Can from "../../../components/common/Can";
+import Button from "../../../components/ui/Button";
+import Can from "../../../components/auth/Can";
 
 type Props = {
   title: string;

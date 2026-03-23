@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { execute } from "../utils/feedback";
 
+type MutationFn = (data: any) => {
+  unwrap: () => Promise<any>;
+};
+
 type Options<T> = {
-  create?: any;
-  update?: any;
-  remove?: any;
+  create?: MutationFn;
+  update?: MutationFn;
+  remove?: MutationFn;
   onSuccess?: () => void;
 };
 
-export function useCrud<T>({
+export function useCrudActions<T>({
   create,
   update,
   remove,
@@ -33,18 +37,14 @@ export function useCrud<T>({
     }
   };
 
-  const handleUpdate = async (
-    id: number,
-    values: T
-  ) => {
+  const handleUpdate = async (id: number, values: T) => {
     if (!update) return;
 
     try {
       setLoading(true);
 
       await execute(
-        () =>
-          update({ id, ...values }).unwrap(),
+        () => update({ id, ...values }).unwrap(),
         { defaultMessage: "Updated successfully" }
       );
 

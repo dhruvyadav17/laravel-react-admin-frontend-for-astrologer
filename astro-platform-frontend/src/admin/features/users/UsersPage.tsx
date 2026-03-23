@@ -3,18 +3,18 @@ import { memo, useMemo, useState } from "react";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { usePagination } from "../../../hooks/usePagination";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
-import { useCrud } from "../../../hooks/useCrud";
+import { useCrudActions } from "../../../hooks/useCrudActions";
 
 import AdminTablePage from "../../components/page/AdminTablePage";
-import RowActions from "../../components/table/RowActions";
+import RowActions from "../../../components/table/RowActions";
 import AssignModal from "../../components/modals/AssignModal";
-import FormModal from "../../../components/common/FormModal";
+import FormModal from "../../../components/form/FormModal";
 
-import Pagination from "../../../components/common/Pagination";
+import Pagination from "../../../components/table/Pagination";
 import {
   TableSearch,
   StatusBadge,
-} from "../../../components/common/TableUtils";
+} from "../../../components/table/TableUtils";
 
 import { useRowActions } from "../../hooks/useRowActions";
 
@@ -38,8 +38,6 @@ function UsersPage() {
   const { can } = useAuth();
   const confirmAction = useConfirmAction();
 
-  /* ================= LOCAL MODAL STATE ================= */
-
   const [editingUser, setEditingUser] =
     useState<User | null>(null);
 
@@ -49,30 +47,12 @@ function UsersPage() {
       entity: User;
     } | null>(null);
 
-  /* ================= LOCAL FORM STATE ================= */
-
   const initialValues = {
     name: "",
     email: "",
     password: "",
     password_confirmation: "",
   };
-
-  const [formValues, setFormValues] =
-    useState(initialValues);
-
-  const setField = (
-    key: keyof typeof initialValues,
-    value: any
-  ) => {
-    setFormValues((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const resetForm = () =>
-    setFormValues(initialValues);
 
   /* ================= QUERY ================= */
 
@@ -94,52 +74,46 @@ function UsersPage() {
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
 
-  const crud = useCrud<User>({
+  /* ================= CRUD ================= */
+
+  const crud = useCrudActions<User>({
     create: createUser,
     update: updateUser,
     remove: deleteUser,
     onSuccess: () => {
-      resetForm();
       setEditingUser(null);
+      refetch();
     },
   });
 
-  /* ================= EDIT SYNC ================= */
+  /* ================= SUBMIT ================= */
 
-  const openEdit = (user: User | null) => {
-    if (user) {
-      setFormValues({
-        ...initialValues,
-        ...user,
-      });
+  const handleSubmit = (values: User) => {
+    if (editingUser?.id) {
+      crud.update(editingUser.id, values);
     } else {
-      resetForm();
+      crud.create(values);
     }
-
-    setEditingUser(user ?? ({} as User));
   };
 
-  /* ================= ARCHIVE ================= */
+  /* ================= DELETE ================= */
 
   const handleArchive = (user: User) =>
     confirmAction({
-      message:
-        "Are you sure you want to archive this user?",
+      message: "Are you sure you want to archive this user?",
       confirmLabel: "Yes, Archive",
-      onConfirm: async () =>
-        crud.remove(user.id),
+      onConfirm: async () => {
+        await crud.remove(user.id!);
+        refetch();
+      },
     });
 
   /* ================= RESTORE ================= */
 
   const handleRestore = (user: User) =>
-    execute(
-      () => restoreUser(user.id).unwrap(),
-      {
-        defaultMessage:
-          "User restored successfully",
-      }
-    );
+    execute(() => restoreUser(user.id).unwrap(), {
+      defaultMessage: "User restored successfully",
+    });
 
   /* ================= ROW ACTIONS ================= */
 
@@ -160,7 +134,7 @@ function UsersPage() {
 
       edit: {
         enabled: can(PERMISSIONS.USER.UPDATE),
-        onClick: () => openEdit(user),
+        onClick: () => setEditingUser(user),
       },
 
       extra: [
@@ -168,9 +142,7 @@ function UsersPage() {
           key: "roles",
           icon: ICONS.ROLE,
           title: "Assign Roles",
-          show: can(
-            PERMISSIONS.USER.ASSIGN_ROLE
-          ),
+          show: can(PERMISSIONS.USER.ASSIGN_ROLE),
           onClick: () =>
             setAssignData({
               mode: "user-role",
@@ -181,9 +153,7 @@ function UsersPage() {
           key: "permissions",
           icon: ICONS.PERMISSION,
           title: "Assign Permissions",
-          show: can(
-            PERMISSIONS.USER.ASSIGN_PERMISSION
-          ),
+          show: can(PERMISSIONS.USER.ASSIGN_PERMISSION),
           onClick: () =>
             setAssignData({
               mode: "user-permission",
@@ -193,7 +163,7 @@ function UsersPage() {
       ],
     });
 
-  /* ================= TABLE COLUMNS ================= */
+  /* ================= TABLE ================= */
 
   const columns = useMemo(
     () => (
@@ -202,9 +172,7 @@ function UsersPage() {
         <th>Email</th>
         <th>Roles</th>
         <th>Status</th>
-        <th className="text-end">
-          Actions
-        </th>
+        <th className="text-end">Actions</th>
       </tr>
     ),
     []
@@ -217,15 +185,11 @@ function UsersPage() {
         permission={PERMISSIONS.USER.CREATE}
         actionLabel="Add User"
         actionIcon={ICONS.ADD}
-        onAction={() => openEdit(null)}
+        onAction={() => setEditingUser({} as User)}
         loading={isLoading}
         error={isError}
         onRetry={refetch}
-        empty={
-          !isLoading &&
-          !isError &&
-          users.length === 0
-        }
+        empty={!isLoading && !isError && users.length === 0}
         emptyText="No users found"
         columns={columns}
         topContent={
@@ -242,10 +206,7 @@ function UsersPage() {
             <tr key={user.id}>
               <td>{user.name}</td>
               <td>{user.email}</td>
-              <td>
-                {user.roles?.join(", ") ||
-                  "—"}
-              </td>
+              <td>{user.roles?.join(", ") || "—"}</td>
               <td>
                 {user.deleted_at ? (
                   <StatusBadge status="archived" />
@@ -254,49 +215,23 @@ function UsersPage() {
                 )}
               </td>
               <td className="text-end">
-                <RowActions
-                  actions={getRowActions(
-                    user
-                  )}
-                />
+                <RowActions actions={getRowActions(user)} />
               </td>
             </tr>
           ))}
       </AdminTablePage>
 
       {meta && !isError && (
-        <Pagination
-          meta={meta}
-          onPageChange={setPage}
-        />
+        <Pagination meta={meta} onPageChange={setPage} />
       )}
 
       {/* ================= FORM MODAL ================= */}
 
       {editingUser && (
         <FormModal
-          title={
-            editingUser.id
-              ? "Edit User"
-              : "Add User"
-          }
-          entity={editingUser}
+          title={editingUser.id ? "Edit User" : "Add User"}
           initialValues={initialValues}
-          form={{
-            values: formValues,
-            errors: {},
-            loading: crud.loading,
-            setField,
-            setAllValues: setFormValues,
-            reset: resetForm,
-            create: () =>
-              crud.create(formValues),
-            update: (id: number) =>
-              crud.update(id, formValues),
-          }}
-          onClose={() =>
-            setEditingUser(null)
-          }
+          entity={editingUser}
           fields={[
             {
               name: "name",
@@ -322,6 +257,9 @@ function UsersPage() {
               required: !editingUser?.id,
             },
           ]}
+          loading={crud.loading}
+          onSubmit={handleSubmit}
+          onClose={() => setEditingUser(null)}
         />
       )}
 
@@ -329,9 +267,7 @@ function UsersPage() {
         <AssignModal
           mode={assignData.mode}
           entity={assignData.entity}
-          onClose={() =>
-            setAssignData(null)
-          }
+          onClose={() => setAssignData(null)}
         />
       )}
     </>

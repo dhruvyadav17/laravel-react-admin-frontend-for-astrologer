@@ -4,7 +4,7 @@ import {
   CardBody,
 } from "../../../components/ui/Card";
 
-import ErrorState from "../../../components/common/ErrorState";
+import ErrorState from "../../../components/feedback/ErrorState";
 
 type Props = {
   title?: string;

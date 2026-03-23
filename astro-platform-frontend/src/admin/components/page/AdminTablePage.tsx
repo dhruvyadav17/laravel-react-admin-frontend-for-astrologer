@@ -1,6 +1,6 @@
 import AdminPage from "./AdminPage";
 import AdminCard from "../ui/AdminCard";
-import DataTable from "../table/DataTable";
+import DataTable from "../../../components/table/DataTable";
 
 type Props = {
   title: string;

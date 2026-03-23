@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CrudModal from "./CrudModal";
 import FormInput from "./FormInput";
 
@@ -16,18 +16,10 @@ type Props<T> = {
 
   fields: FieldConfig<T>[];
 
-  form: {
-    values: T;
-    errors: any;
-    loading: boolean;
-    setField: (field: keyof T, value: any) => void;
-    setAllValues: (values: T) => void;
-    reset: () => void;
-    create: () => void;
-    update: (id: number) => void;
-  };
-
   initialValues: T;
+  onSubmit: (values: T) => void;
+
+  loading?: boolean;
   onClose: () => void;
   saveText?: string;
 };
@@ -36,32 +28,35 @@ export default function FormModal<T extends Record<string, any>>({
   title,
   entity,
   fields,
-  form,
   initialValues,
+  onSubmit,
+  loading = false,
   onClose,
   saveText,
 }: Props<T>) {
+  const [values, setValues] = useState<T>(initialValues);
+
+  /* 🔥 sync edit/create */
   useEffect(() => {
-    if (entity) {
-      form.setAllValues({
-        ...initialValues,
-        ...entity,
-      });
-    } else {
-      form.reset();
-    }
-  }, [entity]);
+    setValues(entity ? { ...initialValues, ...entity } : initialValues);
+  }, [entity, initialValues]);
+
+  const handleChange = (field: keyof T, value: any) => {
+    setValues((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const handleSubmit = () => {
-    entity?.id
-      ? form.update(entity.id)
-      : form.create();
+    if (loading) return; // 🔥 prevent double submit
+    onSubmit(values);
   };
 
   return (
     <CrudModal
       title={title}
-      loading={form.loading}
+      loading={loading}
       onSave={handleSubmit}
       onClose={onClose}
       saveText={saveText}
@@ -73,12 +68,9 @@ export default function FormModal<T extends Record<string, any>>({
           type={field.type}
           required={field.required}
           placeholder={field.placeholder}
-          value={form.values[field.name] ?? ""}
-          error={form.errors?.[field.name]?.[0]}
-          onChange={(v) =>
-            form.setField(field.name, v)
-          }
-          disabled={form.loading}
+          value={values[field.name] ?? ""}
+          onChange={(v) => handleChange(field.name, v)}
+          disabled={loading}
         />
       ))}
     </CrudModal>
