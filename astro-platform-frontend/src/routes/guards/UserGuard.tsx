@@ -1,18 +1,26 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 
 export default function UserGuard() {
   const { isAuth, isAdmin } = useAuth();
+  const location = useLocation();
 
-  // ❌ Not logged in → Welcome page
+  /* ❌ NOT LOGGED IN → redirect to login (with return path) */
   if (!isAuth) {
-    return <Navigate to="/" replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }} // 🔥 remember where user came from
+        replace
+      />
+    );
   }
 
-  // ❌ Admin block from frontend
+  /* ❌ ADMIN trying to access user routes */
   if (isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
+  /* ✅ ALLOWED */
   return <Outlet />;
 }

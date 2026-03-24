@@ -1,19 +1,30 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+
 import LoginForm from "../../auth/LoginForm";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { resolveLoginRedirect } from "../../utils/authRedirect";
+import Loader from "@/components/ui/Loader";
 
 type Props = {
   admin?: boolean;
 };
 
 export default function Login({ admin = false }: Props) {
-  const { isAuth, user } = useAuth();
+  const { isAuth, user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
+  /* 🔥 where user tried to go before login */
+  const from = location.state?.from?.pathname;
+
+  /* 🔄 LOADING STATE (important for refresh / token check) */
+  if (loading) return <Loader />;
+
+  /* ✅ already logged in */
   if (isAuth) {
     return (
       <Navigate
-        to={resolveLoginRedirect(user, admin)}
+        to={from && !admin ? from : resolveLoginRedirect(user, admin)}
         replace
       />
     );
@@ -22,6 +33,13 @@ export default function Login({ admin = false }: Props) {
   return (
     <LoginForm
       title={admin ? "Admin Login" : "User Login"}
+      onSuccess={(userData: any) => {
+        const redirectTo =
+          from && !admin ? from : resolveLoginRedirect(userData, admin);
+
+        /* ✅ SPA navigation (no reload) */
+        navigate(redirectTo, { replace: true });
+      }}
     />
   );
 }

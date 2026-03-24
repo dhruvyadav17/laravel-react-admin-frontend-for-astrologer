@@ -1,4 +1,5 @@
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
+import RowActions from "../../../components/table/RowActions";
 import {
   useGetUsersQuery,
   useCreateUserMutation,
@@ -9,11 +10,16 @@ export default function AstrologersPage() {
   return (
     <AdminCrudPage
       entity="Astrologer"
-      queryHook={() =>
-        useGetUsersQuery({ page: 1, search: "", type: "astrologer" })
-      }
-      createHook={useCreateUserMutation}
-      updateHook={useUpdateUserMutation}
+      api={{
+        list: () =>
+          useGetUsersQuery({
+            page: 1,
+            search: "",
+            type: "astrologer",
+          }),
+        create: useCreateUserMutation,
+        update: useUpdateUserMutation,
+      }}
       columns={
         <tr>
           <th>Name</th>
@@ -23,13 +29,6 @@ export default function AstrologersPage() {
           <th className="text-end">Actions</th>
         </tr>
       }
-      fields={[
-        { name: "name", label: "Name", required: true },
-        { name: "email", label: "Email", required: true },
-        { name: "experience", label: "Experience" },
-        { name: "price_per_minute", label: "Price/Min" },
-        { name: "bio", label: "Bio" },
-      ]}
       initialValues={{
         name: "",
         email: "",
@@ -37,6 +36,24 @@ export default function AstrologersPage() {
         price_per_minute: "",
         bio: "",
       }}
+      fields={[
+        { name: "name", label: "Name", required: true },
+        { name: "email", label: "Email", required: true },
+        { name: "experience", label: "Experience" },
+        { name: "price_per_minute", label: "Price/Min" },
+        { name: "bio", label: "Bio" },
+      ]}
+      renderRow={(item, actions) => (
+        <tr key={item.id}>
+          <td>{(item as any).name}</td>
+          <td>{(item as any).email}</td>
+          <td>{(item as any).experience}</td>
+          <td>{(item as any).price_per_minute}</td>
+          <td className="text-end">
+            <RowActions actions={actions} />
+          </td>
+        </tr>
+      )}
     />
   );
 }

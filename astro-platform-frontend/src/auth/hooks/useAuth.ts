@@ -5,6 +5,7 @@ import { ADMIN_ROLES } from "../../constants/rbac";
 export function useAuth() {
   const user = useSelector((s: RootState) => s.auth.user);
   const permissions = useSelector((s: RootState) => s.auth.permissions);
+  const loading = useSelector((state: any) => state.auth.loading);
 
   const roles: string[] = user?.roles ?? [];
 
@@ -46,5 +47,6 @@ export function useAuth() {
     hasAnyRole,
     can,
     canAny,
+    loading,
   };
 }

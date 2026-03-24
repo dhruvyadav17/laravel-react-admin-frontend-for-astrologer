@@ -28,10 +28,7 @@ type Props<T> = {
 
   permissions?: PermissionsConfig;
 
-  /** optional custom row render */
   renderRow?: (item: T, actions: any[]) => React.ReactNode;
-
-  /** optional extra content (search etc.) */
   topContent?: React.ReactNode;
 };
 
@@ -61,11 +58,11 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   const [editing, setEditing] = useState<T | null>(null);
 
-  /* ================= MUTATIONS ================= */
+  /* ================= MUTATIONS (SAFE) ================= */
 
-  const [createMutation] = api.create();
-  const [updateMutation] = api.update ? api.update() : [null];
-  const [deleteMutation] = api.delete ? api.delete() : [null];
+  const createMutation = api.create ? api.create()[0] : undefined;
+  const updateMutation = api.update ? api.update()[0] : undefined;
+  const deleteMutation = api.delete ? api.delete()[0] : undefined;
 
   /* ================= CRUD ================= */
 
@@ -144,11 +141,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
               renderRow(item, getRowActions(item))
             ) : (
               <tr key={item.id}>
-                {Object.keys(item)
-                  .filter((k) => k !== "id")
-                  .map((key) => (
-                    <td key={key}>{(item as any)[key]}</td>
-                  ))}
+                <td>{JSON.stringify(item)}</td>
                 <td className="text-end">
                   <RowActions actions={getRowActions(item)} />
                 </td>
