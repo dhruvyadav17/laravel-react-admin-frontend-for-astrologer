@@ -5,22 +5,19 @@ export default function UserGuard() {
   const { isAuth, isAdmin } = useAuth();
   const location = useLocation();
 
-  /* ❌ NOT LOGGED IN → redirect to login (with return path) */
   if (!isAuth) {
     return (
       <Navigate
         to="/login"
-        state={{ from: location }} // 🔥 remember where user came from
+        state={{ from: location }}
         replace
       />
     );
   }
 
-  /* ❌ ADMIN trying to access user routes */
   if (isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  /* ✅ ALLOWED */
   return <Outlet />;
 }

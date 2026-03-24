@@ -1,17 +1,13 @@
+import { useState } from "react";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useLogout } from "../../../auth/hooks/useLogout";
-
 import ProfileRoles from "./ProfileRoles";
-
-import {
-  Card,
-  CardHeader,
-  CardBody,
-} from "../../../components/ui/Card";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const logout = useLogout();
+
+  const [tab, setTab] = useState<"profile" | "roles" | "settings">("profile");
 
   if (!user) {
     return (
@@ -22,135 +18,158 @@ export default function ProfilePage() {
   }
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
-        <div className="row">
-          {/* ================= LEFT PROFILE CARD ================= */}
-          <div className="col-md-4 mb-4">
-            <Card className="text-center">
-              <CardBody>
-                <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    user.name
-                  )}&background=0d6efd&color=fff&size=128`}
-                  className="rounded-circle mb-3"
-                  alt="Profile"
-                />
+    <div className="container page">
 
-                <h5 className="mb-1">{user.name}</h5>
-                <p className="text-muted mb-2">
-                  {user.email}
-                </p>
+      <div className="row g-4">
 
-                <span className="badge bg-success">
-                  Active User
-                </span>
-              </CardBody>
-            </Card>
+        {/* ================= LEFT SIDEBAR ================= */}
+        <div className="col-md-4">
+
+          <div className="app-card profile-sidebar">
+
+            {/* AVATAR */}
+            <img
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                user.name
+              )}&background=e53935&color=fff&size=128`}
+              className="profile-avatar mb-3"
+              width={110}
+              height={110}
+              alt="Profile"
+            />
+
+            {/* NAME */}
+            <h5 className="fw-bold mb-1">{user.name}</h5>
+
+            {/* EMAIL */}
+            <p className="text-muted small mb-2">{user.email}</p>
+
+            {/* STATUS */}
+            <span className="badge bg-success mb-3 px-3 py-2">
+              Active User
+            </span>
+
+            {/* MENU */}
+            <div className="d-grid gap-2 mt-3">
+
+              <button
+                className={`btn ${
+                  tab === "profile"
+                    ? "btn-primary-app"
+                    : "btn-light"
+                }`}
+                onClick={() => setTab("profile")}
+              >
+                👤 Profile
+              </button>
+
+              <button
+                className={`btn ${
+                  tab === "roles"
+                    ? "btn-primary-app"
+                    : "btn-light"
+                }`}
+                onClick={() => setTab("roles")}
+              >
+                🛡️ My Roles
+              </button>
+
+              <button
+                className={`btn ${
+                  tab === "settings"
+                    ? "btn-primary-app"
+                    : "btn-light"
+                }`}
+                onClick={() => setTab("settings")}
+              >
+                ⚙️ Settings
+              </button>
+
+            </div>
+
           </div>
 
-          {/* ================= RIGHT CONTENT ================= */}
-          <div className="col-md-8">
-            <Card>
-              <CardHeader
-                title={
-                  <ul className="nav nav-tabs card-header-tabs">
-                    <li className="nav-item">
-                      <a
-                        className="nav-link active"
-                        data-bs-toggle="tab"
-                        href="#profile"
-                      >
-                        Profile Info
-                      </a>
-                    </li>
+        </div>
 
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        data-bs-toggle="tab"
-                        href="#roles"
-                      >
-                        My Roles
-                      </a>
-                    </li>
+        {/* ================= RIGHT CONTENT ================= */}
+        <div className="col-md-8">
 
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        data-bs-toggle="tab"
-                        href="#settings"
-                      >
-                        Settings
-                      </a>
-                    </li>
-                  </ul>
-                }
-              />
+          <div className="app-card">
 
-              <CardBody>
-                <div className="tab-content">
-                  {/* ===== PROFILE INFO ===== */}
-                  <div
-                    className="tab-pane fade show active"
-                    id="profile"
-                  >
-                    <div className="row">
-                      <div className="col-md-6 mb-3">
-                        <label className="text-muted">
-                          Name
-                        </label>
-                        <div className="fw-bold">
-                          {user.name}
-                        </div>
-                      </div>
+            {/* HEADER */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="section-title m-0">
+                My Account
+              </h5>
+            </div>
 
-                      <div className="col-md-6 mb-3">
-                        <label className="text-muted">
-                          Email
-                        </label>
-                        <div className="fw-bold">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {/* ================= PROFILE ================= */}
+            {tab === "profile" && (
+              <div className="row">
 
-                  {/* ===== ROLES ===== */}
-                  <div
-                    className="tab-pane fade"
-                    id="roles"
-                  >
-                    <ProfileRoles />
-                  </div>
-
-                  {/* ===== SETTINGS ===== */}
-                  <div
-                    className="tab-pane fade"
-                    id="settings"
-                  >
-                    <p className="text-muted">
-                      Settings section coming soon.
-                    </p>
-
-                    <button className="btn btn-outline-secondary btn-sm me-2">
-                      Change Password
-                    </button>
-
-                    <button
-                      className="btn btn-outline-danger btn-sm"
-                      onClick={() => logout("/login")}
-                    >
-                      <i className="fas fa-sign-out-alt me-1" />
-                      Logout
-                    </button>
+                <div className="col-md-6 mb-3">
+                  <label className="text-muted small">
+                    Full Name
+                  </label>
+                  <div className="fw-bold fs-6">
+                    {user.name}
                   </div>
                 </div>
-              </CardBody>
-            </Card>
+
+                <div className="col-md-6 mb-3">
+                  <label className="text-muted small">
+                    Email Address
+                  </label>
+                  <div className="fw-bold fs-6">
+                    {user.email}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ================= ROLES ================= */}
+            {tab === "roles" && (
+              <div>
+                <h6 className="mb-3 text-muted">
+                  Your Assigned Roles
+                </h6>
+                <ProfileRoles />
+              </div>
+            )}
+
+            {/* ================= SETTINGS ================= */}
+            {tab === "settings" && (
+              <div>
+
+                <h6 className="text-muted mb-3">
+                  Account Settings
+                </h6>
+
+                <div className="d-flex flex-wrap gap-2">
+
+                  <button className="btn btn-outline-secondary btn-sm">
+                    🔑 Change Password
+                  </button>
+
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => logout("/")}
+                  >
+                    🚪 Logout
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
           </div>
+
         </div>
+
       </div>
-    </section>
+
+    </div>
   );
 }

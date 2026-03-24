@@ -5,6 +5,7 @@ import PanchangPage from "../pages/PanchangPage";
 import AstrologersPage from "../features/astrologers/AstrologersPage";
 
 import UserGuard from "../../routes/guards/UserGuard";
+import AstrologerDetailPage from "../features/astrologers/AstrologerDetailPage";
 
 export const userRoutes = [
   {
@@ -13,50 +14,30 @@ export const userRoutes = [
     children: [
       /* ================= PUBLIC ================= */
 
-      {
-        index: true,
-        element: <HomePage />, // ✅ always accessible
-      },
+      { index: true, element: <HomePage /> },
 
-      {
-        path: "panchang",
-        element: <PanchangPage />, // ✅ public
-      },
+      { path: "panchang", element: <PanchangPage /> },
 
       {
         path: "astrologers",
-        element: <AstrologersPage />, // ✅ public browsing
+        element: <AstrologersPage />,
+      },
+      {
+        path: "astrologers/:id",
+        element: <AstrologerDetailPage />,
       },
 
       /* ================= PROTECTED ================= */
 
       {
-        path: "profile",
-        element: (
-          <UserGuard>
-            <ProfilePage />
-          </UserGuard>
-        ),
-      },
+        element: <UserGuard />, // 🔥 ONE PLACE GUARD
+        children: [
+          { path: "profile", element: <ProfilePage /> },
 
-      /* 🔥 FUTURE READY ROUTES */
-
-      {
-        path: "booking",
-        element: (
-          <UserGuard>
-            <div>Booking Page (Coming Soon)</div>
-          </UserGuard>
-        ),
-      },
-
-      {
-        path: "wallet",
-        element: (
-          <UserGuard>
-            <div>Wallet Page (Coming Soon)</div>
-          </UserGuard>
-        ),
+          // 🔥 future ready
+          { path: "booking", element: <div>Booking Page</div> },
+          { path: "wallet", element: <div>Wallet Page</div> },
+        ],
       },
     ],
   },
