@@ -4,8 +4,8 @@ import RowActions from "../../../components/table/RowActions";
 import FormModal from "../../../components/form/FormModal";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
 import { useAuth } from "../../../auth/hooks/useAuth";
-import { useRowActions } from "../../hooks/useRowActions";
 import { useCrudActions } from "../../../hooks/useCrudActions";
+import { useRowActions } from "../../hooks/useRowActions";
 
 type PermissionsConfig = {
   create?: string;
@@ -16,11 +16,13 @@ type Props<T> = {
   entity: string;
 
   api: {
-    list: any;
+    list: (params?: any) => any;
     create: any;
     update?: any;
     delete?: any;
   };
+
+  params?: any;
 
   columns: React.ReactNode;
   fields: any[];
@@ -30,24 +32,28 @@ type Props<T> = {
 
   renderRow?: (item: T, actions: any[]) => React.ReactNode;
   topContent?: React.ReactNode;
+
+  extraActions?: any[];
 };
 
 export default function AdminCrudPage<T extends { id?: number }>({
   entity,
   api,
+  params,
   columns,
   fields,
   initialValues,
   permissions,
   renderRow,
   topContent,
+  extraActions = [],
 }: Props<T>) {
   const { can } = useAuth();
   const confirmAction = useConfirmAction();
 
   /* ================= QUERY ================= */
 
-  const { data, isLoading, isError, refetch } = api.list();
+  const { data, isLoading, isError, refetch } = api.list(params);
 
   const items: T[] = useMemo(
     () => data?.data ?? data ?? [],
@@ -58,7 +64,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   const [editing, setEditing] = useState<T | null>(null);
 
-  /* ================= MUTATIONS (SAFE) ================= */
+  /* ================= MUTATIONS ================= */
 
   const createMutation = api.create ? api.create()[0] : undefined;
   const updateMutation = api.update ? api.update()[0] : undefined;
@@ -101,23 +107,6 @@ export default function AdminCrudPage<T extends { id?: number }>({
     });
   };
 
-  /* ================= ROW ACTIONS ================= */
-
-  const getRowActions = (item: T) =>
-    useRowActions({
-      row: item,
-      edit: {
-        enabled: !!updateMutation,
-        onClick: () => setEditing(item),
-      },
-      delete: {
-        enabled:
-          !!deleteMutation &&
-          (!permissions?.delete || can(permissions.delete)),
-        onClick: handleDelete,
-      },
-    });
-
   /* ================= RENDER ================= */
 
   return (
@@ -136,18 +125,36 @@ export default function AdminCrudPage<T extends { id?: number }>({
       >
         {!isLoading &&
           !isError &&
-          items.map((item) =>
-            renderRow ? (
-              renderRow(item, getRowActions(item))
+          items.map((item) => {
+            const actions = useRowActions({
+              row: item,
+              edit: {
+                enabled: !!updateMutation,
+                onClick: () => setEditing(item),
+              },
+              delete: {
+                enabled:
+                  !!deleteMutation &&
+                  (!permissions?.delete || can(permissions.delete)),
+                onClick: handleDelete,
+              },
+              extra: extraActions.map((a) => ({
+                ...a,
+                onClick: () => a.onClick(item),
+              })),
+            });
+
+            return renderRow ? (
+              renderRow(item, actions)
             ) : (
               <tr key={item.id}>
                 <td>{JSON.stringify(item)}</td>
                 <td className="text-end">
-                  <RowActions actions={getRowActions(item)} />
+                  <RowActions actions={actions} />
                 </td>
               </tr>
-            )
-          )}
+            );
+          })}
       </AdminTablePage>
 
       {/* ================= FORM ================= */}

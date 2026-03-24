@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
+import { PERMISSIONS } from "../../../constants/rbac";
 
 import {
   useGetRolesQuery,
@@ -16,7 +17,7 @@ function RolesPage() {
         <th className="text-end">Actions</th>
       </tr>
     ),
-    []
+    [],
   );
 
   return (
@@ -27,6 +28,9 @@ function RolesPage() {
         create: useCreateRoleMutation,
         update: useUpdateRoleMutation,
         delete: useDeleteRoleMutation,
+      }}
+      permissions={{
+        create: true,
       }}
       columns={columns}
       initialValues={{ name: "" }}

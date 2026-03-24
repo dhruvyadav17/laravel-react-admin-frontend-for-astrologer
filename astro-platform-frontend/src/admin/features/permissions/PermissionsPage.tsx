@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
+import { PERMISSIONS } from "../../../constants/rbac";
 
 import {
   useGetPermissionsQuery,
@@ -16,12 +17,15 @@ function PermissionsPage() {
         <th className="text-end">Actions</th>
       </tr>
     ),
-    []
+    [],
   );
 
   return (
     <AdminCrudPage
       entity="Permission"
+      permissions={{
+        create: true,
+      }}
       api={{
         list: useGetPermissionsQuery,
         create: useCreatePermissionMutation,
