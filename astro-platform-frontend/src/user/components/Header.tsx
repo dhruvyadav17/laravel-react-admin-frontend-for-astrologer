@@ -12,7 +12,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
-  /* 🔥 CLOSE DROPDOWN ON OUTSIDE CLICK */
+  /* ================= OUTSIDE CLICK ================= */
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) {
@@ -24,29 +24,51 @@ export default function Header() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  /* 🔥 ACTIVE LINK */
+  /* ================= ACTIVE LINK ================= */
   const isActive = (path: string) =>
-    location.pathname === path ? "fw-bold text-warning" : "text-white";
+    location.pathname === path ? "active" : "";
 
   return (
-    <header className="app-header bg-danger text-white shadow-sm">
+    <header className="app-header shadow-sm">
       <div className="container d-flex justify-content-between align-items-center py-3">
 
-        {/* LOGO */}
-        <Link to="/" className="fw-bold fs-5 text-white text-decoration-none">
-          🔱 AstroPandit
+        {/* ================= LOGO ================= */}
+        <Link
+          to="/"
+          className="fw-bold fs-5 text-white text-decoration-none"
+        >
+          🔱 Astro
         </Link>
 
-        {/* NAV */}
+        {/* ================= NAV ================= */}
         <nav className="d-flex gap-4 fw-medium">
-          <Link to="/" className={isActive("/")}>Home</Link>
-          <Link to="/panchang" className={isActive("/panchang")}>Panchang</Link>
-          <Link to="/astrologers" className={isActive("/astrologers")}>Astrologers</Link>
+
+          <Link
+            to="/"
+            className={`nav-link-custom ${isActive("/")}`}
+          >
+            Home
+          </Link>
+
+          <Link
+            to="/panchang"
+            className={`nav-link-custom ${isActive("/panchang")}`}
+          >
+            Panchang
+          </Link>
+
+          <Link
+            to="/astrologers"
+            className={`nav-link-custom ${isActive("/astrologers")}`}
+          >
+            Astrologers
+          </Link>
+
         </nav>
 
-        {/* USER */}
+        {/* ================= USER ================= */}
         {!isAuth ? (
-          <Link to="/login" className="btn btn-light btn-sm">
+          <Link to="/login" className="btn btn-light btn-sm btn-app">
             Login
           </Link>
         ) : (
@@ -60,49 +82,56 @@ export default function Header() {
               <img
                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                   user?.name || "User"
-                )}&background=fff&color=dc3545`}
+                )}&background=fff&color=e63946`}
                 alt="avatar"
                 width={32}
                 height={32}
                 className="rounded-circle"
               />
-              <span>{user?.name}</span>
+              <span className="fw-medium">{user?.name}</span>
             </button>
 
-            {/* DROPDOWN */}
+            {/* ================= DROPDOWN ================= */}
             {open && (
               <div
-                className="app-card position-absolute end-0 mt-2 shadow"
-                style={{ minWidth: 180, zIndex: 1000 }}
+                className="app-card position-absolute end-0 mt-2"
+                style={{
+                  minWidth: 200,
+                  zIndex: 1000,
+                  borderRadius: 12,
+                }}
               >
 
+                {/* PROFILE */}
                 <button
-                  className="dropdown-item"
+                  className="dropdown-item d-flex align-items-center gap-2"
                   onClick={() => {
                     navigate("/profile");
                     setOpen(false);
                   }}
                 >
-                  👤 Profile
+                  👤 <span>Profile</span>
                 </button>
 
+                {/* PANCHANG */}
                 <button
-                  className="dropdown-item"
+                  className="dropdown-item d-flex align-items-center gap-2"
                   onClick={() => {
                     navigate("/panchang");
                     setOpen(false);
                   }}
                 >
-                  📅 Panchang
+                  📅 <span>Panchang</span>
                 </button>
 
                 <div className="dropdown-divider" />
 
+                {/* LOGOUT */}
                 <button
-                  className="dropdown-item text-danger"
+                  className="dropdown-item text-danger d-flex align-items-center gap-2"
                   onClick={() => logout("/")}
                 >
-                  🚪 Logout
+                  🚪 <span>Logout</span>
                 </button>
 
               </div>
@@ -110,7 +139,6 @@ export default function Header() {
 
           </div>
         )}
-
       </div>
     </header>
   );

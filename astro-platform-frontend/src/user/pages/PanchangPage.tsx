@@ -4,7 +4,7 @@ export default function PanchangPage() {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
 
-  /* 🔥 STATIC DATA (API replace ready) */
+  /* ================= STATIC DATA ================= */
   const panchang = {
     tithi: "Shukla Paksha Dwitiya",
     nakshatra: "Rohini",
@@ -42,10 +42,10 @@ export default function PanchangPage() {
       {/* ================= GRID ================= */}
       <div className="row g-4">
 
-        {/* LEFT SIDE */}
+        {/* LEFT */}
         <div className="col-md-8">
 
-          {/* 🔥 PANCHANG DETAILS */}
+          {/* PANCHANG DETAILS */}
           <Section title="🌙 Panchang Details">
             <div className="row">
               <Item title="Tithi" value={panchang.tithi} />
@@ -55,11 +55,11 @@ export default function PanchangPage() {
             </div>
           </Section>
 
-          {/* 🔥 SUN MOON */}
+          {/* SUN & MOON */}
           <Section title="☀ Sun & Moon">
             <div className="row">
-              <Item title="Sunrise" value={panchang.sunrise} />
-              <Item title="Sunset" value={panchang.sunset} />
+              <Item title="Sunrise" value={panchang.sunrise} icon="🌅" />
+              <Item title="Sunset" value={panchang.sunset} icon="🌇" />
               <Item title="Moon Sign" value={panchang.moon_sign} />
               <Item title="Sun Sign" value={panchang.sun_sign} />
             </div>
@@ -67,21 +67,31 @@ export default function PanchangPage() {
 
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <div className="col-md-4">
 
-          {/* 🔥 IMPORTANT TIMINGS */}
+          {/* IMPORTANT TIMINGS */}
           <Section title="⚠ Important Timings" center>
-            <Info label="Rahu Kaal" value={panchang.rahu_kaal} danger />
-            <Info label="Abhijit Muhurat" value={panchang.abhijit} success />
+
+            <Info
+              label="Rahu Kaal"
+              value={panchang.rahu_kaal}
+              variant="danger"
+            />
+
+            <Info
+              label="Abhijit Muhurat"
+              value={panchang.abhijit}
+              variant="success"
+            />
+
           </Section>
 
-          {/* 🔥 INSIGHT */}
+          {/* INSIGHT */}
           <div className="app-card text-center">
-            <h6 className="text-muted">Today’s Insight</h6>
+            <h6 className="text-muted mb-2">Today’s Insight</h6>
             <p className="small mb-0">
-              Today is favorable for starting new work and
-              making financial decisions.
+              Today is favorable for starting new work and making financial decisions.
             </p>
           </div>
 
@@ -93,7 +103,7 @@ export default function PanchangPage() {
   );
 }
 
-/* ================= SECTION WRAPPER ================= */
+/* ================= SECTION ================= */
 function Section({ title, children, center }: any) {
   return (
     <div className="app-card mb-4">
@@ -108,29 +118,39 @@ function Section({ title, children, center }: any) {
 }
 
 /* ================= ITEM ================= */
-function Item({ title, value }: any) {
+function Item({ title, value, icon }: any) {
   return (
     <div className="col-md-6 mb-3">
-      <div className="panchang-item h-100">
-        <h6 className="text-muted">{title}</h6>
-        <strong>{value}</strong>
+      <div className="panchang-item h-100 text-center">
+
+        {icon && <div className="mb-1">{icon}</div>}
+
+        <h6 className="text-muted small">{title}</h6>
+        <div className="fw-semibold">{value}</div>
+
       </div>
     </div>
   );
 }
 
 /* ================= INFO ================= */
-function Info({ label, value, danger, success }: any) {
+function Info({ label, value, variant }: any) {
+  const colorClass =
+    variant === "danger"
+      ? "text-danger"
+      : variant === "success"
+      ? "text-success"
+      : "";
+
   return (
     <div className="mb-3">
+
       <small className="text-muted">{label}</small>
-      <div
-        className={`fw-bold ${
-          danger ? "text-danger" : success ? "text-success" : ""
-        }`}
-      >
+
+      <div className={`fw-bold ${colorClass}`}>
         {value}
       </div>
+
     </div>
   );
 }

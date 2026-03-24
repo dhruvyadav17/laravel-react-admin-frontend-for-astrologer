@@ -43,10 +43,12 @@ export default function AstrologerDetailPage() {
 
         {/* ================= LEFT PROFILE ================= */}
         <div className="col-md-4">
-          <div className="app-card text-center">
+
+          <div className="app-card text-center position-sticky" style={{ top: 100 }}>
 
             {/* IMAGE */}
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
+
               <img
                 src={
                   astrologer.profile_image ||
@@ -55,43 +57,59 @@ export default function AstrologerDetailPage() {
                 alt={astrologer.name}
                 className="astro-img"
               />
+
+              {/* VERIFIED */}
+              <span className="badge bg-success position-absolute top-0 end-0">
+                ✔ Verified
+              </span>
             </div>
 
             {/* NAME */}
-            <h4 className="fw-bold">{astrologer.name}</h4>
+            <h4 className="fw-bold mb-1">{astrologer.name}</h4>
 
             {/* EXPERTISE */}
-            <p className="text-muted small">
+            <p className="text-muted small mb-2">
               {astrologer.expertise || "Astrology Expert"}
             </p>
 
             {/* RATING */}
-            <div className="text-warning mb-2">
-              ⭐ {astrologer.rating || "4.5"} (120 reviews)
+            <div className="mb-2">
+              <span className="badge-accent px-2 py-1">
+                ⭐ {astrologer.rating || "4.5"}
+              </span>
+              <span className="text-muted small ms-1">
+                (120 reviews)
+              </span>
             </div>
 
             {/* EXPERIENCE */}
-            <p className="text-muted">
+            <p className="text-muted small mb-2">
               {astrologer.experience || 5}+ years experience
             </p>
 
             {/* PRICE */}
-            <h5 className="text-danger fw-bold">
-              ₹{astrologer.price_per_minute || 20}/min
-            </h5>
+            <div className="mb-3">
+              <span className="text-danger fw-bold fs-4">
+                ₹{astrologer.price_per_minute || 20}
+              </span>
+              <span className="text-muted"> /min</span>
+            </div>
 
             {/* CTA */}
             <div className="d-grid gap-2 mt-3">
-              <button className="btn btn-primary-app">
+
+              <button className="btn btn-primary-app btn-app">
                 Book Consultation
               </button>
 
-              <button className="btn btn-outline-danger">
+              <button className="btn btn-outline-app btn-app">
                 Chat Now
               </button>
+
             </div>
 
           </div>
+
         </div>
 
         {/* ================= RIGHT DETAILS ================= */}
@@ -100,7 +118,7 @@ export default function AstrologerDetailPage() {
           {/* ABOUT */}
           <div className="app-card mb-3">
             <h5 className="section-title mb-2">About</h5>
-            <p className="text-muted">
+            <p className="text-muted mb-0">
               {astrologer.bio || "No description available."}
             </p>
           </div>
@@ -114,7 +132,7 @@ export default function AstrologerDetailPage() {
                 (skill: string, i: number) => (
                   <span
                     key={i}
-                    className="badge bg-danger px-3 py-2"
+                    className="badge-accent px-3 py-2"
                   >
                     {skill}
                   </span>

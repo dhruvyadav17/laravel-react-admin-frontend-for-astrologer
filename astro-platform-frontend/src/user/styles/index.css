@@ -2,36 +2,41 @@
 
 /* ================= ROOT ================= */
 :root {
-  --primary: #e53935;
-  --primary-dark: #c62828;
-  --bg: #f4f6f9;
-  --text: #2c2c2c;
-  --radius: 14px;
+  --bg: #f8f9fa;
+
+  --primary: #e63946;
+  --primary-dark: #c92f3a;
+
+  --secondary: #1d3557;
+  --accent: #f1c40f;
+
+  --text-dark: #212529;
+  --text-muted: #6c757d;
+  --border: #e5e7eb;
+
+  --radius: 12px;
 }
 
 /* ================= GLOBAL ================= */
 body {
   font-family: "Inter", sans-serif;
   background: var(--bg);
-  color: var(--text);
+  color: var(--text-dark);
 }
 
-/* ================= LAYOUT ================= */
-.page {
-  padding: 40px 0;
-}
-
+/* ================= TYPOGRAPHY ================= */
 .section-title {
   font-weight: 700;
   color: var(--primary);
 }
 
-/* ================= CARD ================= */
+/* ================= CARD SYSTEM ================= */
 .app-card {
   background: #fff;
   border-radius: var(--radius);
   padding: 22px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: 0.25s;
 }
 
@@ -39,18 +44,41 @@ body {
   transform: translateY(-5px);
 }
 
-/* ================= HEADER ================= */
+/* ================= NAVBAR ================= */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   backdrop-filter: blur(6px);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
 }
 
-/* ================= BUTTON ================= */
+.nav-link-custom {
+  color: #fff;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-link-custom::after {
+  content: "";
+  height: 2px;
+  width: 0;
+  background: #fff;
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  transition: 0.3s;
+}
+
+.nav-link-custom:hover::after {
+  width: 100%;
+}
+
+/* ================= BUTTON SYSTEM ================= */
 .btn-app {
   border-radius: 10px;
   font-weight: 500;
+  transition: 0.2s;
 }
 
 .btn-primary-app {
@@ -63,6 +91,16 @@ body {
   background: var(--primary-dark);
 }
 
+.btn-outline-app {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-app:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
 /* ================= SERVICE ================= */
 .service-card {
   border-radius: var(--radius);
@@ -70,6 +108,7 @@ body {
   text-align: center;
   background: #fff;
   transition: 0.25s;
+  border: 1px solid var(--border);
 }
 
 .service-card:hover {
@@ -86,13 +125,14 @@ body {
   height: 90px;
   border-radius: 50%;
   border: 3px solid var(--primary);
+  transition: 0.2s;
+}
+
+.astro-img:hover {
+  transform: scale(1.05);
 }
 
 /* ================= PROFILE ================= */
-.profile-sidebar {
-  text-align: center;
-}
-
 .profile-avatar {
   border-radius: 50%;
   border: 4px solid var(--primary);
@@ -104,29 +144,25 @@ body {
   padding: 18px;
   text-align: center;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  border: 1px solid var(--border);
 }
 
+/* ================= BADGES ================= */
+.badge-accent {
+  background: var(--accent);
+  color: #000;
+}
 
-/* FOOTER */
+/* ================= FOOTER ================= */
 .footer {
-  background: linear-gradient(135deg, #e53935, #c62828);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
   padding: 50px 0 20px;
-}
-/* .footer {
-  background: linear-gradient(135deg, #cac4c4, #cac4c4);
-  color: #fff;
-  padding: 50px 0 20px;
-} */
-.footer-links li {
-  margin-bottom: 8px;
 }
 
 .footer-links a {
   color: #fff;
   opacity: 0.85;
-  text-decoration: none;
   transition: 0.2s;
 }
 
@@ -134,6 +170,7 @@ body {
   opacity: 1;
   text-decoration: underline;
 }
+
 /* ================= MOBILE ================= */
 @media (max-width: 768px) {
   .page {

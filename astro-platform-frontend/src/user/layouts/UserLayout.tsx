@@ -2,33 +2,39 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
-import "../styles/index.css"
+import "../styles/index.css";
+
 export default function UserLayout() {
   const { loading } = useAuth();
 
-  /* 🔥 GLOBAL LOADER */
+  /* ================= GLOBAL LOADER ================= */
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-danger" />
+      <div className="layout-loader">
+        <div className="text-center">
+          <div className="spinner-border text-danger mb-2" />
+          <p className="text-muted small mb-0">
+            Loading your experience...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="d-flex flex-column min-vh-100">
+    <div className="layout-root">
 
-      {/* HEADER */}
+      {/* ================= HEADER ================= */}
       <Header />
 
-      {/* MAIN CONTENT */}
-      <main className="flex-grow-1 page">
+      {/* ================= MAIN ================= */}
+      <main className="layout-main">
         <div className="container">
           <Outlet />
         </div>
       </main>
 
-      {/* FOOTER */}
+      {/* ================= FOOTER ================= */}
       <Footer />
 
     </div>

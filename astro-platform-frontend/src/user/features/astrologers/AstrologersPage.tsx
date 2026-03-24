@@ -53,11 +53,12 @@ export default function AstrologersPage() {
 
             <div className="app-card astro-card h-100 d-flex flex-column justify-content-between">
 
-              {/* TOP */}
+              {/* ================= TOP ================= */}
               <div>
 
                 {/* IMAGE */}
-                <div className="text-center mb-3">
+                <div className="text-center mb-3 position-relative">
+
                   <img
                     src={
                       astro.profile_image ||
@@ -66,10 +67,15 @@ export default function AstrologersPage() {
                     alt={astro.name}
                     className="astro-img"
                   />
+
+                  {/* VERIFIED BADGE */}
+                  <span className="badge bg-success position-absolute top-0 end-0">
+                    ✔
+                  </span>
                 </div>
 
                 {/* NAME */}
-                <h5 className="text-center fw-bold">
+                <h5 className="text-center fw-bold mb-1">
                   {astro.name}
                 </h5>
 
@@ -79,28 +85,41 @@ export default function AstrologersPage() {
                 </p>
 
                 {/* RATING */}
-                <div className="text-center text-warning mb-2">
-                  ⭐ {astro.rating || "4.5"}
+                <div className="text-center mb-2">
+                  <span className="badge-accent px-2 py-1">
+                    ⭐ {astro.rating || "4.5"}
+                  </span>
+                  <span className="text-muted small ms-1">
+                    (120)
+                  </span>
                 </div>
 
+                {/* EXPERIENCE */}
+                <p className="text-center text-muted small mb-2">
+                  {astro.experience || 5}+ years experience
+                </p>
+
                 {/* PRICE */}
-                <div className="text-center fw-bold text-danger mb-3">
-                  ₹ {astro.price_per_minute || 20}/min
+                <div className="text-center fw-bold mb-3">
+                  <span className="text-danger fs-5">
+                    ₹ {astro.price_per_minute || 20}
+                  </span>
+                  <span className="text-muted small"> /min</span>
                 </div>
 
               </div>
 
-              {/* ACTIONS */}
+              {/* ================= ACTIONS ================= */}
               <div className="d-grid gap-2">
 
                 <button
-                  className="btn btn-primary-app"
+                  className="btn btn-primary-app btn-app"
                   onClick={() => navigate(`/astrologers/${astro.id}`)}
                 >
                   View Details
                 </button>
 
-                <button className="btn btn-outline-danger">
+                <button className="btn btn-outline-app btn-app">
                   Talk Now
                 </button>
 

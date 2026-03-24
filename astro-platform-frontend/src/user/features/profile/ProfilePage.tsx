@@ -25,13 +25,13 @@ export default function ProfilePage() {
         {/* ================= LEFT SIDEBAR ================= */}
         <div className="col-md-4">
 
-          <div className="app-card profile-sidebar">
+          <div className="app-card profile-sidebar position-sticky" style={{ top: 100 }}>
 
             {/* AVATAR */}
             <img
               src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
                 user.name
-              )}&background=e53935&color=fff&size=128`}
+              )}&background=e63946&color=fff&size=128`}
               className="profile-avatar mb-3"
               width={110}
               height={110}
@@ -53,10 +53,10 @@ export default function ProfilePage() {
             <div className="d-grid gap-2 mt-3">
 
               <button
-                className={`btn ${
+                className={`btn btn-app ${
                   tab === "profile"
                     ? "btn-primary-app"
-                    : "btn-light"
+                    : "btn-outline-app"
                 }`}
                 onClick={() => setTab("profile")}
               >
@@ -64,10 +64,10 @@ export default function ProfilePage() {
               </button>
 
               <button
-                className={`btn ${
+                className={`btn btn-app ${
                   tab === "roles"
                     ? "btn-primary-app"
-                    : "btn-light"
+                    : "btn-outline-app"
                 }`}
                 onClick={() => setTab("roles")}
               >
@@ -75,10 +75,10 @@ export default function ProfilePage() {
               </button>
 
               <button
-                className={`btn ${
+                className={`btn btn-app ${
                   tab === "settings"
                     ? "btn-primary-app"
-                    : "btn-light"
+                    : "btn-outline-app"
                 }`}
                 onClick={() => setTab("settings")}
               >
@@ -111,7 +111,7 @@ export default function ProfilePage() {
                   <label className="text-muted small">
                     Full Name
                   </label>
-                  <div className="fw-bold fs-6">
+                  <div className="fw-semibold fs-6">
                     {user.name}
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export default function ProfilePage() {
                   <label className="text-muted small">
                     Email Address
                   </label>
-                  <div className="fw-bold fs-6">
+                  <div className="fw-semibold fs-6">
                     {user.email}
                   </div>
                 </div>
@@ -148,13 +148,13 @@ export default function ProfilePage() {
 
                 <div className="d-flex flex-wrap gap-2">
 
-                  <button className="btn btn-outline-secondary btn-sm">
+                  <button className="btn btn-outline-app btn-app btn-sm">
                     🔑 Change Password
                   </button>
 
                   <button
                     className="btn btn-danger btn-sm"
-                    onClick={() => logout("/")}
+                    onClick={() => logout("/") }
                   >
                     🚪 Logout
                   </button>

@@ -10,7 +10,7 @@ export default function Footer() {
 
           {/* BRAND */}
           <div className="col-md-3">
-            <h5 className="fw-bold">🔱 AstroPandit</h5>
+            <h5 className="fw-bold">🔱 Astro</h5>
             <p className="small">
               Discover your future with trusted astrologers.
               Get guidance on love, career, and life.
@@ -67,7 +67,7 @@ export default function Footer() {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
           <p className="m-0 small">
-            © {new Date().getFullYear()} AstroPandit. All rights reserved.
+            © {new Date().getFullYear()} Astro. All rights reserved.
           </p>
 
           <div className="d-flex gap-3 small">
