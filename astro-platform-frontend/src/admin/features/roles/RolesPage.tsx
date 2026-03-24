@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
-import { PERMISSIONS } from "../../../constants/rbac";
+import RowActions from "../../../components/table/RowActions";
 
 import {
   useGetRolesQuery,
@@ -19,7 +19,14 @@ function RolesPage() {
     ),
     [],
   );
-
+  const renderRow = (role: any, actions: any[]) => (
+    <tr key={role.id}>
+      <td>{role.name || "—"}</td>
+      <td className="text-end">
+        <RowActions actions={actions} />
+      </td>
+    </tr>
+  );
   return (
     <AdminCrudPage
       entity="Role"
@@ -33,6 +40,7 @@ function RolesPage() {
         create: true,
       }}
       columns={columns}
+      renderRow={renderRow}
       initialValues={{ name: "" }}
       fields={[
         {

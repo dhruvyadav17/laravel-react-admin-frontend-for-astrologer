@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
-import { PERMISSIONS } from "../../../constants/rbac";
+import RowActions from "@/components/table/RowActions";
 
 import {
   useGetPermissionsQuery,
@@ -19,7 +19,14 @@ function PermissionsPage() {
     ),
     [],
   );
-
+  const renderRow = (permission: any, actions: any[]) => (
+    <tr key={permission.id}>
+      <td>{permission.name || "—"}</td>
+      <td className="text-end">
+        <RowActions actions={actions} />
+      </td>
+    </tr>
+  );
   return (
     <AdminCrudPage
       entity="Permission"
@@ -33,6 +40,7 @@ function PermissionsPage() {
         delete: useDeletePermissionMutation,
       }}
       columns={columns}
+      renderRow={renderRow}
       initialValues={{ name: "" }}
       fields={[
         {
