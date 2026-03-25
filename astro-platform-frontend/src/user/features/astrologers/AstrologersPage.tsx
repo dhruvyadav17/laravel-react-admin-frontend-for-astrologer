@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { useGetAstrologersQuery } from "../../../store/api/user.api";
-
+import { useEffect } from "react";
 export default function AstrologersPage() {
   const navigate = useNavigate();
 
   const { data = [], isLoading, isError } = useGetAstrologersQuery();
+
+  useEffect(() => {
+    if (!isLoading && data.length === 1) {
+      navigate(`/astrologers/${data[0].id}`, { replace: true });
+    }
+  }, [data, isLoading, navigate]);
 
   /* ================= LOADING ================= */
   if (isLoading) {
@@ -36,7 +42,6 @@ export default function AstrologersPage() {
 
   return (
     <div className="container page">
-
       {/* ================= HEADER ================= */}
       <div className="text-center mb-5">
         <h2 className="section-title">🔮 Our Astrologers</h2>
@@ -47,18 +52,13 @@ export default function AstrologersPage() {
 
       {/* ================= LIST ================= */}
       <div className="row g-4">
-
         {data.map((astro: any) => (
           <div className="col-md-4" key={astro.id}>
-
             <div className="app-card astro-card h-100 d-flex flex-column justify-content-between">
-
               {/* ================= TOP ================= */}
               <div>
-
                 {/* IMAGE */}
                 <div className="text-center mb-3 position-relative">
-
                   <img
                     src={
                       astro.profile_image ||
@@ -75,9 +75,7 @@ export default function AstrologersPage() {
                 </div>
 
                 {/* NAME */}
-                <h5 className="text-center fw-bold mb-1">
-                  {astro.name}
-                </h5>
+                <h5 className="text-center fw-bold mb-1">{astro.name}</h5>
 
                 {/* EXPERTISE */}
                 <p className="text-muted text-center small mb-2">
@@ -89,9 +87,7 @@ export default function AstrologersPage() {
                   <span className="badge-accent px-2 py-1">
                     ⭐ {astro.rating || "4.5"}
                   </span>
-                  <span className="text-muted small ms-1">
-                    (120)
-                  </span>
+                  <span className="text-muted small ms-1">(120)</span>
                 </div>
 
                 {/* EXPERIENCE */}
@@ -106,12 +102,10 @@ export default function AstrologersPage() {
                   </span>
                   <span className="text-muted small"> /min</span>
                 </div>
-
               </div>
 
               {/* ================= ACTIONS ================= */}
               <div className="d-grid gap-2">
-
                 <button
                   className="btn btn-primary-app btn-app"
                   onClick={() => navigate(`/astrologers/${astro.id}`)}
@@ -122,16 +116,11 @@ export default function AstrologersPage() {
                 <button className="btn btn-outline-app btn-app">
                   Talk Now
                 </button>
-
               </div>
-
             </div>
-
           </div>
         ))}
-
       </div>
-
     </div>
   );
 }

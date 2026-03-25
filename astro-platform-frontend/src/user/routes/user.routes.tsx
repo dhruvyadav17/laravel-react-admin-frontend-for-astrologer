@@ -16,22 +16,31 @@ export const userRoutes = [
 
       { index: true, element: <HomePage /> },
 
-      { path: "panchang", element: <PanchangPage /> },
+      // { path: "panchang", element: <PanchangPage /> },
 
-      {
-        path: "astrologers",
-        element: <AstrologersPage />,
-      },
-      {
-        path: "astrologers/:id",
-        element: <AstrologerDetailPage />,
-      },
+      // {
+      //   path: "astrologers",
+      //   element: <AstrologersPage />,
+      // },
+      // {
+      //   path: "astrologers/:id",
+      //   element: <AstrologerDetailPage />,
+      // },
 
       /* ================= PROTECTED ================= */
 
       {
         element: <UserGuard />, // 🔥 ONE PLACE GUARD
         children: [
+          { path: "panchang", element: <PanchangPage /> },
+          {
+            path: "astrologers",
+            element: <AstrologersPage />,
+          },
+          {
+            path: "astrologers/:id",
+            element: <AstrologerDetailPage />,
+          },
           { path: "profile", element: <ProfilePage /> },
 
           // 🔥 future ready
