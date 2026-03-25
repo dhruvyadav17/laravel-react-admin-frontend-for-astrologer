@@ -1,12 +1,37 @@
 import { useParams } from "react-router-dom";
 import { useGetAstrologersQuery } from "../../../store/api/user.api";
 
+/* ================= STATIC FALLBACK ================= */
+const fallbackData = {
+  bio: "Experienced astrologer with expertise in Vedic, Tarot, and Numerology. Helping people solve life problems with accurate predictions.",
+  skills: ["Vedic", "Tarot", "Numerology"],
+  languages: ["Hindi", "English"],
+  experience: 5,
+  rating: 4.5,
+  price_per_minute: 20,
+  reviews: [
+    { name: "Rahul", text: "Very accurate prediction!", rating: 5 },
+    { name: "Anjali", text: "Helpful and polite.", rating: 5 },
+  ],
+  gallery: [
+    "https://images.unsplash.com/photo-1607746882042-944635dfe10e",
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
+    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e",
+  ],
+};
+
 export default function AstrologerDetailPage() {
   const { id } = useParams();
 
   const { data = [], isLoading, isError } = useGetAstrologersQuery();
 
   const astrologer = data.find((a: any) => String(a.id) === id);
+
+  /* ================= MERGED DATA ================= */
+  const finalData = {
+    ...fallbackData,
+    ...astrologer,
+  };
 
   /* ================= LOADING ================= */
   if (isLoading) {
@@ -41,7 +66,7 @@ export default function AstrologerDetailPage() {
 
       <div className="row g-4">
 
-        {/* ================= LEFT PROFILE ================= */}
+        {/* ================= LEFT ================= */}
         <div className="col-md-4">
 
           <div className="app-card text-center position-sticky" style={{ top: 100 }}>
@@ -51,121 +76,141 @@ export default function AstrologerDetailPage() {
 
               <img
                 src={
-                  astrologer.profile_image ||
-                  `https://ui-avatars.com/api/?name=${astrologer.name}`
+                  finalData.profile_image ||
+                  `https://ui-avatars.com/api/?name=${finalData.name}`
                 }
-                alt={astrologer.name}
                 className="astro-img"
               />
 
-              {/* VERIFIED */}
               <span className="badge bg-success position-absolute top-0 end-0">
                 ✔ Verified
               </span>
             </div>
 
-            {/* NAME */}
-            <h4 className="fw-bold mb-1">{astrologer.name}</h4>
+            <h4 className="fw-bold">{finalData.name}</h4>
 
-            {/* EXPERTISE */}
-            <p className="text-muted small mb-2">
-              {astrologer.expertise || "Astrology Expert"}
+            <p className="text-muted small">
+              {finalData.expertise || "Astrology Expert"}
             </p>
 
             {/* RATING */}
             <div className="mb-2">
-              <span className="badge-accent px-2 py-1">
-                ⭐ {astrologer.rating || "4.5"}
-              </span>
-              <span className="text-muted small ms-1">
-                (120 reviews)
-              </span>
+              ⭐ {finalData.rating} (120 reviews)
             </div>
 
             {/* EXPERIENCE */}
-            <p className="text-muted small mb-2">
-              {astrologer.experience || 5}+ years experience
+            <p className="text-muted small">
+              {finalData.experience}+ years experience
             </p>
 
             {/* PRICE */}
-            <div className="mb-3">
-              <span className="text-danger fw-bold fs-4">
-                ₹{astrologer.price_per_minute || 20}
-              </span>
-              <span className="text-muted"> /min</span>
-            </div>
+            <h5 className="text-danger fw-bold">
+              ₹{finalData.price_per_minute}/min
+            </h5>
 
             {/* CTA */}
             <div className="d-grid gap-2 mt-3">
-
-              <button className="btn btn-primary-app btn-app">
+              <button className="btn btn-primary-app">
                 Book Consultation
               </button>
 
-              <button className="btn btn-outline-app btn-app">
+              <button className="btn btn-outline-danger">
                 Chat Now
               </button>
-
             </div>
 
           </div>
 
         </div>
 
-        {/* ================= RIGHT DETAILS ================= */}
+        {/* ================= RIGHT ================= */}
         <div className="col-md-8">
 
-          {/* ABOUT */}
+          {/* ================= GALLERY ================= */}
           <div className="app-card mb-3">
-            <h5 className="section-title mb-2">About</h5>
+            <h5 className="section-title mb-3">Gallery</h5>
+
+            <div className="row g-2">
+              {finalData.gallery.map((img: string, i: number) => (
+                <div className="col-md-4" key={i}>
+                  <img
+                    src={img}
+                    className="w-100 rounded"
+                    style={{ height: 120, objectFit: "cover" }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ================= ABOUT ================= */}
+          <div className="app-card mb-3">
+            <h5 className="section-title">About</h5>
             <p className="text-muted mb-0">
-              {astrologer.bio || "No description available."}
+              {finalData.bio}
             </p>
           </div>
 
-          {/* SPECIALIZATION */}
+          {/* ================= SPECIALIZATION ================= */}
           <div className="app-card mb-3">
-            <h5 className="section-title mb-2">Specialization</h5>
+            <h5 className="section-title">Specialization</h5>
 
             <div className="d-flex flex-wrap gap-2">
-              {(astrologer.skills || ["Vedic", "Tarot"]).map(
-                (skill: string, i: number) => (
-                  <span
-                    key={i}
-                    className="badge-accent px-3 py-2"
-                  >
-                    {skill}
-                  </span>
-                )
-              )}
+              {finalData.skills.map((s: string, i: number) => (
+                <span key={i} className="badge-accent px-3 py-2">
+                  {s}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* LANGUAGES */}
+          {/* ================= LANGUAGES ================= */}
           <div className="app-card mb-3">
-            <h5 className="section-title mb-2">Languages</h5>
+            <h5 className="section-title">Languages</h5>
             <p className="text-muted mb-0">
-              {(astrologer.languages || ["Hindi", "English"]).join(", ")}
+              {finalData.languages.join(", ")}
             </p>
           </div>
 
-          {/* REVIEWS */}
+          {/* ================= RATING BREAKDOWN ================= */}
+          <div className="app-card mb-3">
+            <h5 className="section-title mb-3">Rating & Reviews</h5>
+
+            <div className="d-flex align-items-center gap-4">
+
+              <div className="text-center">
+                <h2 className="fw-bold">{finalData.rating}</h2>
+                ⭐⭐⭐⭐⭐
+              </div>
+
+              <div className="flex-grow-1">
+                {[5, 4, 3, 2, 1].map((r) => (
+                  <div key={r} className="d-flex align-items-center gap-2 mb-1">
+                    <small>{r}</small>
+                    <div className="progress flex-grow-1" style={{ height: 6 }}>
+                      <div
+                        className="progress-bar bg-success"
+                        style={{ width: r === 5 ? "90%" : "20%" }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+
+          {/* ================= REVIEWS ================= */}
           <div className="app-card">
-            <h5 className="section-title mb-3">Reviews</h5>
+            <h5 className="section-title mb-3">User Reviews</h5>
 
-            <div className="border-bottom pb-2 mb-2">
-              <strong>Rahul</strong>
-              <p className="mb-0 text-muted small">
-                Very accurate prediction!
-              </p>
-            </div>
-
-            <div>
-              <strong>Anjali</strong>
-              <p className="mb-0 text-muted small">
-                Helpful and polite.
-              </p>
-            </div>
+            {finalData.reviews.map((r: any, i: number) => (
+              <div key={i} className="border-bottom pb-2 mb-2">
+                <strong>{r.name}</strong>
+                <div>⭐⭐⭐⭐⭐</div>
+                <p className="small text-muted mb-0">{r.text}</p>
+              </div>
+            ))}
 
           </div>
 
