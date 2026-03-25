@@ -31,7 +31,7 @@ export default function HomePage() {
       <section className="text-center mb-5">
 
         <h1 className="display-4 fw-bold mb-3">
-          🔱 AstroPandit
+          🔱 Astro
         </h1>
 
         <p className="text-muted mb-4">
