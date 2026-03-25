@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\App;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AstroResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class AstrologerController extends Controller
 
         return $this->success(
             'Astrologers fetched successfully',
-            UserResource::collection($astrologers)
+            AstroResource::collection($astrologers)
         );
     }
 
@@ -38,7 +39,7 @@ class AstrologerController extends Controller
 
         return $this->success(
             'Astrologer detail',
-            new UserResource($user)
+            new AstroResource($user)
         );
     }
 }

@@ -27,10 +27,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
+
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'languages' => 'array',
+        'skills' => 'array',
+        'gallery' => 'array',
     ];
-
     /* ==========================================================
      | ROLE HELPERS
      ========================================================== */
@@ -47,5 +50,4 @@ class User extends Authenticatable implements MustVerifyEmail
                 config('roles.admin_roles', [])
             );
     }
-
 }
