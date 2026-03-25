@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
+import { useGetAstrologersQuery } from "../../../store/api/user.api";
 
+/* ================= STATIC SERVICES ================= */
 const services = [
   { title: "Panchang", icon: "📅", path: "/panchang" },
   { title: "Astrologers", icon: "🔮", path: "/astrologers" },
@@ -7,7 +9,21 @@ const services = [
   { title: "Call Now", icon: "📞", path: "/consult" },
 ];
 
+/* ================= STATIC FALLBACK ================= */
+const fallbackAstros = [
+  {
+    name: "Astrologer",
+    expertise: "Vedic Astrology",
+    rating: 4.5,
+  },
+];
+
 export default function HomePage() {
+  const { data = [], isLoading } = useGetAstrologersQuery();
+
+  /* ================= DYNAMIC + FALLBACK ================= */
+  const astrologers = data.length ? data.slice(0, 3) : fallbackAstros;
+
   return (
     <div className="page">
 
@@ -15,14 +31,13 @@ export default function HomePage() {
       <section className="text-center mb-5">
 
         <h1 className="display-4 fw-bold mb-3">
-          🔱 Astro
+          🔱 AstroPandit
         </h1>
 
         <p className="text-muted mb-4">
           Talk to expert astrologers & get guidance on love, career & life
         </p>
 
-        {/* CTA */}
         <div className="d-flex justify-content-center gap-3 flex-wrap">
 
           <Link to="/astrologers">
@@ -53,16 +68,9 @@ export default function HomePage() {
 
                 <div className="service-card h-100">
 
-                  {/* ICON */}
-                  <div
-                    className="mb-2"
-                    style={{ fontSize: 40 }}
-                  >
-                    {item.icon}
-                  </div>
+                  <div style={{ fontSize: 40 }}>{item.icon}</div>
 
-                  {/* TITLE */}
-                  <h6 className="fw-semibold text-dark">
+                  <h6 className="fw-semibold text-dark mt-2">
                     {item.title}
                   </h6>
 
@@ -76,6 +84,64 @@ export default function HomePage() {
         </div>
 
       </div>
+
+      {/* ================= FEATURED ASTROLOGERS ================= */}
+      <section className="mt-5">
+
+        <div className="container">
+
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="fw-bold m-0">⭐ Top Astrologers</h5>
+
+            <Link to="/astrologers" className="small text-decoration-none">
+              View All →
+            </Link>
+          </div>
+
+          <div className="row g-4">
+
+            {astrologers.map((astro: any, i: number) => {
+
+              const rating = astro.rating || 4.5;
+
+              return (
+                <div key={i} className="col-md-4">
+
+                  <div className="app-card text-center h-100">
+
+                    {/* IMAGE */}
+                    <img
+                      src={
+                        astro.profile_image ||
+                        `https://ui-avatars.com/api/?name=${astro.name}`
+                      }
+                      className="astro-img mb-2"
+                    />
+
+                    {/* NAME */}
+                    <h6 className="fw-bold mb-1">{astro.name}</h6>
+
+                    {/* EXPERTISE */}
+                    <p className="text-muted small mb-1">
+                      {astro.expertise || "Astrology Expert"}
+                    </p>
+
+                    {/* RATING */}
+                    <div className="small">
+                      ⭐ {rating}
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+
+        </div>
+
+      </section>
 
       {/* ================= TRUST SECTION ================= */}
       <section className="text-center mt-5">

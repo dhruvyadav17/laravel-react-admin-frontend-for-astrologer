@@ -17,32 +17,54 @@ export default function ProfilePage() {
     );
   }
 
+  /* ================= SAFE DATA ================= */
+  const name = user.name || "User";
+  const email = user.email || "No Email";
+
   return (
     <div className="container page">
 
       <div className="row g-4">
 
-        {/* ================= LEFT SIDEBAR ================= */}
+        {/* ================= LEFT ================= */}
         <div className="col-md-4">
 
           <div className="app-card profile-sidebar position-sticky" style={{ top: 100 }}>
 
             {/* AVATAR */}
-            <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                user.name
-              )}&background=e63946&color=fff&size=128`}
-              className="profile-avatar mb-3"
-              width={110}
-              height={110}
-              alt="Profile"
-            />
+            <div className="position-relative mb-3">
+
+              <img
+                src={
+                  user.profile_image ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e63946&color=fff&size=128`
+                }
+                className="profile-avatar"
+                width={110}
+                height={110}
+                alt="Profile"
+              />
+
+              {/* ONLINE DOT */}
+              {user.is_online && (
+                <span
+                  className="position-absolute bg-success rounded-circle"
+                  style={{
+                    width: 14,
+                    height: 14,
+                    bottom: 8,
+                    right: 8,
+                    border: "2px solid #fff",
+                  }}
+                />
+              )}
+            </div>
 
             {/* NAME */}
-            <h5 className="fw-bold mb-1">{user.name}</h5>
+            <h5 className="fw-bold mb-1">{name}</h5>
 
             {/* EMAIL */}
-            <p className="text-muted small mb-2">{user.email}</p>
+            <p className="text-muted small mb-2">{email}</p>
 
             {/* STATUS */}
             <span className="badge bg-success mb-3 px-3 py-2">
@@ -52,38 +74,26 @@ export default function ProfilePage() {
             {/* MENU */}
             <div className="d-grid gap-2 mt-3">
 
-              <button
-                className={`btn btn-app ${
-                  tab === "profile"
-                    ? "btn-primary-app"
-                    : "btn-outline-app"
-                }`}
+              <TabButton
+                active={tab === "profile"}
                 onClick={() => setTab("profile")}
               >
                 👤 Profile
-              </button>
+              </TabButton>
 
-              <button
-                className={`btn btn-app ${
-                  tab === "roles"
-                    ? "btn-primary-app"
-                    : "btn-outline-app"
-                }`}
+              <TabButton
+                active={tab === "roles"}
                 onClick={() => setTab("roles")}
               >
                 🛡️ My Roles
-              </button>
+              </TabButton>
 
-              <button
-                className={`btn btn-app ${
-                  tab === "settings"
-                    ? "btn-primary-app"
-                    : "btn-outline-app"
-                }`}
+              <TabButton
+                active={tab === "settings"}
                 onClick={() => setTab("settings")}
               >
                 ⚙️ Settings
-              </button>
+              </TabButton>
 
             </div>
 
@@ -91,39 +101,29 @@ export default function ProfilePage() {
 
         </div>
 
-        {/* ================= RIGHT CONTENT ================= */}
+        {/* ================= RIGHT ================= */}
         <div className="col-md-8">
 
           <div className="app-card">
 
             {/* HEADER */}
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title m-0">
-                My Account
-              </h5>
+              <h5 className="section-title m-0">My Account</h5>
+
+              {/* EDIT BUTTON (future use) */}
+              {tab === "profile" && (
+                <button className="btn btn-outline-app btn-sm">
+                  ✏️ Edit
+                </button>
+              )}
             </div>
 
             {/* ================= PROFILE ================= */}
             {tab === "profile" && (
               <div className="row">
 
-                <div className="col-md-6 mb-3">
-                  <label className="text-muted small">
-                    Full Name
-                  </label>
-                  <div className="fw-semibold fs-6">
-                    {user.name}
-                  </div>
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="text-muted small">
-                    Email Address
-                  </label>
-                  <div className="fw-semibold fs-6">
-                    {user.email}
-                  </div>
-                </div>
+                <InfoItem label="Full Name" value={name} />
+                <InfoItem label="Email Address" value={email} />
 
               </div>
             )}
@@ -154,7 +154,7 @@ export default function ProfilePage() {
 
                   <button
                     className="btn btn-danger btn-sm"
-                    onClick={() => logout("/") }
+                    onClick={() => logout("/")}
                   >
                     🚪 Logout
                   </button>
@@ -170,6 +170,30 @@ export default function ProfilePage() {
 
       </div>
 
+    </div>
+  );
+}
+
+/* ================= REUSABLE TAB BUTTON ================= */
+function TabButton({ active, children, ...props }: any) {
+  return (
+    <button
+      {...props}
+      className={`btn btn-app ${
+        active ? "btn-primary-app" : "btn-outline-app"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ================= REUSABLE INFO ITEM ================= */
+function InfoItem({ label, value }: any) {
+  return (
+    <div className="col-md-6 mb-3">
+      <label className="text-muted small">{label}</label>
+      <div className="fw-semibold fs-6">{value}</div>
     </div>
   );
 }
