@@ -18,6 +18,18 @@ function RolesPage() {
   const { can } = useAuth();
   const [assignData, setAssignData] = useState<any>(null);
 
+  /* ================= QUERY ================= */
+
+  const query = useGetRolesQuery();
+
+  /* ================= MUTATIONS ================= */
+
+  const createMutation = useCreateRoleMutation();
+  const updateMutation = useUpdateRoleMutation();
+  const deleteMutation = useDeleteRoleMutation();
+
+  /* ================= COLUMNS ================= */
+
   const columns = useMemo(
     () => (
       <tr>
@@ -25,8 +37,10 @@ function RolesPage() {
         <th className="text-end">Actions</th>
       </tr>
     ),
-    [],
+    []
   );
+
+  /* ================= RENDER ================= */
 
   const renderRow = (role: any, actions: any[]) => (
     <tr key={role.id}>
@@ -36,6 +50,8 @@ function RolesPage() {
       </td>
     </tr>
   );
+
+  /* ================= EXTRA ACTIONS ================= */
 
   const extraActions = [
     {
@@ -55,15 +71,15 @@ function RolesPage() {
     <>
       <AdminCrudPage
         entity="Role"
-        api={{
-          list: useGetRolesQuery,
-          create: useCreateRoleMutation,
-          update: useUpdateRoleMutation,
-          delete: useDeleteRoleMutation,
+        query={query}
+        mutations={{
+          create: createMutation,
+          update: updateMutation,
+          delete: deleteMutation,
         }}
         permissions={{
           create: true,
-          delete:false,
+          delete: false,
         }}
         columns={columns}
         renderRow={renderRow}
@@ -75,10 +91,10 @@ function RolesPage() {
             required: true,
           },
         ]}
-        extraActions={extraActions} // ✅ added
+        extraActions={extraActions}
       />
 
-      {/* ✅ Assign Modal */}
+      {/* ================= ASSIGN MODAL ================= */}
       {assignData && (
         <AssignModal
           mode={assignData.mode}

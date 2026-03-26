@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
-import RowActions from "@/components/table/RowActions";
+import RowActions from "../../../components/table/RowActions";
 
 import {
   useGetPermissionsQuery,
@@ -10,6 +10,18 @@ import {
 } from "../../../store/api";
 
 function PermissionsPage() {
+  /* ================= QUERY ================= */
+
+  const query = useGetPermissionsQuery();
+
+  /* ================= MUTATIONS ================= */
+
+  const createMutation = useCreatePermissionMutation();
+  const updateMutation = useUpdatePermissionMutation();
+  const deleteMutation = useDeletePermissionMutation();
+
+  /* ================= COLUMNS ================= */
+
   const columns = useMemo(
     () => (
       <tr>
@@ -17,8 +29,11 @@ function PermissionsPage() {
         <th className="text-end">Actions</th>
       </tr>
     ),
-    [],
+    []
   );
+
+  /* ================= RENDER ================= */
+
   const renderRow = (permission: any, actions: any[]) => (
     <tr key={permission.id}>
       <td>{permission.name || "—"}</td>
@@ -27,17 +42,18 @@ function PermissionsPage() {
       </td>
     </tr>
   );
+
   return (
     <AdminCrudPage
       entity="Permission"
+      query={query}
+      mutations={{
+        create: createMutation,
+        update: updateMutation,
+        delete: deleteMutation,
+      }}
       permissions={{
         create: true,
-      }}
-      api={{
-        list: useGetPermissionsQuery,
-        create: useCreatePermissionMutation,
-        update: useUpdatePermissionMutation,
-        delete: useDeletePermissionMutation,
       }}
       columns={columns}
       renderRow={renderRow}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
 import RowActions from "../../../components/table/RowActions";
 import Pagination from "../../../components/table/Pagination";
+import AssignModal from "../../components/modals/AssignModal";
 
 import {
   useGetUsersQuery,
@@ -26,9 +27,20 @@ export default function UsersPage() {
 
   const [assignData, setAssignData] = useState<any>(null);
 
-  // ✅ meta ke liye query
-  const { data } = useGetUsersQuery({ page, search });
+  /* ================= QUERY ================= */
+
+  const query = useGetUsersQuery({ page, search });
+
+  const { data } = query;
   const meta = data?.meta;
+
+  /* ================= MUTATIONS ================= */
+
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const deleteMutation = useDeleteUserMutation();
+
+  /* ================= EXTRA ACTIONS ================= */
 
   const extraActions = [
     {
@@ -59,20 +71,19 @@ export default function UsersPage() {
     <>
       <AdminCrudPage
         entity="User"
-        api={{
-          list: useGetUsersQuery,
-          create: useCreateUserMutation,
-          update: useUpdateUserMutation,
-          delete: useDeleteUserMutation,
+        query={query}
+        mutations={{
+          create: createMutation,
+          update: updateMutation,
+          delete: deleteMutation,
         }}
         permissions={{ create: true }}
-        params={{ page, search }}
         topContent={
           <TableSearch
             value={search}
             onChange={(val) => {
               setSearch(val);
-              setPage(1); // ✅ reset page on search
+              setPage(1); // reset page
             }}
             placeholder="Search users..."
           />
@@ -86,7 +97,7 @@ export default function UsersPage() {
             <th className="text-end">Actions</th>
           </tr>
         }
-        renderRow={(user, actions) => (
+        renderRow={(user: User, actions) => (
           <tr key={user.id}>
             <td>{user.name}</td>
             <td>{user.email}</td>
@@ -103,7 +114,6 @@ export default function UsersPage() {
           email: "",
           password: "",
           password_confirmation: "",
-
           experience: "",
           price_per_minute: "",
           bio: "",
@@ -116,7 +126,7 @@ export default function UsersPage() {
             { name: "name", label: "Name", required: true },
             { name: "email", label: "Email", required: true, disabled: isEdit },
 
-            // ✅ password only in CREATE
+            // password only on create
             ...(!isEdit
               ? [
                   { name: "password", label: "Password", type: "password" },
@@ -128,7 +138,7 @@ export default function UsersPage() {
                 ]
               : []),
 
-            // ✅ astrologer fields
+            // astrologer fields
             ...(isAstrologer
               ? [
                   { name: "experience", label: "Experience" },
@@ -140,12 +150,12 @@ export default function UsersPage() {
         }}
       />
 
-      {/* ✅ SAFE PAGINATION */}
+      {/* ================= PAGINATION ================= */}
       {meta && meta.last_page > 1 && (
         <Pagination meta={meta} onPageChange={setPage} />
       )}
 
-      {/* Assign Modal */}
+      {/* ================= ASSIGN MODAL ================= */}
       {assignData && (
         <AssignModal
           mode={assignData.mode}

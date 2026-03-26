@@ -1,5 +1,6 @@
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
 import RowActions from "../../../components/table/RowActions";
+
 import {
   useGetUsersQuery,
   useCreateUserMutation,
@@ -7,18 +8,26 @@ import {
 } from "../../../store/api";
 
 export default function AstrologersPage() {
+  /* ================= QUERY ================= */
+
+  const query = useGetUsersQuery({
+    page: 1,
+    search: "",
+    type: "astrologer",
+  });
+
+  /* ================= MUTATIONS ================= */
+
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+
   return (
     <AdminCrudPage
       entity="Astrologer"
-      api={{
-        list: () =>
-          useGetUsersQuery({
-            page: 1,
-            search: "",
-            type: "astrologer",
-          }),
-        create: useCreateUserMutation,
-        update: useUpdateUserMutation,
+      query={query}
+      mutations={{
+        create: createMutation,
+        update: updateMutation,
       }}
       columns={
         <tr>
@@ -43,12 +52,12 @@ export default function AstrologersPage() {
         { name: "price_per_minute", label: "Price/Min" },
         { name: "bio", label: "Bio" },
       ]}
-      renderRow={(item, actions) => (
+      renderRow={(item: any, actions) => (
         <tr key={item.id}>
-          <td>{(item as any).name}</td>
-          <td>{(item as any).email}</td>
-          <td>{(item as any).experience}</td>
-          <td>{(item as any).price_per_minute}</td>
+          <td>{item.name}</td>
+          <td>{item.email}</td>
+          <td>{item.experience}</td>
+          <td>{item.price_per_minute}</td>
           <td className="text-end">
             <RowActions actions={actions} />
           </td>

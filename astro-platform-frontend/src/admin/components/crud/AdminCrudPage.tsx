@@ -7,25 +7,35 @@ import { useAuth } from "../../../auth/hooks/useAuth";
 import { useCrudActions } from "../../../hooks/useCrudActions";
 import { useRowActions } from "../../hooks/useRowActions";
 
+/* ================= TYPES ================= */
+
 type PermissionsConfig = {
-  create?: string;
-  delete?: string;
+  create?: string | boolean;
+  delete?: string | boolean;
 };
+
+type QueryResult = {
+  data?: any;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+};
+
+type MutationTuple = [Function, any];
 
 type Props<T> = {
   entity: string;
 
-  api: {
-    list: (params?: any) => any;
-    create: any;
-    update?: any;
-    delete?: any;
+  query: QueryResult;
+
+  mutations?: {
+    create?: MutationTuple;
+    update?: MutationTuple;
+    delete?: MutationTuple;
   };
 
-  params?: any;
-
   columns: React.ReactNode;
-  fields: any[];
+  fields: any[] | ((entity: T) => any[]);
   initialValues: T;
 
   permissions?: PermissionsConfig;
@@ -36,10 +46,10 @@ type Props<T> = {
   extraActions?: any[];
 };
 
-export default function AdminCrudPage<T extends { id?: number }>({
+export default function AdminCrudPage<T>({
   entity,
-  api,
-  params,
+  query,
+  mutations,
   columns,
   fields,
   initialValues,
@@ -53,9 +63,18 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   /* ================= QUERY ================= */
 
-  const { data, isLoading, isError, refetch } = api.list(params);
+  const { data, isLoading, isError, refetch } = query;
 
-  const items: T[] = useMemo(() => data?.data ?? data ?? [], [data]);
+  /**
+   * 🔥 IMPORTANT FIX:
+   * handle both:
+   * 1. { data: [] }
+   * 2. []
+   */
+  const items: T[] = useMemo(() => {
+    if (Array.isArray(data)) return data;
+    return data?.data ?? [];
+  }, [data]);
 
   /* ================= STATE ================= */
 
@@ -63,9 +82,9 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   /* ================= MUTATIONS ================= */
 
-  const createMutation = api.create ? api.create()[0] : undefined;
-  const updateMutation = api.update ? api.update()[0] : undefined;
-  const deleteMutation = api.delete ? api.delete()[0] : undefined;
+  const createMutation = mutations?.create?.[0];
+  const updateMutation = mutations?.update?.[0];
+  const deleteMutation = mutations?.delete?.[0];
 
   /* ================= CRUD ================= */
 
@@ -82,8 +101,10 @@ export default function AdminCrudPage<T extends { id?: number }>({
   /* ================= SUBMIT ================= */
 
   const handleSubmit = (values: T) => {
-    if (editing?.id) {
-      crud.update(editing.id, values);
+    const id = (editing as any)?.id;
+
+    if (id) {
+      crud.update(id, values);
     } else {
       crud.create(values);
     }
@@ -92,13 +113,15 @@ export default function AdminCrudPage<T extends { id?: number }>({
   /* ================= DELETE ================= */
 
   const handleDelete = (item: T) => {
-    if (!deleteMutation || !item.id) return;
+    const id = (item as any)?.id;
+
+    if (!deleteMutation || !id) return;
 
     confirmAction({
       message: `Are you sure you want to delete this ${entity}?`,
       confirmLabel: `Delete ${entity}`,
       onConfirm: async () => {
-        await crud.remove(item.id!);
+        await crud.remove(id);
         refetch();
       },
     });
@@ -122,7 +145,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
       >
         {!isLoading &&
           !isError &&
-          items.map((item) => {
+          items.map((item: any) => {
             const actions = useRowActions({
               row: item,
               edit: {
@@ -161,9 +184,9 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
       {editing && (
         <FormModal
-          title={editing.id ? `Edit ${entity}` : `Add ${entity}`}
+          title={(editing as any)?.id ? `Edit ${entity}` : `Add ${entity}`}
           entity={editing}
-          initialValues={editing.id ? editing : initialValues}
+          initialValues={(editing as any)?.id ? editing : initialValues}
           fields={typeof fields === "function" ? fields(editing) : fields}
           loading={crud.loading}
           onSubmit={handleSubmit}

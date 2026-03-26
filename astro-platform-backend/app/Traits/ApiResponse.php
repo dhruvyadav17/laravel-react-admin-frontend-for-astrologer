@@ -11,25 +11,25 @@ trait ApiResponse
         string $message = 'Action successful',
         mixed $data = null,
         array $meta = [],
-        int $status = Response::HTTP_OK
+        int $code = 200
     ): JsonResponse {
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data'    => $data ?? (object) [],
-            'meta'    => (object) $meta,
-        ], $status);
+            'data'    => $data ?? [],
+            'meta'    => $meta ?? [],
+        ], $code);
     }
 
     protected function error(
-        string $message = 'Something went wrong',
-        mixed $data = null,
-        int $status = Response::HTTP_BAD_REQUEST
+        string $message = '!Error',
+        $errors = null,
+        int $code = 400
     ): JsonResponse {
         return response()->json([
             'success' => false,
             'message' => $message,
-            'data'    => $data ?? (object) [],
-        ], $status);
+            'data'    => $errors ??  [],
+        ], $code);
     }
 }
