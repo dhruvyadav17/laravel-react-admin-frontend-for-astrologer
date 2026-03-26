@@ -169,31 +169,36 @@ class UserService
 
     public function update(User $user, array $data): User
     {
-        // 🔥 Password optional handling
+        
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
         }
+        
+        // 🔥 prevent email change on update
+        unset($data['email']);
 
-        // 🔥 Prevent email overwrite issues (optional safety)
-        if (isset($data['email'])) {
-            $data['email'] = strtolower($data['email']);
-        }
-
-        // 🔥 Update user
+        // ================= BASE UPDATE =================
         $user->update([
-            'name'  => $data['name'],
-            'email' => $data['email'],
+            'name' => $data['name'] ?? $user->name,
             ...$data
         ]);
 
-        // 🔥 Reload relations
-        $user->load('roles');
+        // ================= ASTROLOGER FIELDS =================
+        $isAstrologer = $user->roles()->where('name', 'astrologer')->exists();
 
-        Log::info('User updated', [
-            'user_id' => $user->id,
-        ]);
+        if ($isAstrologer) {
+            $user->update([
+                'experience' => $data['experience'] ?? $user->experience,
+                'price_per_minute' => $data['price_per_minute'] ?? $user->price_per_minute,
+                'bio' => $data['bio'] ?? $user->bio,
+            ]);
+        }
+
+        // ================= RELATIONS =================
+        $user->load('roles');
+    
 
         return $user;
     }

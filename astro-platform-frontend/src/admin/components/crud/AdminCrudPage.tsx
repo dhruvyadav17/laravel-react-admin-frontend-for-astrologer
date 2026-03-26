@@ -55,10 +55,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
 
   const { data, isLoading, isError, refetch } = api.list(params);
 
-  const items: T[] = useMemo(
-    () => data?.data ?? data ?? [],
-    [data]
-  );
+  const items: T[] = useMemo(() => data?.data ?? data ?? [], [data]);
 
   /* ================= STATE ================= */
 
@@ -135,7 +132,10 @@ export default function AdminCrudPage<T extends { id?: number }>({
               delete: {
                 enabled:
                   !!deleteMutation &&
-                  (!permissions?.delete || can(permissions.delete)),
+                  permissions?.delete !== false &&
+                  (typeof permissions?.delete === "string"
+                    ? can(permissions.delete)
+                    : true),
                 onClick: handleDelete,
               },
               extra: extraActions.map((a) => ({
@@ -164,7 +164,7 @@ export default function AdminCrudPage<T extends { id?: number }>({
           title={editing.id ? `Edit ${entity}` : `Add ${entity}`}
           entity={editing}
           initialValues={editing.id ? editing : initialValues}
-          fields={fields}
+          fields={typeof fields === "function" ? fields(editing) : fields}
           loading={crud.loading}
           onSubmit={handleSubmit}
           onClose={() => setEditing(null)}

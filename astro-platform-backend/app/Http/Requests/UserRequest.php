@@ -14,7 +14,6 @@ class UserRequest extends FormRequest
 
     public function rules(): array
     {
-        // Route Model Binding: {user}
         $userId = $this->route('user');
 
         return [
@@ -35,6 +34,24 @@ class UserRequest extends FormRequest
                 'string',
                 'min:8',
                 'confirmed',
+            ],
+
+            // 🔥 ADD THESE (MOST IMPORTANT)
+            'experience' => [
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+
+            'price_per_minute' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'bio' => [
+                'nullable',
+                'string',
             ],
         ];
     }

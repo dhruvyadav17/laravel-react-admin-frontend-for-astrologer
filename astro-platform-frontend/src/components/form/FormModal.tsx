@@ -70,7 +70,8 @@ export default function FormModal<T extends Record<string, any>>({
           placeholder={field.placeholder}
           value={values[field.name] ?? ""}
           onChange={(v) => handleChange(field.name, v)}
-          disabled={loading}
+          
+          disabled={loading || field.disabled}
         />
       ))}
     </CrudModal>

@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
 import RowActions from "../../../components/table/RowActions";
+import AssignModal from "../../components/modals/AssignModal";
 
 import {
   useGetRolesQuery,
@@ -9,7 +10,14 @@ import {
   useDeleteRoleMutation,
 } from "../../../store/api";
 
+import { ICONS } from "../../../constants/ui";
+import { PERMISSIONS } from "../../../constants/rbac";
+import { useAuth } from "../../../auth/hooks/useAuth";
+
 function RolesPage() {
+  const { can } = useAuth();
+  const [assignData, setAssignData] = useState<any>(null);
+
   const columns = useMemo(
     () => (
       <tr>
@@ -19,6 +27,7 @@ function RolesPage() {
     ),
     [],
   );
+
   const renderRow = (role: any, actions: any[]) => (
     <tr key={role.id}>
       <td>{role.name || "—"}</td>
@@ -27,29 +36,57 @@ function RolesPage() {
       </td>
     </tr>
   );
+
+  const extraActions = [
+    {
+      key: "permissions",
+      icon: ICONS.PERMISSION,
+      title: "Assign Permissions",
+      show: can(PERMISSIONS.ROLE?.ASSIGN_PERMISSION ?? true),
+      onClick: (role: any) =>
+        setAssignData({
+          mode: "role-permission",
+          entity: role,
+        }),
+    },
+  ];
+
   return (
-    <AdminCrudPage
-      entity="Role"
-      api={{
-        list: useGetRolesQuery,
-        create: useCreateRoleMutation,
-        update: useUpdateRoleMutation,
-        delete: useDeleteRoleMutation,
-      }}
-      permissions={{
-        create: true,
-      }}
-      columns={columns}
-      renderRow={renderRow}
-      initialValues={{ name: "" }}
-      fields={[
-        {
-          name: "name",
-          label: "Role Name",
-          required: true,
-        },
-      ]}
-    />
+    <>
+      <AdminCrudPage
+        entity="Role"
+        api={{
+          list: useGetRolesQuery,
+          create: useCreateRoleMutation,
+          update: useUpdateRoleMutation,
+          delete: useDeleteRoleMutation,
+        }}
+        permissions={{
+          create: true,
+          delete:false,
+        }}
+        columns={columns}
+        renderRow={renderRow}
+        initialValues={{ name: "" }}
+        fields={[
+          {
+            name: "name",
+            label: "Role Name",
+            required: true,
+          },
+        ]}
+        extraActions={extraActions} // ✅ added
+      />
+
+      {/* ✅ Assign Modal */}
+      {assignData && (
+        <AssignModal
+          mode={assignData.mode}
+          entity={assignData.entity}
+          onClose={() => setAssignData(null)}
+        />
+      )}
+    </>
   );
 }
 

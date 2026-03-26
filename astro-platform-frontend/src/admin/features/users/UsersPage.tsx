@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
 import RowActions from "../../../components/table/RowActions";
+import Pagination from "../../../components/table/Pagination";
 
 import {
   useGetUsersQuery,
@@ -24,6 +25,10 @@ export default function UsersPage() {
   const { can } = useAuth();
 
   const [assignData, setAssignData] = useState<any>(null);
+
+  // ✅ meta ke liye query
+  const { data } = useGetUsersQuery({ page, search });
+  const meta = data?.meta;
 
   const extraActions = [
     {
@@ -60,14 +65,15 @@ export default function UsersPage() {
           update: useUpdateUserMutation,
           delete: useDeleteUserMutation,
         }}
-        permissions={{
-          create: true,
-        }}
+        permissions={{ create: true }}
         params={{ page, search }}
         topContent={
           <TableSearch
             value={search}
-            onChange={setSearch}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1); // ✅ reset page on search
+            }}
             placeholder="Search users..."
           />
         }
@@ -97,18 +103,47 @@ export default function UsersPage() {
           email: "",
           password: "",
           password_confirmation: "",
+
+          experience: "",
+          price_per_minute: "",
+          bio: "",
         }}
-        fields={[
-          { name: "name", label: "Name", required: true },
-          { name: "email", label: "Email", required: true },
-          { name: "password", label: "Password", type: "password" },
-          {
-            name: "password_confirmation",
-            label: "Confirm Password",
-            type: "password",
-          },
-        ]}
+        fields={(entity: any) => {
+          const isEdit = !!entity?.id;
+          const isAstrologer = entity?.roles?.includes("astrologer");
+
+          return [
+            { name: "name", label: "Name", required: true },
+            { name: "email", label: "Email", required: true, disabled: isEdit },
+
+            // ✅ password only in CREATE
+            ...(!isEdit
+              ? [
+                  { name: "password", label: "Password", type: "password" },
+                  {
+                    name: "password_confirmation",
+                    label: "Confirm Password",
+                    type: "password",
+                  },
+                ]
+              : []),
+
+            // ✅ astrologer fields
+            ...(isAstrologer
+              ? [
+                  { name: "experience", label: "Experience" },
+                  { name: "price_per_minute", label: "Price/Min" },
+                  { name: "bio", label: "Bio" },
+                ]
+              : []),
+          ];
+        }}
       />
+
+      {/* ✅ SAFE PAGINATION */}
+      {meta && meta.last_page > 1 && (
+        <Pagination meta={meta} onPageChange={setPage} />
+      )}
 
       {/* Assign Modal */}
       {assignData && (
