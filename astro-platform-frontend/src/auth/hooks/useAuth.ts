@@ -1,23 +1,29 @@
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import { ADMIN_ROLES } from "../../constants/rbac";
 
 export function useAuth() {
   const user = useSelector((s: RootState) => s.auth.user);
   const permissions = useSelector((s: RootState) => s.auth.permissions);
-  const loading = useSelector((state: any) => state.auth.loading);
+  const loading = useSelector((s: RootState) => s.auth.loading);
 
   const roles: string[] = user?.roles ?? [];
 
   const isAuth = Boolean(user);
 
-  const isSuperAdmin = roles.includes("super-admin");
+  /* ================= ROLE TYPES ================= */
+
+  const isFrontendUser =
+    isAuth &&
+    (roles.length === 0 ||
+      roles.every((r) => ["user", "astrologer"].includes(r)));
 
   const isAdmin =
-    isSuperAdmin || roles.some((r) => ADMIN_ROLES.includes(r as any));
+    isAuth &&
+    roles.some((r) => !["user", "astrologer"].includes(r));
 
-  // 🔥 NEW (IMPORTANT)
-  const isFrontendUser = isAuth && !isAdmin;
+  const isSuperAdmin = roles.includes("super-admin");
+
+  /* ================= HELPERS ================= */
 
   const hasRole = (role: string): boolean =>
     isSuperAdmin || roles.includes(role);
@@ -38,10 +44,8 @@ export function useAuth() {
 
     isAuth,
     isAdmin,
-    isSuperAdmin,
-
-    // 🔥 NEW
     isFrontendUser,
+    isSuperAdmin,
 
     hasRole,
     hasAnyRole,

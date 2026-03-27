@@ -1,25 +1,40 @@
+export const FRONTEND_ROLES = ["user", "astrologer"];
+
+export const isFrontendUser = (roles: string[]) => {
+  if (!roles || roles.length === 0) return true;
+
+  return roles.every((r) => FRONTEND_ROLES.includes(r));
+};
+
+export const isAdminUser = (roles: string[]) => {
+  if (!roles || roles.length === 0) return false;
+
+  return roles.some((r) => !FRONTEND_ROLES.includes(r));
+};
+
 export function resolveLoginRedirect(
   user: any,
   loginFrom: "admin" | "user"
 ) {
   if (!user) return "/login";
 
-  const roles = user.roles || [];
+  const roles: string[] = user.roles || [];
 
-  const isAdmin =
-    roles.includes("admin") || roles.includes("super-admin");
+  const frontend = isFrontendUser(roles);
+  const admin = isAdminUser(roles);
 
-  /* ================= FRONTEND LOGIN ================= */
-  if (loginFrom === "user") {
-    return "/";
+  /* ================= BOTH ACCESS ================= */
+  if (frontend && admin) {
+    return loginFrom === "admin"
+      ? "/admin/dashboard"
+      : "/";
   }
 
-  /* ================= ADMIN LOGIN ================= */
-  if (loginFrom === "admin") {
-    if (isAdmin) return "/admin/dashboard";
+  /* ================= ONLY FRONTEND ================= */
+  if (frontend) return "/";
 
-    return "/";
-  }
+  /* ================= ONLY ADMIN ================= */
+  if (admin) return "/admin/dashboard";
 
   return "/";
 }

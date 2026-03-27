@@ -14,17 +14,18 @@ export default function Login({ admin = false }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  /* 🔥 where user tried to go before login */
   const from = location.state?.from?.pathname;
 
-  /* 🔄 LOADING STATE (important for refresh / token check) */
   if (loading) return <Loader />;
 
-  /* ✅ already logged in */
   if (isAuth) {
     return (
       <Navigate
-        to={from && !admin ? from : resolveLoginRedirect(user, admin)}
+        to={
+          from && !admin
+            ? from
+            : resolveLoginRedirect(user, admin ? "admin" : "user")
+        }
         replace
       />
     );
@@ -35,9 +36,10 @@ export default function Login({ admin = false }: Props) {
       title={admin ? "Admin Login" : "User Login"}
       onSuccess={(userData: any) => {
         const redirectTo =
-          from && !admin ? from : resolveLoginRedirect(userData, admin);
+          from && !admin
+            ? from
+            : resolveLoginRedirect(userData, admin ? "admin" : "user");
 
-        /* ✅ SPA navigation (no reload) */
         navigate(redirectTo, { replace: true });
       }}
     />
