@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
-import AdminTablePage from "../page/AdminTablePage";
-import RowActions from "../../../components/table/RowActions";
-import FormModal from "../../../components/form/FormModal";
 import { useConfirmAction } from "../../../hooks/useConfirmAction";
-import { useAuth } from "../../../auth/hooks/useAuth";
-import { useCrudActions } from "../../../hooks/useCrudActions";
-import { useRowActions } from "../../hooks/useRowActions";
+
+import CrudTable from "./CrudTable";
+import CrudFormModal from "./CrudFormModal";
+import { useCrudController } from "./useCrudController";
 
 /* ================= TYPES ================= */
 
@@ -13,40 +11,16 @@ type BaseEntity = {
   id: number;
 };
 
-type PermissionsConfig = {
-  create?: string | boolean;
-  delete?: string | boolean;
-};
-
-type QueryResult = {
-  data?: any;
-  isLoading: boolean;
-  isError: boolean;
-  refetch: () => void;
-};
-
-type MutationTuple = [Function, any];
-
 type Props<T extends BaseEntity> = {
   entity: string;
-
-  query: QueryResult;
-
-  mutations?: {
-    create?: MutationTuple;
-    update?: MutationTuple;
-    delete?: MutationTuple;
-  };
-
+  query: any;
+  mutations?: any;
   columns: React.ReactNode;
-  fields: any[] | ((entity: Partial<T>) => any[]);
+  fields: any;
   initialValues: T;
-
-  permissions?: PermissionsConfig;
-
-  renderRow?: (item: T, actions: any[]) => React.ReactNode;
+  permissions?: any;
+  renderRow?: any;
   topContent?: React.ReactNode;
-
   extraActions?: any[];
 };
 
@@ -62,135 +36,69 @@ export default function AdminCrudPage<T extends BaseEntity>({
   topContent,
   extraActions = [],
 }: Props<T>) {
-  const { can } = useAuth();
   const confirmAction = useConfirmAction();
-
-  /* ================= QUERY ================= */
 
   const { data, isLoading, isError, refetch } = query;
 
   const items = useMemo<T[]>(() => {
-    if (Array.isArray(data)) return data as T[];
-    return (data?.data ?? []) as T[];
+    if (Array.isArray(data)) return data;
+    return data?.data ?? [];
   }, [data]);
 
-  /* ================= STATE ================= */
-
   const [editing, setEditing] = useState<Partial<T> | null>(null);
-
-  /* ================= MUTATIONS ================= */
 
   const createMutation = mutations?.create?.[0];
   const updateMutation = mutations?.update?.[0];
   const deleteMutation = mutations?.delete?.[0];
 
-  /* ================= CRUD ================= */
-
-  const crud = useCrudActions<T>({
-    create: createMutation,
-    update: updateMutation,
-    remove: deleteMutation,
+  const crud = useCrudController<T>({
+    createMutation,
+    updateMutation,
+    deleteMutation,
     onSuccess: () => {
       setEditing(null);
       refetch();
     },
   });
 
-  /* ================= SUBMIT ================= */
-
-  const handleSubmit = (values: T) => {
-    const id = (editing as T)?.id;
-
-    if (id) {
-      crud.update(id, values);
-    } else {
-      crud.create(values);
-    }
-  };
-
-  /* ================= DELETE ================= */
-
   const handleDelete = (item: T) => {
-    const id = item.id;
-
-    if (!deleteMutation || !id) return;
-
     confirmAction({
       message: `Are you sure you want to delete this ${entity}?`,
       confirmLabel: `Delete ${entity}`,
       onConfirm: async () => {
-        await crud.remove(id);
+        await crud.handleDelete(item.id);
         refetch();
       },
     });
   };
 
-  /* ================= RENDER ================= */
-
   return (
     <>
-      <AdminTablePage
-        title={`${entity}s`}
-        permission={permissions?.create}
-        actionLabel={`Add ${entity}`}
-        onAction={() => setEditing({} as T)}
-        loading={isLoading}
-        error={isError}
-        onRetry={refetch}
-        empty={!isLoading && !isError && items.length === 0}
+      <CrudTable
+        entity={entity}
+        items={items}
+        isLoading={isLoading}
+        isError={isError}
+        refetch={refetch}
         columns={columns}
+        renderRow={renderRow}
+        setEditing={setEditing}
+        deleteMutation={deleteMutation}
+        handleDelete={handleDelete}
+        permissions={permissions}
+        extraActions={extraActions}
         topContent={topContent}
-      >
-        {!isLoading &&
-          !isError &&
-          items.map((item: T) => {
-            const actions = useRowActions({
-              row: item,
-              edit: {
-                enabled: !!updateMutation,
-                onClick: () => setEditing(item),
-              },
-              delete: {
-                enabled:
-                  !!deleteMutation &&
-                  permissions?.delete !== false &&
-                  (typeof permissions?.delete === "string"
-                    ? can(permissions.delete)
-                    : true),
-                onClick: handleDelete,
-              },
-              extra: extraActions.map((a) => ({
-                ...a,
-                onClick: () => a.onClick(item),
-              })),
-            });
+      />
 
-            return renderRow ? (
-              renderRow(item, actions)
-            ) : (
-              <tr key={item.id}>
-                <td>{JSON.stringify(item)}</td>
-                <td className="text-end">
-                  <RowActions actions={actions} />
-                </td>
-              </tr>
-            );
-          })}
-      </AdminTablePage>
-
-      {/* ================= FORM ================= */}
-
-      {editing && (
-        <FormModal
-          title={(editing as T)?.id ? `Edit ${entity}` : `Add ${entity}`}
-          entity={editing}
-          initialValues={(editing as T)?.id ? (editing as T) : initialValues}
-          fields={typeof fields === "function" ? fields(editing) : fields}
-          loading={crud.loading}
-          onSubmit={handleSubmit}
-          onClose={() => setEditing(null)}
-        />
-      )}
+      <CrudFormModal
+        entity={entity}
+        editing={editing}
+        initialValues={initialValues}
+        fields={fields}
+        loading={crud.loading}
+        onSubmit={crud.handleSubmit}
+        onClose={() => setEditing(null)}
+      />
     </>
   );
 }

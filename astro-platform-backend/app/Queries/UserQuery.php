@@ -7,37 +7,69 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserQuery
 {
-    /**
-     * Base Query (Reusable 🔥)
-     */
+    /* ================= BASE ================= */
+
     public static function base(): Builder
+    {
+        return User::query()->select(self::columns());
+    }
+
+    /* ================= COLUMNS ================= */
+
+    public static function columns(): array
+    {
+        return [
+            'id',
+            'name',
+            'email',
+            'experience',
+            'price_per_minute',
+            'bio',
+            'deleted_at',
+            'created_at',
+        ];
+    }
+
+    /* ================= LIGHT LIST ================= */
+
+    public static function list(): Builder
+    {
+        return self::base();
+    }
+
+    /* ================= WITH ROLES ================= */
+
+    public static function withRoles(): Builder
+    {
+        return self::base()
+            ->withTrashed()
+            ->with([
+                'roles:id,name'
+            ]);
+    }
+
+    /* ================= ASTROLOGERS ================= */
+
+    public static function astrologers(): Builder
     {
         return User::query()
             ->select([
                 'id',
                 'name',
-                'email',
+                'profile_image',
                 'experience',
                 'price_per_minute',
+                'rating',
+                'total_reviews',
+                'languages',
+                'skills',
                 'bio',
-                'deleted_at',
-                'created_at'
-            ]);
+            ])
+            ->role('astrologer'); // 🔥 optimized
     }
 
-    /**
-     * With Roles (Optimized)
-     */
-    public static function withRoles(): Builder
-    {
-        return self::base()
-            ->withTrashed()
-            ->with('roles:id,name');
-    }
+    /* ================= SEARCH ================= */
 
-    /**
-     * Search Scope
-     */
     public static function search(Builder $query, ?string $search): Builder
     {
         return $query->when($search, function ($q) use ($search) {
@@ -48,9 +80,8 @@ class UserQuery
         });
     }
 
-    /**
-     * Sorting
-     */
+    /* ================= SORT ================= */
+
     public static function latest(Builder $query): Builder
     {
         return $query->latest();
