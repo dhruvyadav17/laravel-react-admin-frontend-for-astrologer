@@ -7,82 +7,65 @@ use Illuminate\Http\Request;
 
 class AstrologerService
 {
-    /* ================= LIST ================= */
-
-    public function list(Request $request): array
+    /**
+     * Base Query (Reusable 🔥)
+     */
+    protected function baseQuery()
     {
-        $query = User::query()
-            ->role('astrologer')
-            ->where('is_active', true);
-
-        /* ===== SEARCH ===== */
-        if ($request->filled('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
-        }
-
-        /* ===== FILTER ===== */
-        if ($request->filled('min_price')) {
-            $query->where('price_per_minute', '>=', $request->min_price);
-        }
-
-        if ($request->filled('max_price')) {
-            $query->where('price_per_minute', '<=', $request->max_price);
-        }
-
-        if ($request->filled('min_experience')) {
-            $query->where('experience', '>=', $request->min_experience);
-        }
-
-        /* ===== SORT ===== */
-        if ($request->filled('sort')) {
-            match ($request->sort) {
-                'price_low'  => $query->orderBy('price_per_minute', 'asc'),
-                'price_high' => $query->orderBy('price_per_minute', 'desc'),
-                'rating'     => $query->orderBy('rating', 'desc'),
-                'experience' => $query->orderBy('experience', 'desc'),
-                default      => $query->latest(),
-            };
-        } else {
-            $query->latest();
-        }
-
-        /* ===== SELECT (OPTIMIZATION) ===== */
-        $query->select([
-            'id',
-            'name',
-            'email',
-            'profile_image',
-            'experience',
-            'price_per_minute',
-            'rating',
-            'total_reviews',
-            'is_online',
-        ]);
-
-        /* ===== PAGINATION ===== */
-        $astrologers = $query->paginate(10);
-
-        return [
-            'data' => $astrologers,
-            'meta' => [
-                'current_page' => $astrologers->currentPage(),
-                'last_page'    => $astrologers->lastPage(),
-                'total'        => $astrologers->total(),
-            ],
-        ];
+        return User::query()
+            ->select([
+                'id',
+                'name',
+                'profile_image',
+                'experience',
+                'price_per_minute',
+                'rating',
+                'total_reviews',
+                'languages',
+                'skills',
+                'bio',
+            ])
+            ->astrologers();
     }
 
-    /* ================= DETAIL ================= */
-
-    public function detail(User $user): ?User
+    /**
+     * List astrologers
+     */
+    public function list(Request $request)
     {
-        if (! $user->hasRole('astrologer')) {
-            return null;
-        }
+        return $this->baseQuery()
 
-        return $user->loadMissing([
-            'roles',
-            'permissions',
-        ]);
+            // 🔍 SEARCH (SAFE + GROUPED)
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $q->where(function ($q) use ($request) {
+                    $q->where('name', 'like', "%{$request->search}%");
+                });
+            })
+
+            // 🔽 SORTING
+            ->when(
+                $request->sort_by === 'price',
+                fn($q) => $q->orderBy('price_per_minute')
+            )
+            ->when(
+                $request->sort_by === 'experience',
+                fn($q) => $q->orderByDesc('experience')
+            )
+            ->when(
+                !$request->sort_by,
+                fn($q) => $q->orderByDesc('rating')
+            )
+
+            // 📄 PAGINATION
+            ->paginate($request->per_page ?? 10);
+    }
+
+    /**
+     * Single astrologer
+     */
+    public function find($id)
+    {
+        return $this->baseQuery()
+            ->findOrFail($id);
     }
 }

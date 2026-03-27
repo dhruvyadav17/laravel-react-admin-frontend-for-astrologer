@@ -50,4 +50,11 @@ class User extends Authenticatable implements MustVerifyEmail
                 config('roles.admin_roles', [])
             );
     }
+
+    public function scopeAstrologers($query)
+    {
+        return $query
+            ->role('astrologer')
+            ->where('is_active', true);
+    }
 }

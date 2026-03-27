@@ -3,19 +3,27 @@
 namespace App\Services\Sidebar;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class SidebarService
 {
     public function get(): array
     {
         $user = Auth::user();
-        $sidebar = config('sidebar');
 
-        return collect($sidebar)
-            ->map(fn ($group) => $this->transformGroup($group, $user))
-            ->filter(fn ($group) => !empty($group['children']))
-            ->values()
-            ->toArray();
+        // 🔥 unique cache per user role/permission
+        $cacheKey = 'sidebar_user_' . $user->id;
+
+        return Cache::remember($cacheKey, 3600, function () use ($user) {
+
+            $sidebar = config('sidebar');
+
+            return collect($sidebar)
+                ->map(fn ($group) => $this->transformGroup($group, $user))
+                ->filter(fn ($group) => !empty($group['children']))
+                ->values()
+                ->toArray();
+        });
     }
 
     protected function canAccess(array $item, $user): bool

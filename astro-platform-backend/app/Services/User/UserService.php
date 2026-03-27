@@ -18,16 +18,33 @@ class UserService
 
     public function paginate(Request $request): array
     {
-        $users = User::withTrashed()
-            ->with('roles')
+        $users = User::query()
+            ->select([
+                'id',
+                'name',
+                'email',
+                'experience',
+                'price_per_minute',
+                'bio',
+                'deleted_at',
+                'created_at'
+            ])
+            ->withTrashed()
+            ->with('roles:id,name')
+
+            // 🔍 SEARCH (FIXED BUG 🔥 OR CONDITION ISSUE)
             ->when(
                 $request->filled('search'),
-                fn($q) =>
-                $q->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%")
+                function ($q) use ($request) {
+                    $q->where(function ($q) use ($request) {
+                        $q->where('name', 'like', "%{$request->search}%")
+                            ->orWhere('email', 'like', "%{$request->search}%");
+                    });
+                }
             )
+
             ->latest()
-            ->paginate(10);
+            ->paginate($request->per_page ?? 10);
 
         return [
             'data' => $users->items(),
@@ -169,13 +186,13 @@ class UserService
 
     public function update(User $user, array $data): User
     {
-        
+
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
         }
-        
+
         // 🔥 prevent email change on update
         unset($data['email']);
 
@@ -198,7 +215,7 @@ class UserService
 
         // ================= RELATIONS =================
         $user->load('roles');
-    
+
 
         return $user;
     }

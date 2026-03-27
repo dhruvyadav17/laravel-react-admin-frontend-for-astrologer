@@ -9,6 +9,10 @@ import { useRowActions } from "../../hooks/useRowActions";
 
 /* ================= TYPES ================= */
 
+type BaseEntity = {
+  id: number;
+};
+
 type PermissionsConfig = {
   create?: string | boolean;
   delete?: string | boolean;
@@ -23,7 +27,7 @@ type QueryResult = {
 
 type MutationTuple = [Function, any];
 
-type Props<T> = {
+type Props<T extends BaseEntity> = {
   entity: string;
 
   query: QueryResult;
@@ -35,7 +39,7 @@ type Props<T> = {
   };
 
   columns: React.ReactNode;
-  fields: any[] | ((entity: T) => any[]);
+  fields: any[] | ((entity: Partial<T>) => any[]);
   initialValues: T;
 
   permissions?: PermissionsConfig;
@@ -46,7 +50,7 @@ type Props<T> = {
   extraActions?: any[];
 };
 
-export default function AdminCrudPage<T>({
+export default function AdminCrudPage<T extends BaseEntity>({
   entity,
   query,
   mutations,
@@ -65,20 +69,14 @@ export default function AdminCrudPage<T>({
 
   const { data, isLoading, isError, refetch } = query;
 
-  /**
-   * 🔥 IMPORTANT FIX:
-   * handle both:
-   * 1. { data: [] }
-   * 2. []
-   */
-  const items: T[] = useMemo(() => {
-    if (Array.isArray(data)) return data;
-    return data?.data ?? [];
+  const items = useMemo<T[]>(() => {
+    if (Array.isArray(data)) return data as T[];
+    return (data?.data ?? []) as T[];
   }, [data]);
 
   /* ================= STATE ================= */
 
-  const [editing, setEditing] = useState<T | null>(null);
+  const [editing, setEditing] = useState<Partial<T> | null>(null);
 
   /* ================= MUTATIONS ================= */
 
@@ -101,7 +99,7 @@ export default function AdminCrudPage<T>({
   /* ================= SUBMIT ================= */
 
   const handleSubmit = (values: T) => {
-    const id = (editing as any)?.id;
+    const id = (editing as T)?.id;
 
     if (id) {
       crud.update(id, values);
@@ -113,7 +111,7 @@ export default function AdminCrudPage<T>({
   /* ================= DELETE ================= */
 
   const handleDelete = (item: T) => {
-    const id = (item as any)?.id;
+    const id = item.id;
 
     if (!deleteMutation || !id) return;
 
@@ -145,7 +143,7 @@ export default function AdminCrudPage<T>({
       >
         {!isLoading &&
           !isError &&
-          items.map((item: any) => {
+          items.map((item: T) => {
             const actions = useRowActions({
               row: item,
               edit: {
@@ -184,9 +182,9 @@ export default function AdminCrudPage<T>({
 
       {editing && (
         <FormModal
-          title={(editing as any)?.id ? `Edit ${entity}` : `Add ${entity}`}
+          title={(editing as T)?.id ? `Edit ${entity}` : `Add ${entity}`}
           entity={editing}
-          initialValues={(editing as any)?.id ? editing : initialValues}
+          initialValues={(editing as T)?.id ? (editing as T) : initialValues}
           fields={typeof fields === "function" ? fields(editing) : fields}
           loading={crud.loading}
           onSubmit={handleSubmit}

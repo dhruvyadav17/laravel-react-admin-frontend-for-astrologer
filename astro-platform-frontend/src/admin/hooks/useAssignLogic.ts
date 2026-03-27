@@ -26,6 +26,9 @@ type AssignItem = {
   assigned: boolean;
 };
 
+type Role = { name: string };
+type Permission = { name: string };
+
 /* ================= HOOK ================= */
 
 export function useAssignLogic(mode: Mode, entity: Entity) {
@@ -73,29 +76,15 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
       return;
     }
 
-    if (isUserPermission && userPermData) {
-      setSelected(
-        Array.isArray(userPermData.assigned)
-          ? userPermData.assigned
-          : []
-      );
+    if (isUserPermission) {
+      setSelected(userPermData?.assigned ?? []);
       return;
     }
 
-    if (isRolePermission && rolePermData) {
-      setSelected(
-        Array.isArray(rolePermData.assigned)
-          ? rolePermData.assigned
-          : []
-      );
+    if (isRolePermission) {
+      setSelected(rolePermData?.assigned ?? []);
     }
-  }, [
-    mode,
-    entity.id,
-    entity.roles,
-    userPermData,
-    rolePermData,
-  ]);
+  }, [mode, entity.id, entity.roles, userPermData, rolePermData]);
 
   /* ================= ITEMS ================= */
 
@@ -103,13 +92,13 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
     const selectedSet = new Set(selected);
 
     if (isUserRole) {
-      return roles.map((r: any) => ({
+      return (roles as Role[]).map((r) => ({
         name: r.name,
         assigned: selectedSet.has(r.name),
       }));
     }
 
-    return permissions.map((p: any) => ({
+    return (permissions as Permission[]).map((p) => ({
       name: p.name,
       assigned: selectedSet.has(p.name),
     }));
@@ -149,6 +138,8 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
       }).unwrap();
     }
   };
+
+  /* ================= TITLE ================= */
 
   const title = isUserRole
     ? "Assign Roles"
