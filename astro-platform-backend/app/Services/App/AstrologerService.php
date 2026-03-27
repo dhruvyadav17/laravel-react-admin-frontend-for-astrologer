@@ -14,30 +14,29 @@ class AstrologerService
     {
         $cacheKey = 'astrologers_' . md5(json_encode($request->all()));
 
-        return Cache::tags(['users', 'astrologers'])
-            ->remember($cacheKey, 60, function () use ($request) {
+        return Cache::remember($cacheKey, 60, function () use ($request) {
 
-                return UserQuery::astrologers()
+            return UserQuery::astrologers()
 
-                    ->when($request->filled('search'), function ($q) use ($request) {
-                        $q->where('name', 'like', "%{$request->search}%");
-                    })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $q->where('name', 'like', "%{$request->search}%");
+                })
 
-                    ->when(
-                        $request->sort_by === 'price',
-                        fn($q) => $q->orderBy('price_per_minute')
-                    )
-                    ->when(
-                        $request->sort_by === 'experience',
-                        fn($q) => $q->orderByDesc('experience')
-                    )
-                    ->when(
-                        !$request->sort_by,
-                        fn($q) => $q->orderByDesc('rating')
-                    )
+                ->when(
+                    $request->sort_by === 'price',
+                    fn($q) => $q->orderBy('price_per_minute')
+                )
+                ->when(
+                    $request->sort_by === 'experience',
+                    fn($q) => $q->orderByDesc('experience')
+                )
+                ->when(
+                    !$request->sort_by,
+                    fn($q) => $q->orderByDesc('rating')
+                )
 
-                    ->paginate($request->per_page ?? 10);
-            });
+                ->paginate($request->per_page ?? 10);
+        });
     }
 
     public function find($id)

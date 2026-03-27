@@ -11,10 +11,11 @@ export const userApi = baseApi.injectEndpoints({
       query: () => "/app/panchang/today",
       transformResponse: (res: any) => res.data ?? {},
     }),
+    getAstrologer: builder.query<any, number>({
+      query: (id) => `/app/astrologers/${id}`,
+      transformResponse: (res: any) => res.data ?? {},
+    }),
   }),
 });
 
-export const {
-  useGetAstrologersQuery,
-  useGetTodayPanchangQuery,
-} = userApi;
+export const { useGetAstrologersQuery, useGetTodayPanchangQuery,  useGetAstrologerQuery } = userApi;

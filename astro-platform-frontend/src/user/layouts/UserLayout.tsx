@@ -7,36 +7,24 @@ import "../styles/index.css";
 export default function UserLayout() {
   const { loading } = useAuth();
 
-  /* ================= GLOBAL LOADER ================= */
   if (loading) {
     return (
-      <div className="layout-loader">
-        <div className="text-center">
-          <div className="spinner-border text-danger mb-2" />
-          <p className="text-muted small mb-0">
-            Loading your experience...
-          </p>
-        </div>
+      <div className="layout-loader text-center">
+        <div className="spinner-border text-danger mb-2" />
+        <p className="text-muted small">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="layout-root">
-
-      {/* ================= HEADER ================= */}
+    <>
       <Header />
 
-      {/* ================= MAIN ================= */}
-      <main className="layout-main">
-        <div className="container">
-          <Outlet />
-        </div>
+      <main className="container py-3">
+        <Outlet />
       </main>
 
-      {/* ================= FOOTER ================= */}
       <Footer />
-
-    </div>
+    </>
   );
 }
