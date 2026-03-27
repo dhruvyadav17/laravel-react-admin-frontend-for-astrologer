@@ -12,16 +12,22 @@ class UserRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Prepare data before validation (🔥 PRO)
+     */
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'email' => strtolower($this->email),
+        ]);
+    }
+
     public function rules(): array
     {
         $userId = $this->route('user');
 
         return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+            'name' => ['required', 'string', 'max:255'],
 
             'email' => [
                 'required',
@@ -36,23 +42,11 @@ class UserRequest extends FormRequest
                 'confirmed',
             ],
 
-            // 🔥 ADD THESE (MOST IMPORTANT)
-            'experience' => [
-                'nullable',
-                'integer',
-                'min:0',
-            ],
+            'experience' => ['nullable', 'integer', 'min:0'],
 
-            'price_per_minute' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
+            'price_per_minute' => ['nullable', 'numeric', 'min:0'],
 
-            'bio' => [
-                'nullable',
-                'string',
-            ],
+            'bio' => ['nullable', 'string'],
         ];
     }
 }

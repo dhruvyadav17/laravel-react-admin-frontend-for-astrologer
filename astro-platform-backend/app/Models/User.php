@@ -57,4 +57,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->role('astrologer')
             ->where('is_active', true);
     }
+
+    public function isAstrologer(): bool
+    {
+        return $this->hasRole('astrologer');
+    }
 }

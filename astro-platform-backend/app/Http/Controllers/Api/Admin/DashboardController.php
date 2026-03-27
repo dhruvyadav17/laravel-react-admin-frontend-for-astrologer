@@ -10,7 +10,8 @@ class DashboardController extends Controller
 {
     public function stats()
     {
-        $cacheKey = 'dashboard_stats';
+        // 🔥 USER BASED CACHE (FIXED)
+        $cacheKey = 'dashboard_' . auth()->id();
 
         $data = Cache::remember($cacheKey, 60, function () {
             return [
@@ -18,7 +19,7 @@ class DashboardController extends Controller
 
                 'total_astrologers' => User::query()
                     ->role('astrologer')
-                    ->select('id') // 🔥 optimized
+                    ->select('id')
                     ->count(),
 
                 'total_consultations' => 0,
