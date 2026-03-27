@@ -47,9 +47,14 @@ export default function AdminCrudPage<T extends BaseEntity>({
 
   const [editing, setEditing] = useState<Partial<T> | null>(null);
 
+  /* ================= MUTATIONS ================= */
+
   const createMutation = mutations?.create?.[0];
   const updateMutation = mutations?.update?.[0];
   const deleteMutation = mutations?.delete?.[0];
+  const restoreMutation = mutations?.restore?.[0]; // ✅ NEW
+
+  /* ================= CRUD CONTROLLER ================= */
 
   const crud = useCrudController<T>({
     createMutation,
@@ -61,16 +66,29 @@ export default function AdminCrudPage<T extends BaseEntity>({
     },
   });
 
+  /* ================= DELETE (ARCHIVE) ================= */
+
   const handleDelete = (item: T) => {
     confirmAction({
-      message: `Are you sure you want to delete this ${entity}?`,
-      confirmLabel: `Delete ${entity}`,
+      message: `Are you sure you want to archive this ${entity}?`, // ✅ UX FIX
+      confirmLabel: `Archive ${entity}`,
       onConfirm: async () => {
         await crud.handleDelete(item.id);
         refetch();
       },
     });
   };
+
+  /* ================= RESTORE ================= */
+
+  const handleRestore = async (item: T) => {
+    if (!restoreMutation) return;
+
+    await restoreMutation(item.id);
+    refetch();
+  };
+
+  /* ================= RENDER ================= */
 
   return (
     <>
@@ -85,6 +103,7 @@ export default function AdminCrudPage<T extends BaseEntity>({
         setEditing={setEditing}
         deleteMutation={deleteMutation}
         handleDelete={handleDelete}
+        restoreHandler={handleRestore} // ✅ IMPORTANT
         permissions={permissions}
         extraActions={extraActions}
         topContent={topContent}

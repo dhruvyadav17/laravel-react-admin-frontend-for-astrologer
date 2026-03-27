@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache; // ✅ NEW
+use Illuminate\Support\Facades\Cache;
 use App\Support\Pagination;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -60,7 +60,7 @@ class UserService
                 $user->syncPermissions($data['permissions']);
             }
 
-            $this->clearUserCache(); // 🔥 IMPORTANT
+            $this->clearUserCache();
 
             return $user;
         });
@@ -90,7 +90,7 @@ class UserService
 
         Log::info('Admin created', ['id' => $user->id]);
 
-        $this->clearUserCache(); // 🔥 IMPORTANT
+        $this->clearUserCache();
 
         return [
             'user' => $user,
@@ -135,7 +135,7 @@ class UserService
 
             $user->load('roles');
 
-            $this->clearUserCache(); // 🔥 IMPORTANT
+            $this->clearUserCache();
 
             return $user;
         });
@@ -146,13 +146,13 @@ class UserService
     public function delete(User $user): void
     {
         $user->delete();
-        $this->clearUserCache(); // 🔥
+        $this->clearUserCache();
     }
 
     public function restore(User $user): void
     {
         $user->restore();
-        $this->clearUserCache(); // 🔥
+        $this->clearUserCache();
     }
 
     /* ================= ROLES ================= */
@@ -164,7 +164,7 @@ class UserService
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->clearUserCache(); // 🔥
+        $this->clearUserCache();
     }
 
     /* ================= PERMISSIONS ================= */
@@ -175,7 +175,7 @@ class UserService
             $user->syncPermissions($permissions);
         });
 
-        $this->clearUserCache(); // 🔥
+        $this->clearUserCache();
     }
 
     public function permissions(User $user): array
@@ -197,6 +197,9 @@ class UserService
 
     protected function clearUserCache(): void
     {
-        Cache::tags(['users', 'dashboard', 'astrologers'])->flush();
+        // ✅ FILE CACHE SAFE (NO TAGS)
+        Cache::forget('users_list');
+        Cache::forget('dashboard_stats');
+        Cache::forget('astrologers_list');
     }
 }

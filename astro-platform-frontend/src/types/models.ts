@@ -22,7 +22,7 @@ export type User = {
   email: string;
 
   /* ================= RBAC ================= */
-  roles: string[];                 // ["super-admin", "admin"]
+  roles: string[]; // ["super-admin", "admin"]
 
   /* ================= ACCOUNT ================= */
   is_active?: boolean;
@@ -37,6 +37,7 @@ export type User = {
 
   /* ================= SOFT DELETE ================= */
   deleted_at?: Timestamp | null;
+  is_archived?: boolean; // ✅ NEW (clean frontend usage)
 
   /* ================= META ================= */
   created_at?: Timestamp;

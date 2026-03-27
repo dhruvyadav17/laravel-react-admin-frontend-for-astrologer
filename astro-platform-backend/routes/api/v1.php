@@ -124,7 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->middleware('permission:user-delete')
                 ->name('destroy');
 
-            Route::post('/{user}/restore', [UserController::class, 'restore'])
+            Route::patch('/{user}/restore', [UserController::class, 'restore'])
                 ->middleware('permission:user-delete')
                 ->withTrashed()
                 ->name('restore');

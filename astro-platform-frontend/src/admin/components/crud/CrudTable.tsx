@@ -14,6 +14,7 @@ export default function CrudTable<T>({
   setEditing,
   deleteMutation,
   handleDelete,
+  restoreHandler, // ✅ NEW (clean restore)
   permissions,
   extraActions = [],
   topContent,
@@ -35,32 +36,49 @@ export default function CrudTable<T>({
     >
       {!isLoading &&
         !isError &&
-        items.map((item: T) => {
+        items.map((item: any) => {
+          const isDeleted = !!item.deleted_at;
+
           const actions = useRowActions({
             row: item,
+            isDeleted,
+
+            /* ================= EDIT ================= */
             edit: {
-              enabled: true,
+              enabled: !isDeleted,
               onClick: () => setEditing(item),
             },
+
+            /* ================= DELETE ================= */
             delete: {
               enabled:
+                !isDeleted &&
                 !!deleteMutation &&
                 permissions?.delete !== false &&
                 (typeof permissions?.delete === "string"
                   ? can(permissions.delete)
                   : true),
-              onClick: (row: any) => handleDelete(row.id),
+
+              onClick: (row: any) => handleDelete(row),
             },
-            extra: extraActions.map((a: any) => ({
-              ...a,
-              onClick: () => a.onClick(item),
-            })),
+
+            /* ================= RESTORE ================= */
+            restore: {
+              enabled: isDeleted,
+              onClick: (row: any) => {
+                console.log("RESTORE CLICK", row); // 👈 add this
+                restoreHandler?.(row);
+              },
+            },
+
+            /* ================= EXTRA ================= */
+            extra: extraActions,
           });
 
           return renderRow ? (
             renderRow(item, actions)
           ) : (
-            <tr key={(item as any).id}>
+            <tr key={item.id}>
               <td>{JSON.stringify(item)}</td>
               <td className="text-end">
                 <RowActions actions={actions} />

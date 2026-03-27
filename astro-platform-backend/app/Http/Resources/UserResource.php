@@ -35,6 +35,8 @@ class UserResource extends JsonResource
                 $this->isAstrologer(),
                 $this->bio
             ),
+            // 'deleted_at' => $this->deleted_at,
+            'is_archived' => $this->deleted_at !== null,
         ];
     }
 }

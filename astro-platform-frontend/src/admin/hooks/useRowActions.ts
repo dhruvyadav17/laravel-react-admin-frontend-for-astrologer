@@ -1,5 +1,7 @@
 import { ICONS } from "../../constants/ui";
 
+/* ================= TYPES ================= */
+
 type BaseAction<T> = {
   enabled?: boolean;
   onClick: (row: T) => void;
@@ -25,6 +27,8 @@ type Options<T> = {
   extra?: ExtraAction<T>[];
 };
 
+/* ================= HOOK ================= */
+
 export function useRowActions<T>({
   row,
   isDeleted = false,
@@ -35,30 +39,18 @@ export function useRowActions<T>({
 }: Options<T>) {
   const actions: any[] = [];
 
-  /* ================= ACTIVE STATE ================= */
+  /* ================= EDIT ================= */
 
-  if (!isDeleted) {
-    if (edit?.enabled) {
-      actions.push({
-        key: "edit",
-        icon: ICONS.EDIT,
-        title: "Edit",
-        onClick: () => edit.onClick(row),
-      });
-    }
-
-    if (deleteAction?.enabled) {
-      actions.push({
-        key: "delete",
-        icon: ICONS.DELETE,
-        title: "Delete",
-        variant: "danger",
-        onClick: () => deleteAction.onClick(row),
-      });
-    }
+  if (!isDeleted && edit?.enabled) {
+    actions.push({
+      key: "edit",
+      icon: ICONS.EDIT,
+      title: "Edit",
+      onClick: () => edit.onClick(row),
+    });
   }
 
-  /* ================= DELETED STATE ================= */
+  /* ================= TOGGLE (ARCHIVE / RESTORE) ================= */
 
   if (isDeleted && restore?.enabled) {
     actions.push({
@@ -68,18 +60,28 @@ export function useRowActions<T>({
       variant: "success",
       onClick: () => restore.onClick(row),
     });
+  } else if (!isDeleted && deleteAction?.enabled) {
+    actions.push({
+      key: "delete",
+      icon: ICONS.DELETE,
+      title: "Archive", // ✅ UX improvement (soft delete)
+      variant: "danger",
+      onClick: () => deleteAction.onClick(row),
+    });
   }
 
   /* ================= EXTRA ACTIONS ================= */
 
-  extra.forEach((item) => {
-    if (item.show !== false) {
-      actions.push({
-        ...item,
-        onClick: () => item.onClick(row),
-      });
-    }
-  });
+  if (!isDeleted && extra.length) {
+    extra.forEach((item) => {
+      if (item.show !== false) {
+        actions.push({
+          ...item,
+          onClick: () => item.onClick(row),
+        });
+      }
+    });
+  }
 
   return actions;
 }

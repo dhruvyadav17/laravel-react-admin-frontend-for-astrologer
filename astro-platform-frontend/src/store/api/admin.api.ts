@@ -28,7 +28,7 @@ export const adminApi = baseApi.injectEndpoints({
     restoreUser: builder.mutation<void, number>({
       query: (id) => ({
         url: `/admin/users/${id}/restore`,
-        method: "POST",
+        method: "PATCH", // ✅ FIXED
       }),
       invalidatesTags: [{ type: "Users", id: "LIST" }],
     }),
@@ -110,7 +110,7 @@ export const adminApi = baseApi.injectEndpoints({
 });
 
 /* ======================================================
-   🔥 EXPORT ALL HOOKS (VERY IMPORTANT)
+   EXPORT HOOKS
 ====================================================== */
 
 export const {
@@ -119,7 +119,6 @@ export const {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-
   useRestoreUserMutation,
   useAssignUserRolesMutation,
   useGetUserPermissionsQuery,

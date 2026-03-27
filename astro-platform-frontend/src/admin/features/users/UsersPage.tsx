@@ -9,6 +9,7 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useRestoreUserMutation ,
 } from "../../../store/api";
 
 import { usePagination } from "../../../hooks/usePagination";
@@ -39,7 +40,7 @@ export default function UsersPage() {
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();
   const deleteMutation = useDeleteUserMutation();
-
+  const restoreMutation = useRestoreUserMutation();
   /* ================= EXTRA ACTIONS ================= */
 
   const extraActions = [
@@ -76,6 +77,7 @@ export default function UsersPage() {
           create: createMutation,
           update: updateMutation,
           delete: deleteMutation,
+          restore: restoreMutation,
         }}
         permissions={{ create: true }}
         topContent={
