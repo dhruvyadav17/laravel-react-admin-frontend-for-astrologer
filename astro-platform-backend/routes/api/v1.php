@@ -51,7 +51,7 @@ Route::post('/refresh-token', RefreshTokenController::class)->name('auth.token.r
 
 /* ================= FRONTEND (APP) ================= */
 
-Route::prefix('app')->group(function () {
+Route::middleware('auth:sanctum')->prefix('app')->group(function () {
 
     /* 🔮 ASTROLOGERS */
 
