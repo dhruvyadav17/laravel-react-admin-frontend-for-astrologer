@@ -22,7 +22,8 @@ use App\Http\Controllers\Api\Admin\{
     UserController,
     SidebarController,
     DashboardController,
-    AdminUserController
+    AdminUserController,
+    AstrologerController as AdminAstrologerController
 };
 
 use App\Http\Controllers\Api\{
@@ -30,17 +31,22 @@ use App\Http\Controllers\Api\{
     PermissionController
 };
 
+/* ================= APP ================= */
 use App\Http\Controllers\Api\App\AstrologerController;
+
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
-Route::post('/register', RegisterController::class)->name('auth.register');
-Route::post('/login', LoginController::class)->name('auth.login');
-Route::post('/forgot-password', ForgotPasswordController::class)->name('auth.password.forgot');
-Route::post('/reset-password', ResetPasswordController::class)->name('auth.password.reset');
-Route::post('/refresh-token', RefreshTokenController::class)->name('auth.token.refresh');
+
+Route::post('/register', RegisterController::class);
+Route::post('/login', LoginController::class);
+Route::post('/forgot-password', ForgotPasswordController::class);
+Route::post('/reset-password', ResetPasswordController::class);
+Route::post('/refresh-token', RefreshTokenController::class);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -48,44 +54,28 @@ Route::post('/refresh-token', RefreshTokenController::class)->name('auth.token.r
 |--------------------------------------------------------------------------
 */
 
-
-/* ================= FRONTEND (APP) ================= */
-
-Route::middleware('auth:sanctum')->prefix('app')->group(function () {
-
-    /* 🔮 ASTROLOGERS */
-
-    Route::get('/astrologers', [AstrologerController::class, 'index']);
-
-    Route::get('/astrologers/{user}', [AstrologerController::class, 'show']);
-});
 Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | FRONTEND (USER + ASTROLOGER)
+    | FRONTEND (APP)
     |--------------------------------------------------------------------------
     */
     Route::prefix('app')->group(function () {
 
         /* ================= PROFILE ================= */
-        Route::get('/profile', ProfileController::class)
-            ->name('app.profile');
-
-        Route::post('/logout', LogoutController::class)
-            ->name('app.logout');
+        Route::get('/profile', ProfileController::class);
+        Route::post('/logout', LogoutController::class);
 
         /* ================= EMAIL ================= */
-        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-            ->name('app.email.verify');
+        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify']);
+        Route::post('/email/resend', [EmailVerificationController::class, 'resend']);
 
-        Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
-            ->name('app.email.resend');
-
-        // 🔮 FUTURE
-        // Route::get('/astrologers', ...);
-        // Route::get('/astrologers/{id}', ...);
+        /* ================= ASTROLOGERS ================= */
+        Route::get('/astrologers', [AstrologerController::class, 'index']);
+        Route::get('/astrologers/{id}', [AstrologerController::class, 'show']);
     });
+
 
     /*
     |--------------------------------------------------------------------------
@@ -95,82 +85,81 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
 
         /* ================= DASHBOARD ================= */
-        Route::get('/sidebar', SidebarController::class)->name('sidebar');
-
-        Route::get('/dashboard/stats', [DashboardController::class, 'stats'])
-            ->name('dashboard.stats');
+        Route::get('/sidebar', SidebarController::class);
+        Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
         /* ================= CREATE ADMIN ================= */
         Route::post('/admins', [AdminUserController::class, 'store'])
-            ->middleware('permission:role-manage')
-            ->name('admins.store');
+            ->middleware('permission:role-manage');
 
         /* ================= USERS ================= */
-        Route::prefix('users')->name('users.')->group(function () {
+        Route::prefix('users')->group(function () {
 
             Route::get('/', [UserController::class, 'index'])
-                ->middleware('permission:user-view')
-                ->name('index');
+                ->middleware('permission:user-view');
 
             Route::post('/', [UserController::class, 'store'])
-                ->middleware('permission:user-create')
-                ->name('store');
+                ->middleware('permission:user-create');
 
             Route::put('/{user}', [UserController::class, 'update'])
-                ->middleware('permission:user-update')
-                ->name('update');
+                ->middleware('permission:user-update');
 
             Route::delete('/{user}', [UserController::class, 'destroy'])
-                ->middleware('permission:user-delete')
-                ->name('destroy');
+                ->middleware('permission:user-delete');
 
-            Route::patch('/{user}/restore', [UserController::class, 'restore'])
-                ->middleware('permission:user-restore')
-                ->withTrashed()
-                ->name('restore');
+            Route::patch('/{id}/restore', [UserController::class, 'restore'])
+                ->middleware('permission:user-restore');
 
             Route::post('/{user}/assign-role', [UserController::class, 'assignRole'])
-                ->middleware('permission:user-assign-role')
-                ->name('assign-role');
+                ->middleware('permission:user-assign-role');
 
             Route::post('/{user}/permissions', [UserController::class, 'assignPermissions'])
-                ->middleware('permission:user-assign-permission')
-                ->name('permissions.assign');
+                ->middleware('permission:user-assign-permission');
 
             Route::get('/{user}/permissions', [UserController::class, 'permissions'])
-                ->middleware('permission:user-view')
-                ->name('permissions.list');
+                ->middleware('permission:user-view');
+        });
+
+        /* ================= ASTROLOGERS (🔥 NEW) ================= */
+        Route::prefix('astrologers')->group(function () {
+
+            Route::get('/', [AdminAstrologerController::class, 'index'])
+                ->middleware('permission:user-view');
+
+            Route::post('/', [AdminAstrologerController::class, 'store'])
+                ->middleware('permission:user-create');
+
+            Route::put('/{astrologer}', [AdminAstrologerController::class, 'update'])
+                ->middleware('permission:user-update');
+
+            Route::delete('/{astrologer}', [AdminAstrologerController::class, 'destroy'])
+                ->middleware('permission:user-delete');
         });
 
         /* ================= ROLES ================= */
         Route::prefix('roles')
             ->middleware('permission:role-manage')
-            ->name('roles.')
             ->group(function () {
 
-                Route::get('/', [RoleController::class, 'index'])->name('index');
-                Route::post('/', [RoleController::class, 'store'])->name('store');
-                Route::put('/{role}', [RoleController::class, 'update'])->name('update');
-                Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
+                Route::get('/', [RoleController::class, 'index']);
+                Route::post('/', [RoleController::class, 'store']);
+                Route::put('/{role}', [RoleController::class, 'update']);
+                Route::delete('/{role}', [RoleController::class, 'destroy']);
 
-                Route::get('/{role}/permissions', [RoleController::class, 'permissions'])
-                    ->name('permissions.list');
-
-                Route::post('/{role}/permissions', [RoleController::class, 'assignPermissions'])
-                    ->name('permissions.assign');
+                Route::get('/{role}/permissions', [RoleController::class, 'permissions']);
+                Route::post('/{role}/permissions', [RoleController::class, 'assignPermissions']);
             });
 
         /* ================= PERMISSIONS ================= */
         Route::prefix('permissions')
             ->middleware('permission:permission-manage')
-            ->name('permissions.')
             ->group(function () {
 
-                Route::get('/', [PermissionController::class, 'index'])->name('index');
-                Route::post('/', [PermissionController::class, 'store'])->name('store');
-                Route::get('/{permission}', [PermissionController::class, 'show'])->name('show');
-                Route::put('/{permission}', [PermissionController::class, 'update'])->name('update');
-                Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy');
+                Route::get('/', [PermissionController::class, 'index']);
+                Route::post('/', [PermissionController::class, 'store']);
+                Route::get('/{permission}', [PermissionController::class, 'show']);
+                Route::put('/{permission}', [PermissionController::class, 'update']);
+                Route::delete('/{permission}', [PermissionController::class, 'destroy']);
             });
     });
 });

@@ -60,8 +60,10 @@ class UserController extends Controller
 
     /* ================= RESTORE ================= */
 
-    public function restore(User $user)
+    public function restore($id)
     {
+        $user = User::withTrashed()->findOrFail($id);
+
         $this->service->restore($user);
 
         return $this->success(

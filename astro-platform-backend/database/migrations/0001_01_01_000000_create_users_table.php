@@ -35,37 +35,12 @@ return new class extends Migration
             // ================= PASSWORD POLICY =================
             $table->timestamp('password_changed_at')->nullable();
 
-            // ===================================================
-            // 🔮 ASTROLOGER FIELDS (IMPROVED)
-            // ===================================================
-
             // Profile
             $table->string('profile_image')->nullable();
-
-            // 🔥 NEW: multiple images (gallery)
-            $table->json('gallery')->nullable();
-
-            // About
-            $table->text('bio')->nullable();
-
-            // Expertise (short text)
-            $table->string('expertise')->nullable();
-
-            // 🔥 FIXED: use JSON instead of string
-            $table->json('languages')->nullable();
-            $table->json('skills')->nullable();
-
-            // Experience & Pricing
-            $table->unsignedInteger('experience')->default(0);
-            $table->decimal('price_per_minute', 8, 2)->default(0);
 
             // Status
             $table->boolean('is_verified')->default(false);
             $table->boolean('is_online')->default(false);
-
-            // Ratings
-            $table->decimal('rating', 3, 2)->default(0); // max 9.99
-            $table->unsignedInteger('total_reviews')->default(0);
 
             // ================= META =================
             $table->softDeletes();
@@ -73,7 +48,6 @@ return new class extends Migration
 
             // ================= INDEXES =================
             $table->index(['is_active', 'is_verified']);
-            $table->index('rating');
         });
     }
 

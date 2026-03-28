@@ -3,6 +3,7 @@
 namespace App\Services\User;
 
 use App\Models\User;
+use App\Models\Astrologer;
 use App\Models\Permission;
 use App\Queries\UserQuery;
 use Illuminate\Http\Request;
@@ -52,10 +53,22 @@ class UserService
 
             $user = $this->createBase($data);
 
+            /* ================= ROLES ================= */
             if (!empty($data['roles'])) {
                 $user->syncRoles($data['roles']);
             }
 
+            /* ================= ASTROLOGER CREATE ================= */
+            if ($user->hasRole('astrologer')) {
+                Astrologer::create([
+                    'user_id' => $user->id,
+                    'experience' => $data['experience'] ?? 0,
+                    'price_per_minute' => $data['price_per_minute'] ?? 0,
+                    'bio' => $data['bio'] ?? null,
+                ]);
+            }
+
+            /* ================= PERMISSIONS ================= */
             if (!empty($data['permissions'])) {
                 $user->syncPermissions($data['permissions']);
             }
@@ -104,6 +117,7 @@ class UserService
     {
         return DB::transaction(function () use ($user, $data) {
 
+            /* ================= PASSWORD ================= */
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             } else {
@@ -112,23 +126,30 @@ class UserService
 
             unset($data['email']);
 
+            /* ================= USER UPDATE ================= */
             $user->update([
                 'name' => $data['name'] ?? $user->name,
                 ...$data
             ]);
 
+            /* ================= ASTROLOGER UPDATE ================= */
             if ($user->hasRole('astrologer')) {
-                $user->update([
-                    'experience' => $data['experience'] ?? $user->experience,
-                    'price_per_minute' => $data['price_per_minute'] ?? $user->price_per_minute,
-                    'bio' => $data['bio'] ?? $user->bio,
-                ]);
+                Astrologer::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'experience' => $data['experience'] ?? 0,
+                        'price_per_minute' => $data['price_per_minute'] ?? 0,
+                        'bio' => $data['bio'] ?? null,
+                    ]
+                );
             }
 
+            /* ================= ROLES ================= */
             if (!empty($data['roles'])) {
                 $user->syncRoles($data['roles']);
             }
 
+            /* ================= PERMISSIONS ================= */
             if (!empty($data['permissions'])) {
                 $user->syncPermissions($data['permissions']);
             }
@@ -197,7 +218,6 @@ class UserService
 
     protected function clearUserCache(): void
     {
-        // ✅ FILE CACHE SAFE (NO TAGS)
         Cache::forget('users_list');
         Cache::forget('dashboard_stats');
         Cache::forget('astrologers_list');

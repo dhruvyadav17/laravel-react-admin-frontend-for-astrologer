@@ -10,6 +10,7 @@ export const baseApi = createApi({
     "Roles",
     "Permissions",
     "Sidebar",
+    "Astrologer",
   ],
 
   endpoints: () => ({}), // Empty — endpoints injected later

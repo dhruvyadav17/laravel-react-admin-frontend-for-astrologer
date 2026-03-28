@@ -41,12 +41,6 @@ class UserRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-
-            'experience' => ['nullable', 'integer', 'min:0'],
-
-            'price_per_minute' => ['nullable', 'numeric', 'min:0'],
-
-            'bio' => ['nullable', 'string'],
         ];
     }
 }

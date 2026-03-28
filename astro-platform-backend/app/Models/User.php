@@ -30,9 +30,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'languages' => 'array',
-        'skills' => 'array',
-        'gallery' => 'array',
     ];
     /* ==========================================================
      | ROLE HELPERS
@@ -51,11 +48,9 @@ class User extends Authenticatable implements MustVerifyEmail
             );
     }
 
-    public function scopeAstrologers($query)
+    public function astrologer()
     {
-        return $query
-            ->role('astrologer')
-            ->where('is_active', true);
+        return $this->hasOne(Astrologer::class);
     }
 
     public function isAstrologer(): bool
