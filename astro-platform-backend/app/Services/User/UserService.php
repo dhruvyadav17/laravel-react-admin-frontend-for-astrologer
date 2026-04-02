@@ -65,6 +65,9 @@ class UserService
                     'experience' => $data['experience'] ?? 0,
                     'price_per_minute' => $data['price_per_minute'] ?? 0,
                     'bio' => $data['bio'] ?? null,
+                    'expertise' => $data['expertise'] ?? null,
+                    'languages' => $data['languages'] ?? [],
+                    'skills' => $data['skills'] ?? [],
                 ]);
             }
 
@@ -140,6 +143,9 @@ class UserService
                         'experience' => $data['experience'] ?? 0,
                         'price_per_minute' => $data['price_per_minute'] ?? 0,
                         'bio' => $data['bio'] ?? null,
+                        'expertise' => $data['expertise'] ?? null,
+                        'languages' => $data['languages'] ?? [],
+                        'skills' => $data['skills'] ?? [],
                     ]
                 );
             }

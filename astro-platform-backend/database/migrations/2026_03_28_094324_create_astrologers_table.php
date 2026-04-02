@@ -37,6 +37,7 @@ return new class extends Migration
             // ⭐ RATINGS
             $table->decimal('rating', 3, 2)->default(0); // max 9.99
             $table->unsignedInteger('total_reviews')->default(0);
+            // $table->integer('total_reviews')->default(0);           
 
             // 🟢 STATUS
             $table->boolean('is_online')->default(false);

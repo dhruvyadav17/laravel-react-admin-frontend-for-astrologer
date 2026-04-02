@@ -9,7 +9,6 @@ import {
 } from "../../../store/api/astrologer.api";
 
 export default function AstrologersPage() {
-
   /* ================= QUERY ================= */
   const query = useGetAdminAstrologersQuery();
 
@@ -27,7 +26,6 @@ export default function AstrologersPage() {
         update: updateMutation,
         delete: deleteMutation,
       }}
-
       /* ================= TABLE ================= */
       columns={
         <tr>
@@ -40,20 +38,21 @@ export default function AstrologersPage() {
           <th className="text-end">Actions</th>
         </tr>
       }
-
       /* ================= FORM ================= */
       initialValues={{
         experience: "",
         price_per_minute: "",
         bio: "",
       }}
-
       fields={[
         { name: "experience", label: "Experience", required: true },
         { name: "price_per_minute", label: "Price/Min", required: true },
         { name: "bio", label: "Bio" },
-      ]}
+        { name: "expertise", label: "Expertise" },
 
+        { name: "skills", label: "Skills (comma separated)" },
+        { name: "languages", label: "Languages (comma separated)" },
+      ]}
       /* ================= ROW ================= */
       renderRow={(item: any, actions) => (
         <tr key={item.id}>
@@ -62,9 +61,7 @@ export default function AstrologersPage() {
           <td>{item.experience}</td>
           <td>₹{item.price_per_minute}</td>
           <td>{item.rating}</td>
-          <td>
-            {item.is_online ? "🟢 Online" : "🔴 Offline"}
-          </td>
+          <td>{item.is_online ? "🟢 Online" : "🔴 Offline"}</td>
           <td className="text-end">
             <RowActions actions={actions} />
           </td>

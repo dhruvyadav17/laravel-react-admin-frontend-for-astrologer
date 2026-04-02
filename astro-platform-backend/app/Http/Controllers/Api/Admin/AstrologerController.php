@@ -6,36 +6,41 @@ use App\Http\Controllers\Controller;
 use App\Models\Astrologer;
 use App\Http\Requests\AstrologerRequest;
 use App\Http\Resources\AstroResource;
+use App\Services\App\AstrologerService;
 
 class AstrologerController extends Controller
 {
+    public function __construct(
+        protected AstrologerService $service
+    ) {}
+
     public function index()
     {
         return $this->success(
             'Astrologers list',
             AstroResource::collection(
-                Astrologer::with('user')->latest()->get()
+                $this->service->adminList()
             )
         );
     }
 
     public function store(AstrologerRequest $request)
     {
-        $astro = Astrologer::create($request->validated());
+        $astro = $this->service->create($request->validated());
 
         return $this->success('Created', new AstroResource($astro));
     }
 
     public function update(AstrologerRequest $request, Astrologer $astrologer)
     {
-        $astrologer->update($request->validated());
+        $astro = $this->service->update($astrologer, $request->validated());
 
-        return $this->success('Updated', new AstroResource($astrologer));
+        return $this->success('Updated', new AstroResource($astro));
     }
 
     public function destroy(Astrologer $astrologer)
     {
-        $astrologer->delete();
+        $this->service->delete($astrologer);
 
         return $this->success('Deleted');
     }

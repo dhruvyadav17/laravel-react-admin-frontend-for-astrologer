@@ -16,10 +16,15 @@ class AstrologerRequest extends FormRequest
         return [
             'experience' => ['required', 'integer', 'min:0'],
             'price_per_minute' => ['required', 'numeric', 'min:0'],
+
             'bio' => ['nullable', 'string'],
             'expertise' => ['nullable', 'string'],
+
             'languages' => ['nullable', 'array'],
+            'languages.*' => ['string'],
+
             'skills' => ['nullable', 'array'],
+            'skills.*' => ['string'],
         ];
     }
 }

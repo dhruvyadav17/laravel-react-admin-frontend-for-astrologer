@@ -69,6 +69,10 @@ export default function AstrologerDetailPage() {
               ₹{astro.price_per_minute}/min
             </h5>
 
+            {astro.is_verified && (
+              <span className="badge bg-success ms-2">Verified</span>
+            )}
+            {astro.skills?.length > 0 ? astro.skills : ["General Astrology"]}
             {/* CTA */}
             <button className="btn btn-call w-100">
               {astro.is_online ? "Talk Now" : "Currently Offline"}
