@@ -1,49 +1,23 @@
-// src/services/authService.ts
+// PATH: src/services/authService.ts
+// FIX: /app/profile → /me  (new v1.php ke routes se match karo)
+//      /app/logout  → /logout
 
 import api from "../api/axios";
 
-/* =====================================================
-   AUTH SERVICES
-===================================================== */
-
-/* ================= LOGIN ================= */
-/**
- * POST /login
- */
-export const loginService = (
-  email: string,
-  password: string
-) => {
-  return api.post("/login", {
-    email,
-    password,
-  });
+export const loginService = (email: string, password: string) => {
+  return api.post("/login", { email, password });
 };
 
-/* ================= PROFILE ================= */
-/**
- * GET /app/profile
- *
- * 🔥 FIXED: correct route prefix
- */
+// ✅ FIX: was /app/profile → now /me
 export const profileService = () => {
-  return api.get("/app/profile");
+  return api.get("/me");
 };
 
-/* ================= LOGOUT ================= */
-/**
- * POST /app/logout
- *
- * 🔥 FIXED: correct route prefix
- */
+// ✅ FIX: was /app/logout → now /logout
 export const logoutService = () => {
-  return api.post("/app/logout");
+  return api.post("/logout");
 };
 
-/* ================= REGISTER ================= */
-/**
- * POST /register
- */
 export const registerService = (data: {
   name: string;
   email: string;

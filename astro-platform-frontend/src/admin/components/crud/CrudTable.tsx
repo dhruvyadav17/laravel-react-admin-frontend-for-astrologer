@@ -1,8 +1,85 @@
+// PATH: src/admin/components/crud/CrudTable.tsx
+// FIX 1: useRowActions() ko .map() ke ANDAR se bahar nikala — React Hook Rules violation tha
+//         Hooks conditionally ya loop ke andar call nahi ho sakte
+// FIX 2: console.log("RESTORE CLICK") debug code hata diya
+
 import AdminTablePage from "../page/AdminTablePage";
 import RowActions from "../../../components/table/RowActions";
-import { useRowActions } from "../../hooks/useRowActions";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { ICONS } from "../../../constants/ui";
 
+/* ─── Build actions outside of hook — pure function ─── */
+function buildRowActions({
+  item,
+  isDeleted,
+  deleteMutation,
+  permissions,
+  can,
+  setEditing,
+  handleDelete,
+  restoreHandler,
+  extraActions,
+}: {
+  item:           any;
+  isDeleted:      boolean;
+  deleteMutation: any;
+  permissions:    any;
+  can:            (p: string) => boolean;
+  setEditing:     (item: any) => void;
+  handleDelete:   (item: any) => void;
+  restoreHandler: ((item: any) => void) | undefined;
+  extraActions:   any[];
+}) {
+  const actions: any[] = [];
+
+  /* EDIT */
+  if (!isDeleted) {
+    actions.push({
+      key:   "edit",
+      icon:  ICONS.EDIT,
+      title: "Edit",
+      onClick: () => setEditing(item),
+    });
+  }
+
+  /* RESTORE / DELETE */
+  if (isDeleted) {
+    actions.push({
+      key:     "restore",
+      icon:    ICONS.RESTORE,
+      title:   "Restore",
+      variant: "success",
+      onClick: () => restoreHandler?.(item),
+    });
+  } else if (
+    !!deleteMutation &&
+    permissions?.delete !== false &&
+    (typeof permissions?.delete === "string"
+      ? can(permissions.delete)
+      : true)
+  ) {
+    actions.push({
+      key:     "delete",
+      icon:    ICONS.DELETE,
+      title:   "Archive",
+      variant: "danger",
+      onClick: () => handleDelete(item),
+    });
+  }
+
+  /* EXTRA */
+  if (!isDeleted && extraActions.length) {
+    extraActions.forEach((extra) => {
+      if (extra.show !== false) {
+        actions.push({ ...extra, onClick: () => extra.onClick(item) });
+      }
+    });
+  }
+
+  return actions;
+}
+
+/* ─── CrudTable component ─── */
 export default function CrudTable<T>({
   entity,
   items,
@@ -14,7 +91,7 @@ export default function CrudTable<T>({
   setEditing,
   deleteMutation,
   handleDelete,
-  restoreHandler, // ✅ NEW (clean restore)
+  restoreHandler,
   permissions,
   extraActions = [],
   topContent,
@@ -39,40 +116,17 @@ export default function CrudTable<T>({
         items.map((item: any) => {
           const isDeleted = !!item.deleted_at;
 
-          const actions = useRowActions({
-            row: item,
+          /* ✅ Pure function — NOT a hook — safe inside .map() */
+          const actions = buildRowActions({
+            item,
             isDeleted,
-
-            /* ================= EDIT ================= */
-            edit: {
-              enabled: !isDeleted,
-              onClick: () => setEditing(item),
-            },
-
-            /* ================= DELETE ================= */
-            delete: {
-              enabled:
-                !isDeleted &&
-                !!deleteMutation &&
-                permissions?.delete !== false &&
-                (typeof permissions?.delete === "string"
-                  ? can(permissions.delete)
-                  : true),
-
-              onClick: (row: any) => handleDelete(row),
-            },
-
-            /* ================= RESTORE ================= */
-            restore: {
-              enabled: isDeleted,
-              onClick: (row: any) => {
-                console.log("RESTORE CLICK", row); // 👈 add this
-                restoreHandler?.(row);
-              },
-            },
-
-            /* ================= EXTRA ================= */
-            extra: extraActions,
+            deleteMutation,
+            permissions,
+            can,
+            setEditing,
+            handleDelete,
+            restoreHandler,
+            extraActions,
           });
 
           return renderRow ? (

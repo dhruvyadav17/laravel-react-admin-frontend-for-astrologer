@@ -1,54 +1,76 @@
 <?php
 // PATH: app/Services/App/AstrologerService.php
-// UPDATE — Major rewrite extending BaseService
-// CHANGES:
-//   - BaseService extend kiya (DRY CRUD)
-//   - createWithUser(): transaction mein user + astrologer banata hai (pehle sirf astrologer banta tha)
-//   - selfUpdate(): astrologer sirf apne allowed fields update kare
-//   - toggleOnline(): online/offline toggle
-//   - recalculateRating(): review submit ke baad rating recalculate
-//   - publicList(): AstrologerQuery filters use karta hai
-//   - adminList(): search + is_verified filter
+// SIMPLIFIED: BaseService dependency hatao, direct Eloquent use karo
 
 namespace App\Services\App;
 
-use App\DTO\AstrologerData;
 use App\Models\Astrologer;
 use App\Models\User;
-use App\Queries\AstrologerQuery;
-use App\Services\BaseService;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
-class AstrologerService extends BaseService
+class AstrologerService
 {
-    protected function model(): string { return Astrologer::class; }
-
-    // ── Public listing (user-facing, filtered + sorted) ───────
-    public function publicList(array $filters = []): LengthAwarePaginator
+    /* ── Public listing ─────────────────────────────── */
+    public function publicList(array $filters = [])
     {
-        return AstrologerQuery::publicBase($filters)->paginate(12);
+        $q = Astrologer::with('user')
+            ->where('is_verified', true);
+
+        if (!empty($filters['online']))
+            $q->where('is_online', true)->where('is_available', true);
+
+        if (!empty($filters['expertise']))
+            $q->where('expertise', 'like', '%'.$filters['expertise'].'%');
+
+        if (!empty($filters['language']))
+            $q->whereJsonContains('languages', $filters['language']);
+
+        if (!empty($filters['min_rating']))
+            $q->where('rating', '>=', (float)$filters['min_rating']);
+
+        if (!empty($filters['consultation_type']) && $filters['consultation_type'] !== 'all')
+            $q->where(fn($s) => $s->where('consultation_type', $filters['consultation_type'])
+                ->orWhere('consultation_type', 'all'));
+
+        match ($filters['sort'] ?? 'top_rated') {
+            'price_low'  => $q->orderBy('price_per_minute'),
+            'price_high' => $q->orderByDesc('price_per_minute'),
+            'experience' => $q->orderByDesc('experience'),
+            'newest'     => $q->orderByDesc('astrologers.created_at'),
+            default      => $q->orderByDesc('rating'),
+        };
+
+        return $q->paginate(12);
     }
 
     public function findPublic(int $id): Astrologer
     {
-        return AstrologerQuery::publicBase()
-            ->where('astrologers.id', $id)
-            ->firstOrFail();
+        return Astrologer::with('user')
+            ->where('is_verified', true)
+            ->findOrFail($id);
     }
 
-    // ── Admin listing ─────────────────────────────────────────
-    public function adminList(array $filters = []): LengthAwarePaginator
+    /* ── Admin listing ──────────────────────────────── */
+    public function adminList(array $filters = [])
     {
-        return AstrologerQuery::adminBase($filters)->paginate(15);
+        $q = Astrologer::withTrashed()->with('user')->latest();
+
+        if (!empty($filters['search'])) {
+            $s = '%'.$filters['search'].'%';
+            $q->whereHas('user', fn($sq) =>
+                $sq->where('name','like',$s)->orWhere('email','like',$s)
+            )->orWhere('expertise','like',$s);
+        }
+
+        if (isset($filters['is_verified']))
+            $q->where('is_verified', (bool)$filters['is_verified']);
+
+        return $q->paginate(15);
     }
 
-    // ── Create with User (transaction) ────────────────────────
-    // PEHLE: Sirf Astrologer record banta tha, user account nahi banta tha
-    // BAAD:  User + Astrologer dono transaction mein bante hain
+    /* ── Create with user ───────────────────────────── */
     public function createWithUser(array $data): array
     {
         return DB::transaction(function () use ($data) {
@@ -64,71 +86,57 @@ class AstrologerService extends BaseService
             ]);
             $user->assignRole('astrologer');
 
-            $dto = AstrologerData::fromArray($data, $user->id);
             $astrologer = Astrologer::create([
-                'user_id'           => $dto->user_id,
-                'experience'        => $dto->experience,
-                'price_per_minute'  => $dto->price_per_minute,
-                'bio'               => $dto->bio,
-                'expertise'         => $dto->expertise,
-                'languages'         => $dto->languages,
-                'skills'            => $dto->skills,
-                'consultation_type' => $dto->consultation_type,
-                'profile_image'     => $dto->profile_image,
-                'gallery'           => $dto->gallery ?? [],
+                'user_id'           => $user->id,
+                'experience'        => $data['experience']        ?? 0,
+                'price_per_minute'  => $data['price_per_minute']  ?? 0,
+                'bio'               => $data['bio']               ?? '',
+                'expertise'         => $data['expertise']         ?? '',
+                'languages'         => $data['languages']         ?? [],
+                'skills'            => $data['skills']            ?? [],
+                'consultation_type' => $data['consultation_type'] ?? 'all',
+                'is_verified'       => true,
             ]);
 
-            $this->clearCache();
             return ['user' => $user, 'astrologer' => $astrologer->load('user'), 'password' => $password];
         });
     }
 
-    // ── Admin update (user + astrologer fields) ───────────────
-    public function update(Model $model, array $data): Model
+    /* ── Update ─────────────────────────────────────── */
+    public function update(Astrologer $astrologer, array $data): Astrologer
     {
-        return DB::transaction(function () use ($model, $data) {
+        return DB::transaction(function () use ($astrologer, $data) {
             if (isset($data['name']) || isset($data['email'])) {
-                $model->user->update(array_filter([
+                $astrologer->user->update(array_filter([
                     'name'  => $data['name']  ?? null,
                     'email' => $data['email'] ?? null,
-                ], fn($v) => !is_null($v)));
+                ]));
             }
-
-            $allowed = ['experience','price_per_minute','bio','expertise','languages','skills',
-                        'consultation_type','is_available','is_verified','profile_image','gallery'];
-
-            $model->update(array_filter(
-                array_intersect_key($data, array_flip($allowed)),
-                fn($v) => !is_null($v)
-            ));
-
-            $this->clearCache();
-            return $model->fresh(['user']);
+            $allowed = ['experience','price_per_minute','bio','expertise',
+                        'languages','skills','consultation_type','is_available',
+                        'is_verified','profile_image','gallery'];
+            $astrologer->update(array_intersect_key($data, array_flip($allowed)));
+            return $astrologer->fresh(['user']);
         });
     }
 
-    // ── Self update (astrologer updates own profile) ──────────
-    // NEW: Sirf allowed fields update ho sakti hain
+    /* ── Self update (astrologer portal) ────────────── */
     public function selfUpdate(Astrologer $astrologer, array $data): Astrologer
     {
-        $allowed = ['bio','experience','price_per_minute','languages','skills',
-                    'consultation_type','profile_image','gallery','is_available'];
-
+        $allowed = ['bio','experience','price_per_minute','languages',
+                    'skills','consultation_type','profile_image','gallery','is_available'];
         $astrologer->update(array_intersect_key($data, array_flip($allowed)));
-        $this->clearCache();
         return $astrologer->fresh(['user']);
     }
 
-    // ── Online toggle ─────────────────────────────────────────
-    // NEW: Astrologer online/offline toggle kar sake
+    /* ── Toggle online ──────────────────────────────── */
     public function toggleOnline(Astrologer $astrologer): Astrologer
     {
         $astrologer->update(['is_online' => !$astrologer->is_online]);
         return $astrologer->fresh();
     }
 
-    // ── Rating recalculate ────────────────────────────────────
-    // NEW: Review submit ke baad avg rating recalculate
+    /* ── Recalculate rating ─────────────────────────── */
     public function recalculateRating(Astrologer $astrologer): void
     {
         $stats = $astrologer->reviews()
@@ -142,10 +150,16 @@ class AstrologerService extends BaseService
         ]);
     }
 
-    private function clearCache(): void
+    /* ── Delete / Restore ───────────────────────────── */
+    public function delete(Astrologer $astrologer): void
     {
-        Cache::forget('astrologers.public');
-        Cache::forget('astrologers.admin');
-        Cache::forget('dashboard.stats');
+        $astrologer->delete();
+    }
+
+    public function restore(int $id): Astrologer
+    {
+        $a = Astrologer::withTrashed()->findOrFail($id);
+        $a->restore();
+        return $a->fresh(['user']);
     }
 }

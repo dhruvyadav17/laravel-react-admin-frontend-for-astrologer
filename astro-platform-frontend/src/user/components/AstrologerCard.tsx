@@ -1,5 +1,23 @@
+// PATH: src/user/components/AstrologerCard.tsx
+
 import { Link } from "react-router-dom";
-import type { Astrologer } from "../../types/models";
+
+type Props = {
+  astrologer: {
+    id:                 number;
+    name:               string;
+    profile_image?:     string | null;
+    expertise?:         string;
+    rating?:            number;
+    price_per_minute?:  number;
+    experience?:        number;
+    is_online?:         boolean;
+    is_available?:      boolean;
+    languages?:         string[];
+    total_reviews?:     number;
+    consultation_type?: string;
+  };
+};
 
 const CONSULT_ICONS: Record<string, string> = {
   chat:  "fa-comment",
@@ -8,156 +26,91 @@ const CONSULT_ICONS: Record<string, string> = {
   all:   "fa-th-large",
 };
 
-const CONSULT_LABELS: Record<string, string> = {
-  chat:  "Chat",
-  call:  "Call",
-  video: "Video",
-  all:   "All",
-};
-
-export default function AstrologerCard({
-  astrologer,
-}: {
-  astrologer: Astrologer;
-}) {
+export default function AstrologerCard({ astrologer }: Props) {
   const {
     id,
-    name,
+    name               = "",
     profile_image,
     expertise,
-    experience,
-    price_per_minute,
-    rating,
-    total_reviews,
-    languages,
-    is_online,
-    is_available,
-    consultation_type,
+    rating             = 0,
+    price_per_minute   = 0,
+    experience         = 0,
+    is_online          = false,
+    is_available       = false,
+    languages          = [],
+    total_reviews      = 0,
+    consultation_type  = "all",
   } = astrologer;
 
   const available = is_online && is_available;
+  const stars     = Math.min(Math.max(Math.round(rating), 0), 5);
+  const avatar    = profile_image ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e63946&color=fff&size=150`;
 
   return (
-    <Link
-      to={`/astrologers/${id}`}
-      className="text-decoration-none h-100 d-block"
-    >
-      <div
-        className="card h-100 shadow-sm border-0"
-        style={{ transition: "box-shadow 0.2s", cursor: "pointer" }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.boxShadow =
-            "0 6px 20px rgba(0,0,0,.12)")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.boxShadow = "")
-        }
-      >
-        <div className="card-body p-3">
+    <Link to={`/astrologers/${id}`} className="text-decoration-none d-block h-100">
+      <div className="astro-card-new h-100 d-flex flex-column text-center">
 
-          {/* ── TOP ROW ─────────────────────────────── */}
-          <div className="d-flex gap-3 mb-3">
+        {/* ── Avatar + online dot ──── */}
+        <div className="astro-img-wrap mb-2 mx-auto">
+          <img src={avatar} alt={name} />
+          <span className={`online-dot ${available ? "on" : ""}`} />
+        </div>
 
-            {/* Avatar with online dot */}
-            <div className="position-relative flex-shrink-0">
-              {profile_image ? (
-                <img
-                  src={profile_image}
-                  alt={name}
-                  className="rounded-circle"
-                  style={{ width: 64, height: 64, objectFit: "cover" }}
-                />
-              ) : (
-                <div
-                  className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
-                  style={{ width: 64, height: 64, fontSize: 22 }}
-                >
-                  {name?.[0]?.toUpperCase()}
-                </div>
-              )}
-              {/* Online indicator */}
-              <span
-                className={`position-absolute bottom-0 end-0 rounded-circle border border-2 border-white ${
-                  available ? "bg-success" : "bg-secondary"
-                }`}
-                style={{ width: 14, height: 14 }}
-                title={available ? "Available Now" : "Offline"}
-              />
-            </div>
+        {/* ── Name ────────────────── */}
+        <h6 className="fw-bold mb-1 text-dark">{name}</h6>
 
-            {/* Info */}
-            <div className="flex-grow-1 overflow-hidden">
-              <h6 className="fw-bold mb-0 text-dark text-truncate">{name}</h6>
-              <div className="text-primary small fw-semibold mb-1">
-                {expertise}
-              </div>
-              <div className="text-muted small">{experience} yrs experience</div>
-              {/* Rating */}
-              <div className="d-flex align-items-center gap-1 mt-1">
-                <span className="text-warning" style={{ fontSize: 13 }}>★</span>
-                <span className="fw-semibold small text-dark">
-                  {rating.toFixed(1)}
-                </span>
-                <span className="text-muted small">({total_reviews})</span>
-              </div>
-            </div>
-          </div>
+        {/* ── Expertise ───────────── */}
+        <p className="text-muted small mb-1">
+          {expertise || "Astrology Expert"}
+        </p>
 
-          {/* ── LANGUAGES ───────────────────────────── */}
-          <div className="d-flex flex-wrap gap-1 mb-2">
-            {languages.slice(0, 3).map((lang) => (
-              <span
-                key={lang}
-                className="badge bg-light text-dark border"
-                style={{ fontSize: 11 }}
-              >
-                {lang}
-              </span>
+        {/* ── Rating ──────────────── */}
+        <div className="rating-stars mb-1">
+          {"★".repeat(stars)}
+          <span className="text-muted">{"☆".repeat(5 - stars)}</span>
+        </div>
+        <div className="small text-muted mb-1">
+          {rating.toFixed(1)} rating
+          {total_reviews > 0 && <span className="ms-1">({total_reviews})</span>}
+        </div>
+
+        {/* ── Experience ──────────── */}
+        <div className="small text-muted mb-2">
+          {experience}+ years experience
+        </div>
+
+        {/* ── Languages ───────────── */}
+        {languages.length > 0 && (
+          <div className="d-flex flex-wrap gap-1 mb-2 justify-content-center">
+            {languages.slice(0, 3).map((l) => (
+              <span key={l} className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{l}</span>
             ))}
             {languages.length > 3 && (
-              <span
-                className="badge bg-light text-muted border"
-                style={{ fontSize: 11 }}
-              >
-                +{languages.length - 3}
-              </span>
+              <span className="badge bg-light text-muted border" style={{ fontSize: 10 }}>+{languages.length - 3}</span>
             )}
           </div>
+        )}
 
-          {/* ── FOOTER ──────────────────────────────── */}
-          <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-1">
-            <div>
-              <span className="fw-bold text-dark fs-6">
-                ₹{price_per_minute}
-              </span>
-              <span className="text-muted small">/min</span>
+        {/* ── Footer ──────────────── */}
+        <div className="mt-auto pt-2 border-top">
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="price mb-0">
+              ₹{price_per_minute}
+              <span className="text-muted small fw-normal">/min</span>
             </div>
-            <div className="d-flex gap-1 align-items-center">
-              {/* Consultation type */}
-              <span
-                className="badge bg-light text-primary border"
-                style={{ fontSize: 11 }}
-              >
-                <i
-                  className={`fas ${
-                    CONSULT_ICONS[consultation_type] ?? "fa-th-large"
-                  } me-1`}
-                />
-                {CONSULT_LABELS[consultation_type] ?? "All"}
+            <div className="d-flex gap-1">
+              <span className="badge bg-light text-primary border" style={{ fontSize: 10 }}>
+                <i className={`fas ${CONSULT_ICONS[consultation_type] ?? "fa-th-large"} me-1`} />
+                {consultation_type === "all" ? "All" : consultation_type}
               </span>
-              {/* Status */}
-              <span
-                className={`badge ${
-                  available ? "bg-success" : "bg-secondary"
-                }`}
-                style={{ fontSize: 11 }}
-              >
+              <span className={`badge ${available ? "bg-success" : "bg-secondary"}`} style={{ fontSize: 10 }}>
                 {available ? "Online" : "Offline"}
               </span>
             </div>
           </div>
-
         </div>
+
       </div>
     </Link>
   );

@@ -1,12 +1,8 @@
 // PATH: src/admin/features/astrologers/AstrologersPage.tsx
-// FIX: Old hook names replace kiye:
-//   useGetAdminAstrologersQuery     → useAdminGetAstrologersQuery
-//   useCreateAstrologerMutation     → useAdminCreateAstrologerMutation
-//   useUpdateAstrologerMutation     → useAdminUpdateAstrologerMutation
-//   useDeleteAstrologerMutation     → useAdminDeleteAstrologerMutation
-//   + restore, verify mutations add kiye
-//   + search, filter bar add kiya
-//   + correct permissions (astrologer-* not user-*)
+// FIX: renderRow signature correct kiya — (item: Astrologer, actions: RowAction[])
+//      CrudTable renderRow(item, actions) call karta hai
+//      actions = RowAction[] — edit/delete/restore already included by CrudTable
+//      verify button ko actions array mein push karke RowActions component se render kiya
 
 import { useState } from "react";
 import {
@@ -18,14 +14,12 @@ import {
   useAdminVerifyAstrologerMutation,
 } from "../../../store/api/astrologer.api";
 import AdminCrudPage from "../../components/crud/AdminCrudPage";
-import Can from "../../../components/auth/Can";
+import RowActions from "../../../components/table/RowActions";
 import { PERMISSIONS } from "../../../constants/rbac";
 import type { Astrologer, FieldConfig } from "../../../types/models";
 import { toast } from "react-toastify";
 
-/* =====================================================
- | FORM FIELDS
- ===================================================== */
+/* ─── Form config ─────────────────────────────────── */
 const INITIAL_VALUES: Partial<Astrologer> = {
   name:              "",
   email:             "",
@@ -58,9 +52,7 @@ const FIELDS: FieldConfig<Partial<Astrologer>>[] = [
   },
 ];
 
-/* =====================================================
- | MAIN PAGE
- ===================================================== */
+/* ─── Main Page ───────────────────────────────────── */
 export default function AstrologersPage() {
   const [search,   setSearch]   = useState("");
   const [verified, setVerified] = useState("");
@@ -78,16 +70,17 @@ export default function AstrologersPage() {
 
   const astrologers = data?.data ?? [];
 
-  const handleVerify = async (id: number, currentState: boolean) => {
+  const handleVerify = async (id: number, isVerified: boolean) => {
     try {
       await verify(id).unwrap();
-      toast.success(currentState ? "Verification revoked" : "Astrologer verified!");
+      toast.success(isVerified ? "Verification revoked" : "Astrologer verified!");
+      refetch();
     } catch {
       toast.error("Action failed. Please try again.");
     }
   };
 
-  /* ── COLUMNS ─────────────────────────────────────── */
+  /* ─── Columns ────────────────────────────────────── */
   const columns = (
     <tr>
       <th>#</th>
@@ -97,126 +90,96 @@ export default function AstrologersPage() {
       <th>Price/Min</th>
       <th>Rating</th>
       <th>Online</th>
-      <th>Verified</th>
+      <th>Status</th>
       <th className="text-end pe-3">Actions</th>
     </tr>
   );
 
-  /* ── ROW ─────────────────────────────────────────── */
-  const renderRow = (
-    a: Astrologer,
-    onEdit:    (item: Astrologer) => void,
-    onDelete:  (item: Astrologer) => void,
-    onRestore: (item: Astrologer) => void
-  ) => (
-    <tr key={a.id} className={a.deleted_at ? "table-secondary opacity-75" : ""}>
-      <td className="text-muted small">{a.id}</td>
+  /* ─── renderRow ──────────────────────────────────────
+   * SIGNATURE: (item: Astrologer, actions: RowAction[])
+   * CrudTable calls: renderRow(item, actions)
+   * actions[] already has: edit, delete/restore from CrudTable
+   * We inject verify as an extra RowAction here
+   ──────────────────────────────────────────────────── */
+  const renderRow = (a: Astrologer, actions: any[]) => {
+    const verifyAction = {
+      key:     "verify",
+      icon:    a.is_verified ? "fas fa-check-circle" : "fas fa-circle",
+      title:   a.is_verified ? "Click to revoke verification" : "Click to verify",
+      variant: (a.is_verified ? "success" : "secondary") as any,
+      show:    !a.deleted_at,
+      onClick: () => handleVerify(a.id, a.is_verified),
+    };
 
-      <td>
-        <div className="d-flex align-items-center gap-2">
-          {a.profile_image ? (
-            <img
-              src={a.profile_image}
-              alt={a.name}
-              className="rounded-circle flex-shrink-0"
-              style={{ width: 34, height: 34, objectFit: "cover" }}
-            />
-          ) : (
-            <div
-              className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-              style={{ width: 34, height: 34, fontSize: 13 }}
-            >
-              {a.name?.[0]?.toUpperCase()}
-            </div>
-          )}
-          <div>
-            <div className="fw-semibold small">{a.name}</div>
-            <div className="text-muted" style={{ fontSize: 11 }}>{a.email}</div>
-          </div>
-        </div>
-      </td>
+    // inject verify before edit/delete
+    const allActions = [verifyAction, ...actions];
 
-      <td>
-        <span className="badge bg-primary-subtle text-primary border">
-          {a.expertise}
-        </span>
-      </td>
-      <td className="small">{a.experience} yrs</td>
-      <td className="small">₹{a.price_per_minute}</td>
+    return (
+      <tr key={a.id} className={a.deleted_at ? "table-secondary opacity-75" : ""}>
+        <td className="text-muted small">{a.id}</td>
 
-      <td>
-        <div className="d-flex align-items-center gap-1">
-          <span className="text-warning small">★</span>
-          <span className="fw-semibold small">{a.rating?.toFixed(1)}</span>
-          <span className="text-muted" style={{ fontSize: 11 }}>
-            ({a.total_reviews})
-          </span>
-        </div>
-      </td>
-
-      <td>
-        <span className={`badge ${a.is_online ? "bg-success" : "bg-secondary"}`}>
-          {a.is_online ? "Online" : "Offline"}
-        </span>
-      </td>
-
-      <td>
-        <Can permission={PERMISSIONS.ASTROLOGER.VERIFY}>
-          <button
-            className={`btn btn-sm ${a.is_verified ? "btn-success" : "btn-outline-secondary"}`}
-            style={{ fontSize: 11, padding: "2px 10px" }}
-            onClick={() => handleVerify(a.id, a.is_verified)}
-            title={a.is_verified ? "Click to revoke" : "Click to verify"}
-          >
-            {a.is_verified ? (
-              <><i className="fas fa-check me-1" />Verified</>
+        {/* Avatar + Name */}
+        <td>
+          <div className="d-flex align-items-center gap-2">
+            {a.profile_image ? (
+              <img
+                src={a.profile_image}
+                alt={a.name}
+                className="rounded-circle flex-shrink-0"
+                style={{ width: 34, height: 34, objectFit: "cover" }}
+              />
             ) : (
-              "Unverified"
-            )}
-          </button>
-        </Can>
-      </td>
-
-      <td className="text-end pe-3">
-        <div className="d-flex gap-1 justify-content-end">
-          {a.deleted_at ? (
-            <Can permission={PERMISSIONS.ASTROLOGER.RESTORE}>
-              <button
-                className="btn btn-sm btn-outline-success"
-                title="Restore"
-                onClick={() => onRestore(a)}
+              <div
+                className="rounded-circle bg-primary text-white d-flex align-items-center
+                            justify-content-center fw-bold flex-shrink-0"
+                style={{ width: 34, height: 34, fontSize: 13 }}
               >
-                <i className="fas fa-undo" />
-              </button>
-            </Can>
-          ) : (
-            <>
-              <Can permission={PERMISSIONS.ASTROLOGER.UPDATE}>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  title="Edit"
-                  onClick={() => onEdit(a)}
-                >
-                  <i className="fas fa-edit" />
-                </button>
-              </Can>
-              <Can permission={PERMISSIONS.ASTROLOGER.DELETE}>
-                <button
-                  className="btn btn-sm btn-outline-danger"
-                  title="Delete"
-                  onClick={() => onDelete(a)}
-                >
-                  <i className="fas fa-trash" />
-                </button>
-              </Can>
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
+                {a.name?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="fw-semibold small">{a.name}</div>
+              <div className="text-muted" style={{ fontSize: 11 }}>{a.email}</div>
+            </div>
+          </div>
+        </td>
 
-  /* ── SEARCH + FILTER BAR ─────────────────────────── */
+        <td>
+          <span className="badge bg-primary-subtle text-primary border">{a.expertise}</span>
+        </td>
+        <td className="small">{a.experience} yrs</td>
+        <td className="small">₹{a.price_per_minute}</td>
+
+        {/* Rating */}
+        <td>
+          <span className="text-warning small">★ </span>
+          <span className="fw-semibold small">{a.rating?.toFixed(1)}</span>
+          <span className="text-muted" style={{ fontSize: 11 }}> ({a.total_reviews})</span>
+        </td>
+
+        {/* Online */}
+        <td>
+          <span className={`badge ${a.is_online ? "bg-success" : "bg-secondary"}`}>
+            {a.is_online ? "Online" : "Offline"}
+          </span>
+        </td>
+
+        {/* Verified badge */}
+        <td>
+          <span className={`badge ${a.is_verified ? "bg-success" : "bg-warning text-dark"}`}>
+            {a.is_verified ? "✓ Verified" : "Unverified"}
+          </span>
+        </td>
+
+        {/* Actions — verify + edit/delete/restore */}
+        <td className="text-end pe-3">
+          <RowActions actions={allActions} />
+        </td>
+      </tr>
+    );
+  };
+
+  /* ─── Top filter bar ─────────────────────────────── */
   const topContent = (
     <div className="card mb-3">
       <div className="card-body py-2">
@@ -250,7 +213,7 @@ export default function AstrologersPage() {
               value={verified}
               onChange={(e) => setVerified(e.target.value)}
             >
-              <option value="">All (Verified &amp; Unverified)</option>
+              <option value="">All Astrologers</option>
               <option value="true">Verified Only</option>
               <option value="false">Unverified Only</option>
             </select>
@@ -263,32 +226,16 @@ export default function AstrologersPage() {
     </div>
   );
 
-  /* ── RENDER ──────────────────────────────────────── */
+  /* ─── Render ──────────────────────────────────────── */
   return (
     <AdminCrudPage<Astrologer>
       entity="Astrologer"
       query={{ data: astrologers, isLoading, isError, refetch }}
       mutations={{
-        create: [
-          async (d: Partial<Astrologer>) => {
-            await create(d).unwrap();
-          },
-        ],
-        update: [
-          async (d: Partial<Astrologer> & { id: number }) => {
-            await update({ id: d.id, data: d }).unwrap();
-          },
-        ],
-        delete: [
-          async (id: number) => {
-            await remove(id).unwrap();
-          },
-        ],
-        restore: [
-          async (id: number) => {
-            await restore(id).unwrap();
-          },
-        ],
+        create:  [async (d: Partial<Astrologer>) => { await create(d).unwrap(); }],
+        update:  [async (d: Partial<Astrologer> & { id: number }) => { await update({ id: d.id, data: d }).unwrap(); }],
+        delete:  [async (id: number) => { await remove(id).unwrap(); }],
+        restore: [async (id: number) => { await restore(id).unwrap(); }],
       }}
       columns={columns}
       fields={FIELDS}
