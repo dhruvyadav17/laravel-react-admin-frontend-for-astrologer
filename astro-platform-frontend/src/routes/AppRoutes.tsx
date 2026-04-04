@@ -1,20 +1,22 @@
-import { useRoutes, Navigate } from "react-router-dom";
+// =====================================================
+// PATH: src/routes/AppRoutes.tsx
+// =====================================================
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import { adminRoutes }      from "../admin/routes/admin.routes";
+import { authRoutes }       from "./auth.routes";
+import { userRoutes }       from "../user/routes/user.routes";
+import { astrologerRoutes } from "../astrologer/routes/astrologer.routes";
+import { errorRoutes }      from "./error.routes";
 
-import { authRoutes } from "./auth.routes";
-import { adminRoutes } from "../admin/routes/admin.routes";
-import { userRoutes } from "../user/routes/user.routes";
-import { errorRoutes } from "./error.routes";
+const router = createBrowserRouter([
+  authRoutes,
+  userRoutes,
+  astrologerRoutes,
+  adminRoutes,
+  errorRoutes,
+  { path: "*", element: <Navigate to="/404" replace /> },
+]);
 
 export default function AppRoutes() {
-  return useRoutes([
-    ...authRoutes,     // ✅ login routes
-    ...userRoutes,     // ✅ frontend user panel
-    ...adminRoutes,    // ✅ admin panel
-    ...errorRoutes,    // ✅ error pages
-
-    {
-      path: "*",
-      element: <Navigate to="/" replace />,
-    },
-  ]);
+  return <RouterProvider router={router} />;
 }

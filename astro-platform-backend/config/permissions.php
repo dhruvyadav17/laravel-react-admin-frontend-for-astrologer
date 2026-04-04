@@ -1,27 +1,19 @@
 <?php
+// PATH: config/permissions.php
+// UPDATE: astrologer group add kiya with verify + restore
+// REASON: astrologer-verify, astrologer-restore pehle missing the.
+//         Frontend RBAC constants se sync hona chahiye.
 
 return [
-
     'user' => [
-        'user-view',
-        'user-create',
-        'user-update',
-        'user-delete',
-        'user-assign-role',
-        'user-assign-permission',
-        'user-restore',
+        'user-view','user-create','user-update','user-delete',
+        'user-restore','user-assign-role','user-assign-permission',
     ],
-
-    'role' => [
-        'role-manage',
+    // NEW: astrologer permissions group
+    'astrologer' => [
+        'astrologer-view','astrologer-create','astrologer-update',
+        'astrologer-delete','astrologer-restore','astrologer-verify',
     ],
-
-    'permission' => [
-        'permission-manage',
-    ],
-
-    'system' => [
-        'admin-impersonate',
-    ],
-
+    'rbac'      => ['role-manage','permission-manage'],
+    'dashboard' => ['dashboard-view'],
 ];

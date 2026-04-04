@@ -1,9 +1,12 @@
 <?php
+// PATH: database/seeders/UserSeeder.php
+// UPDATE: AstrologerFactory use kiya, consultation_type/is_available add kiye, 5 factory astrologers
+// REASON: Pehle hardcoded 1 astrologer tha. Factory se realistic seed data milti hai.
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Astrologer;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,62 +14,58 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ================= NORMAL USERS =================
-        User::factory(10)->create();
+        // ── 10 random customers ─────────────────────────────────
+        User::factory(10)->customer()->create();
 
-        // ================= ASTROLOGER =================
-        $user = User::updateOrCreate(
+        // ── Main test astrologer (deterministic email) ───────────
+        $aUser = User::updateOrCreate(
             ['email' => 'astrologer@test.com'],
             [
-                'name' => 'Astrologer User',
-                'password' => Hash::make('password'),
+                'name'              => 'Rajesh Sharma',
+                'password'          => Hash::make('password'),
                 'email_verified_at' => now(),
-
-                // 🔥 USER LEVEL (ONLY BASIC)
-                'profile_image' => 'https://images.unsplash.com/photo-1607746882042-944635dfe10e',
-                'is_verified' => true,
+                'profile_image'     => 'https://i.pravatar.cc/150?u=rajesh',
+                'is_verified'       => true,
             ]
         );
+        $aUser->syncRoles('astrologer');
 
-        // assign role
-        $user->assignRole('astrologer');
-
-        // 🔥 CREATE ASTROLOGER PROFILE
         Astrologer::updateOrCreate(
-            ['user_id' => $user->id],
+            ['user_id' => $aUser->id],
             [
-                'experience' => 5,
-                'price_per_minute' => 20,
-                'bio' => 'Expert astrologer with 5+ years experience',
-                'expertise' => 'Vedic Astrology',
-
-                'languages' => ['Hindi', 'English'],
-                'skills' => ['Kundli', 'Palmistry'],
-
-                'rating' => 4.5,
-                'total_reviews' => 120,
-
-                'is_online' => true,
-                'is_verified' => true,
-
-                'profile_image' => 'https://images.unsplash.com/photo-1607746882042-944635dfe10e',
-                'gallery' => [
-                    'https://images.unsplash.com/photo-1',
-                    'https://images.unsplash.com/photo-2',
-                ],
+                'experience'          => 10,
+                'price_per_minute'    => 25,
+                'bio'                 => 'Expert Vedic astrologer with 10+ years of experience in Kundli, Match Making, and Career guidance.',
+                'expertise'           => 'Vedic Astrology',
+                'languages'           => ['Hindi', 'English'],
+                'skills'              => ['Kundli', 'Match Making', 'Career', 'Love'],
+                'consultation_type'   => 'all',   // NEW FIELD
+                'rating'              => 4.8,
+                'total_reviews'       => 256,
+                'total_consultations' => 1200,    // NEW FIELD
+                'is_online'           => true,
+                'is_available'        => true,    // NEW FIELD
+                'is_verified'         => true,
+                'profile_image'       => 'https://i.pravatar.cc/150?u=rajesh',
+                'gallery'             => [],
             ]
         );
 
-        // ================= CUSTOMER =================
-        $customer = User::updateOrCreate(
+        // ── 5 factory astrologers (realistic data) ───────────────
+        // NEW: Factory se realistic test astrologers
+        User::factory(5)->astrologer()->create()->each(function ($user) {
+            \App\Models\Astrologer::factory()->create(['user_id' => $user->id]);
+        });
+
+        // ── Test customer ────────────────────────────────────────
+        $cUser = User::updateOrCreate(
             ['email' => 'user@test.com'],
             [
-                'name' => 'Customer User',
-                'password' => Hash::make('password'),
+                'name'              => 'Test Customer',
+                'password'          => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
-
-        $customer->assignRole('user');
+        $cUser->syncRoles('user');
     }
 }

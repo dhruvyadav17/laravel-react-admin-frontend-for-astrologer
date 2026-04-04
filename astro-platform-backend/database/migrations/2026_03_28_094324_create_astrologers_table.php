@@ -42,7 +42,7 @@ return new class extends Migration
             // 🟢 STATUS
             $table->boolean('is_online')->default(false);
             $table->boolean('is_verified')->default(false);
-
+            $table->softDeletes();
             // ⏱️ META
             $table->timestamps();
 

@@ -1,25 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
 
 import App from "./App";
+import { Provider } from "react-redux";
 import { store } from "./store";
 import { setStore } from "./store/storeAccessor";
-
-import ErrorBoundary from "./components/feedback/ErrorBoundary";
-
 import { listenAuthEvents } from "./utils/authEvents";
 import { logoutThunk } from "./store/authSlice";
+import ErrorBoundary from "./components/feedback/ErrorBoundary";
 
-/* ===== CSS ORDER (DON'T CHANGE) ===== */
+/* ── CSS order — DO NOT CHANGE ─── */
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-
-/* ===== JS ===== */
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
-/* ===== TOAST ===== */
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./admin/styles/adminlte-sidebar-fix.css";
@@ -31,17 +24,22 @@ listenAuthEvents(() => {
   window.location.replace("/login");
 });
 
+// ❌ NO <BrowserRouter> here
+// ✅ AppRoutes already uses createBrowserRouter + RouterProvider internally
+// Wrapping with BrowserRouter causes: "You cannot render a <Router> inside another <Router>"
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
-        <BrowserRouter>
-          <App />
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-          />
-        </BrowserRouter>
+        <App />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+        />
       </Provider>
     </ErrorBoundary>
   </React.StrictMode>

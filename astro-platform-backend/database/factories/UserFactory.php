@@ -1,32 +1,51 @@
 <?php
+// PATH: database/factories/UserFactory.php
+// UPDATE — astrologer() aur customer() states add kiye
+// REASON: Sirf admin() state tha. AstrologerFactory ke liye astrologer() state chahiye tha.
 
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => Hash::make('password'),
-            'remember_token' => str()->random(10),
-            'is_active' => true,
+            'name'               => fake()->name(),
+            'email'              => fake()->unique()->safeEmail(),
+            'email_verified_at'  => now(),
+            'password'           => Hash::make('password'),
+            'remember_token'     => str()->random(10),
+            'is_active'          => true,
+            'is_verified'        => false,
+            'profile_image'      => 'https://i.pravatar.cc/150?u='.fake()->unique()->userName(),
         ];
     }
 
-    /**
-     * 🔥 ADMIN USER
-     */
+    /** Admin user — was already present, kept */
     public function admin(): static
     {
-        return $this->afterCreating(function ($user) {
-            $user->assignRole('admin');
-        });
+        return $this->afterCreating(fn($u) => $u->assignRole('admin'));
+    }
+
+    /** NEW: Astrologer user — needed for AstrologerFactory */
+    public function astrologer(): static
+    {
+        return $this->state(['is_verified' => true])
+            ->afterCreating(fn($u) => $u->assignRole('astrologer'));
+    }
+
+    /** NEW: Regular customer */
+    public function customer(): static
+    {
+        return $this->afterCreating(fn($u) => $u->assignRole('user'));
+    }
+
+    /** NEW: Unverified email */
+    public function unverified(): static
+    {
+        return $this->state(['email_verified_at' => null]);
     }
 }

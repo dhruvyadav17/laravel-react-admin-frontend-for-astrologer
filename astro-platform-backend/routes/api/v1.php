@@ -1,165 +1,109 @@
 <?php
+// PATH: routes/api/v1.php  MAJOR UPDATE
+// CHANGES: astrologer portal routes, reviews endpoint, fix permissions user-*→astrologer-*, restore+verify
 
+use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\AstrologerController as AdminAstrologerController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\SidebarController;
+use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\App\AstrologerController;
+use App\Http\Controllers\Api\Astrologer\ProfileController as AstrologerProfileController;
+use App\Http\Controllers\Api\Auth\EmailVerificationController;
+use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\LogoutController;
+use App\Http\Controllers\Api\Auth\ProfileController;
+use App\Http\Controllers\Api\Auth\RefreshTokenController;
+use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\Password\ForgotPasswordController;
+use App\Http\Controllers\Api\Password\ResetPasswordController;
 use Illuminate\Support\Facades\Route;
 
-/* ================= AUTH ================= */
-use App\Http\Controllers\Api\Auth\{
-    RegisterController,
-    LoginController,
-    ProfileController,
-    LogoutController,
-    EmailVerificationController,
-    RefreshTokenController
-};
-
-use App\Http\Controllers\Api\Password\{
-    ForgotPasswordController,
-    ResetPasswordController
-};
-
-/* ================= ADMIN ================= */
-use App\Http\Controllers\Api\Admin\{
-    UserController,
-    SidebarController,
-    DashboardController,
-    AdminUserController,
-    AstrologerController as AdminAstrologerController
-};
-
-use App\Http\Controllers\Api\{
-    RoleController,
-    PermissionController
-};
-
-/* ================= APP ================= */
-use App\Http\Controllers\Api\App\AstrologerController;
 
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC ROUTES
-|--------------------------------------------------------------------------
-*/
+Route::prefix('v1')->group(function () {
 
-Route::post('/register', RegisterController::class);
-Route::post('/login', LoginController::class);
-Route::post('/forgot-password', ForgotPasswordController::class);
-Route::post('/reset-password', ResetPasswordController::class);
-Route::post('/refresh-token', RefreshTokenController::class);
+    /* ── PUBLIC ────────────────────────────────────────────── */
+    Route::post('/login',           LoginController::class);
+    Route::post('/register',        RegisterController::class);
+    Route::post('/forgot-password', ForgotPasswordController::class);
+    Route::post('/reset-password',  ResetPasswordController::class);
+    Route::post('/token/refresh',   RefreshTokenController::class);
 
+    Route::get('/astrologers',              [AstrologerController::class, 'index']);
+    Route::get('/astrologers/{id}',         [AstrologerController::class, 'show']);
+    Route::get('/astrologers/{id}/reviews', [AstrologerController::class, 'reviews']); // NEW
 
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATED ROUTES
-|--------------------------------------------------------------------------
-*/
+    /* ── AUTHENTICATED ─────────────────────────────────────── */
+    Route::middleware('auth:sanctum')->group(function () {
 
-Route::middleware('auth:sanctum')->group(function () {
-
-    /*
-    |--------------------------------------------------------------------------
-    | FRONTEND (APP)
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('app')->group(function () {
-
-        /* ================= PROFILE ================= */
-        Route::get('/profile', ProfileController::class);
         Route::post('/logout', LogoutController::class);
-
-        /* ================= EMAIL ================= */
+        Route::get('/me',      ProfileController::class);
         Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify']);
-        Route::post('/email/resend', [EmailVerificationController::class, 'resend']);
+        Route::post('/email/resend',            [EmailVerificationController::class, 'resend']);
 
-        /* ================= ASTROLOGERS ================= */
-        Route::get('/astrologers', [AstrologerController::class, 'index']);
-        Route::get('/astrologers/{id}', [AstrologerController::class, 'show']);
-    });
+        // Submit review – role:user only NEW
+        Route::post('/astrologers/{id}/reviews', [AstrologerController::class, 'submitReview'])
+            ->middleware('role:user');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN PANEL
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('admin')->name('admin.')->group(function () {
-
-        /* ================= DASHBOARD ================= */
-        Route::get('/sidebar', SidebarController::class);
-        Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
-
-        /* ================= CREATE ADMIN ================= */
-        Route::post('/admins', [AdminUserController::class, 'store'])
-            ->middleware('permission:role-manage');
-
-        /* ================= USERS ================= */
-        Route::prefix('users')->group(function () {
-
-            Route::get('/', [UserController::class, 'index'])
-                ->middleware('permission:user-view');
-
-            Route::post('/', [UserController::class, 'store'])
-                ->middleware('permission:user-create');
-
-            Route::put('/{user}', [UserController::class, 'update'])
-                ->middleware('permission:user-update');
-
-            Route::delete('/{user}', [UserController::class, 'destroy'])
-                ->middleware('permission:user-delete');
-
-            Route::patch('/{id}/restore', [UserController::class, 'restore'])
-                ->middleware('permission:user-restore');
-
-            Route::post('/{user}/assign-role', [UserController::class, 'assignRole'])
-                ->middleware('permission:user-assign-role');
-
-            Route::post('/{user}/permissions', [UserController::class, 'assignPermissions'])
-                ->middleware('permission:user-assign-permission');
-
-            Route::get('/{user}/permissions', [UserController::class, 'permissions'])
-                ->middleware('permission:user-view');
+        /* ── ASTROLOGER PORTAL (NEW) ─────────────────────────*/
+        Route::prefix('astrologer')->middleware('role:astrologer')->name('astrologer.')->group(function () {
+            Route::get('/me',                [AstrologerProfileController::class, 'me']);
+            Route::patch('/me',              [AstrologerProfileController::class, 'update']);
+            Route::patch('/me/availability', [AstrologerProfileController::class, 'toggleAvailability']);
+            Route::get('/me/reviews',        [AstrologerProfileController::class, 'myReviews']);
+            Route::get('/me/stats',          [AstrologerProfileController::class, 'stats']);
+            Route::get('/me/schedule',       [AstrologerProfileController::class, 'schedule']);
+            Route::post('/me/schedule',      [AstrologerProfileController::class, 'saveSchedule']);
         });
 
-        /* ================= ASTROLOGERS (🔥 NEW) ================= */
-        Route::prefix('astrologers')->group(function () {
+        /* ── ADMIN ───────────────────────────────────────────*/
+        Route::prefix('admin')->name('admin.')->group(function () {
 
-            Route::get('/', [AdminAstrologerController::class, 'index'])
-                ->middleware('permission:user-view');
+            Route::get('/sidebar',         SidebarController::class);
+            Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+            Route::post('/admins',         [AdminUserController::class, 'store'])
+                ->middleware('permission:role-manage');
 
-            Route::post('/', [AdminAstrologerController::class, 'store'])
-                ->middleware('permission:user-create');
+            Route::prefix('users')->group(function () {
+                Route::get('/',                    [UserController::class, 'index'])->middleware('permission:user-view');
+                Route::post('/',                   [UserController::class, 'store'])->middleware('permission:user-create');
+                Route::put('/{user}',              [UserController::class, 'update'])->middleware('permission:user-update');
+                Route::delete('/{user}',           [UserController::class, 'destroy'])->middleware('permission:user-delete');
+                Route::patch('/{id}/restore',      [UserController::class, 'restore'])->middleware('permission:user-restore');
+                Route::post('/{user}/assign-role', [UserController::class, 'assignRole'])->middleware('permission:user-assign-role');
+                Route::post('/{user}/permissions', [UserController::class, 'assignPermissions'])->middleware('permission:user-assign-permission');
+                Route::get('/{user}/permissions',  [UserController::class, 'permissions'])->middleware('permission:user-view');
+            });
 
-            Route::put('/{astrologer}', [AdminAstrologerController::class, 'update'])
-                ->middleware('permission:user-update');
+            // FIXED: user-* → astrologer-* permissions; added restore+verify
+            Route::prefix('astrologers')->group(function () {
+                Route::get('/',                      [AdminAstrologerController::class, 'index'])->middleware('permission:astrologer-view');
+                Route::post('/',                     [AdminAstrologerController::class, 'store'])->middleware('permission:astrologer-create');
+                Route::put('/{astrologer}',          [AdminAstrologerController::class, 'update'])->middleware('permission:astrologer-update');
+                Route::delete('/{astrologer}',       [AdminAstrologerController::class, 'destroy'])->middleware('permission:astrologer-delete');
+                Route::patch('/{id}/restore',        [AdminAstrologerController::class, 'restore'])->middleware('permission:astrologer-restore'); // NEW
+                Route::patch('/{astrologer}/verify', [AdminAstrologerController::class, 'verify'])->middleware('permission:astrologer-verify');   // NEW
+            });
 
-            Route::delete('/{astrologer}', [AdminAstrologerController::class, 'destroy'])
-                ->middleware('permission:user-delete');
-        });
-
-        /* ================= ROLES ================= */
-        Route::prefix('roles')
-            ->middleware('permission:role-manage')
-            ->group(function () {
-
-                Route::get('/', [RoleController::class, 'index']);
-                Route::post('/', [RoleController::class, 'store']);
-                Route::put('/{role}', [RoleController::class, 'update']);
-                Route::delete('/{role}', [RoleController::class, 'destroy']);
-
-                Route::get('/{role}/permissions', [RoleController::class, 'permissions']);
+            Route::prefix('roles')->middleware('permission:role-manage')->group(function () {
+                Route::get('/',                    [RoleController::class, 'index']);
+                Route::post('/',                   [RoleController::class, 'store']);
+                Route::put('/{role}',              [RoleController::class, 'update']);
+                Route::delete('/{role}',           [RoleController::class, 'destroy']);
+                Route::get('/{role}/permissions',  [RoleController::class, 'permissions']);
                 Route::post('/{role}/permissions', [RoleController::class, 'assignPermissions']);
             });
 
-        /* ================= PERMISSIONS ================= */
-        Route::prefix('permissions')
-            ->middleware('permission:permission-manage')
-            ->group(function () {
-
-                Route::get('/', [PermissionController::class, 'index']);
-                Route::post('/', [PermissionController::class, 'store']);
-                Route::get('/{permission}', [PermissionController::class, 'show']);
-                Route::put('/{permission}', [PermissionController::class, 'update']);
-                Route::delete('/{permission}', [PermissionController::class, 'destroy']);
+            Route::prefix('permissions')->middleware('permission:permission-manage')->group(function () {
+                Route::get('/',               [PermissionController::class, 'index']);
+                Route::post('/',              [PermissionController::class, 'store']);
+                Route::get('/{permission}',   [PermissionController::class, 'show']);
+                Route::put('/{permission}',   [PermissionController::class, 'update']);
+                Route::delete('/{permission}',[PermissionController::class, 'destroy']);
             });
+        });
     });
 });

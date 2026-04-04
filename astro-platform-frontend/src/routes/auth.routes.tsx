@@ -1,19 +1,17 @@
-import AuthLayout from "../auth/layouts/AuthLayout";
-import LoginForm from "../auth/LoginForm";
+import { Navigate, Outlet }  from "react-router-dom";
+import AuthLayout             from "../auth/layouts/AuthLayout";
+import Login                  from "../pages/auth/Login";
+import Register               from "../pages/auth/Register";
+import ForgotPassword         from "../pages/auth/ForgotPassword";
+import ResetPassword          from "../pages/auth/ResetPassword";
 
-export const authRoutes = [
-  {
-    element: <AuthLayout />,
-    children: [
-      {
-        path: "/login",
-        element: <LoginForm title="User Login" />,
-      },
-      {
-        path: "/admin/login",
-        element: <LoginForm title="Admin Login" />,
-      },
-      
-    ],
-  },
-];
+export const authRoutes = {
+  element: <AuthLayout />,
+  children: [
+    { path: "login",                   element: <Login /> },
+    { path: "admin/login",             element: <Login admin /> },
+    { path: "register",                element: <Register /> },
+    { path: "forgot-password",         element: <ForgotPassword /> },
+    { path: "reset-password",          element: <ResetPassword /> },
+  ],
+};
