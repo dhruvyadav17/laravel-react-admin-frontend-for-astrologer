@@ -1,75 +1,64 @@
-// src/api/axios.ts
+// PATH: src/api/axios.ts
+// FIX BUG-15: 403 handler hamesha /admin/unauthorized bhejta tha
+//              User-side 403 (e.g. /profile access) → /unauthorized chahiye
+//              Admin-side 403 → /admin/unauthorized
+//              Ab currentPath check karke context-aware redirect karta hai
 
 import axios, { AxiosError } from "axios";
-import { getStore } from "../store/storeAccessor";
-import { logoutThunk } from "../store/authSlice";
+import { getStore }          from "../store/storeAccessor";
+import { logoutThunk }       from "../store/authSlice";
 
 /* =====================================================
    AXIOS INSTANCE
-   -----------------------------------------------------
-   - Used ONLY for:
-     • login
-     • register
-     • forgot / reset password
-     • email verification
-   - Refresh token is NOT handled here
+   - Used ONLY for: login, register, forgot/reset password
+   - Refresh token is handled in RTK Query baseQueryWithReauth
 ===================================================== */
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 15000,
-  headers: {
-    Accept: "application/json",
-  },
+  headers: { Accept: "application/json" },
 });
 
-/* =====================================================
-   REQUEST INTERCEPTOR
-   -----------------------------------------------------
-   - Attach token if available
-===================================================== */
-
+/* ── Request interceptor — attach token ─────────── */
 api.interceptors.request.use((config) => {
   try {
     const store = getStore();
     const token = store.getState().auth.token;
-
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   } catch {
-    // store not ready (early boot / edge case)
+    // store not ready (early boot)
   }
-
   return config;
 });
 
-/* =====================================================
-   RESPONSE INTERCEPTOR
-===================================================== */
-
+/* ── Response interceptor ───────────────────────── */
 api.interceptors.response.use(
   (res) => res,
 
   (error: AxiosError<any>) => {
     const status = error.response?.status;
 
-    /* ================= 401 → FORCE LOGOUT ================= */
+    /* 401 → force logout (axios never refreshes — RTK handles that) */
     if (status === 401) {
-      /**
-       * 🔒 RULE:
-       * - axios NEVER refreshes token
-       * - refresh handled only in RTK Query
-       *
-       * If axios gets 401 → session is invalid
-       */
       forceLogout();
     }
 
-    /* ================= 403 → UNAUTHORIZED ================= */
+    /* FIX BUG-15: 403 → context-aware redirect
+       Before: always → /admin/unauthorized (wrong for user side)
+       After:  admin path → /admin/unauthorized
+               user path  → /unauthorized                          */
     if (status === 403) {
-      if (!window.location.pathname.includes("/admin/unauthorized")) {
-        window.location.replace("/admin/unauthorized");
+      const currentPath = window.location.pathname;
+      const isAdminRoute = currentPath.startsWith("/admin");
+
+      const unauthorizedPath = isAdminRoute
+        ? "/admin/unauthorized"
+        : "/unauthorized";
+
+      if (!currentPath.includes("unauthorized")) {
+        window.location.replace(unauthorizedPath);
       }
     }
 
@@ -77,10 +66,7 @@ api.interceptors.response.use(
   }
 );
 
-/* =====================================================
-   HELPERS
-===================================================== */
-
+/* ── Force logout helper ────────────────────────── */
 function forceLogout() {
   try {
     const store = getStore();
@@ -89,19 +75,15 @@ function forceLogout() {
     // store may not be ready
   }
 
-  /* 🔥 Clear ONLY auth-related storage */
   localStorage.removeItem("token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
   localStorage.removeItem("permissions");
 
-  /* 🔁 Context-aware redirect */
   const currentPath = window.location.pathname;
-
-  const redirectTo =
-    currentPath.startsWith("/admin")
-      ? "/admin/login"
-      : "/login";
+  const redirectTo  = currentPath.startsWith("/admin")
+    ? "/admin/login"
+    : "/login";
 
   window.location.replace(redirectTo);
 }

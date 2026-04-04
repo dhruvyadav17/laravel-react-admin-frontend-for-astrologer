@@ -1,12 +1,16 @@
-import { Navigate }       from "react-router-dom";
-import AdminGuard          from "../../routes/guards/AdminGuard";
-import AdminLayout         from "../layouts/AdminLayout";
-import DashboardPage       from "../features/dashboard/DashboardPage";
-import UsersPage           from "../features/users/UsersPage";
-import AstrologersPage     from "../features/astrologers/AstrologersPage";
-import RolesPage           from "../features/roles/RolesPage";
-import PermissionsPage     from "../features/permissions/PermissionsPage";
-import AdminProfilePage    from "../features/profile/AdminProfilePage";
+// PATH: src/admin/routes/admin.routes.tsx
+// FIX: Unauthorized page mein <a href="/admin/dashboard"> tha — full page reload
+//      <Link to="/admin/dashboard"> se replace kiya
+
+import { Navigate, Link }   from "react-router-dom";
+import AdminGuard             from "../../routes/guards/AdminGuard";
+import AdminLayout            from "../layouts/AdminLayout";
+import DashboardPage          from "../features/dashboard/DashboardPage";
+import UsersPage              from "../features/users/UsersPage";
+import AstrologersPage        from "../features/astrologers/AstrologersPage";
+import RolesPage              from "../features/roles/RolesPage";
+import PermissionsPage        from "../features/permissions/PermissionsPage";
+import AdminProfilePage       from "../features/profile/AdminProfilePage";
 
 export const adminRoutes = {
   path:    "admin",
@@ -16,10 +20,10 @@ export const adminRoutes = {
       element:  <AdminLayout />,
       children: [
         { index: true,         element: <Navigate to="dashboard" replace /> },
-        { path: "dashboard",   element: <DashboardPage /> },
-        { path: "users",       element: <UsersPage /> },
+        { path: "dashboard",   element: <DashboardPage />   },
+        { path: "users",       element: <UsersPage />       },
         { path: "astrologers", element: <AstrologersPage /> },
-        { path: "roles",       element: <RolesPage /> },
+        { path: "roles",       element: <RolesPage />       },
         { path: "permissions", element: <PermissionsPage /> },
         { path: "profile",     element: <AdminProfilePage /> },
         {
@@ -32,9 +36,10 @@ export const adminRoutes = {
                 <p className="text-muted">
                   You don't have permission for this page.
                 </p>
-                <a href="/admin/dashboard" className="btn btn-primary mt-2">
+                {/* FIX: <a href> → <Link to> */}
+                <Link to="/admin/dashboard" className="btn btn-primary mt-2">
                   Back to Dashboard
-                </a>
+                </Link>
               </div>
             </div>
           ),

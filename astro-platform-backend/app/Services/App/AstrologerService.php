@@ -1,50 +1,32 @@
 <?php
 // PATH: app/Services/App/AstrologerService.php
-// SIMPLIFIED: BaseService dependency hatao, direct Eloquent use karo
+// FIX BUG-7: toggleOnline() sirf is_online toggle karta tha — is_available sync nahi hoti thi
+//             Frontend PATCH /astrologer/me/availability → { is_online, is_available } dono expect karta hai
+//             Logic: online karo → dono true; offline karo → is_online false, is_available false
+// FIX BUG-8: publicList() / adminList() mein inline query logic tha
+//             AstrologerQuery class already exist karti hai more complete logic ke saath
+//             (min_price, max_price support bhi tha jo service mein nahi tha)
+//             Ab service AstrologerQuery ko delegate karti hai — DRY, testable
 
 namespace App\Services\App;
 
 use App\Models\Astrologer;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
+use App\Queries\AstrologerQuery;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AstrologerService
 {
-    /* ── Public listing ─────────────────────────────── */
+    /* ── Public listing (delegate to AstrologerQuery) ── */
+    // FIX BUG-8: Inline filter logic hata ke AstrologerQuery use kiya
+    //             Ab min_price, max_price filters bhi kaam karenge
     public function publicList(array $filters = [])
     {
-        $q = Astrologer::with('user')
-            ->where('is_verified', true);
-
-        if (!empty($filters['online']))
-            $q->where('is_online', true)->where('is_available', true);
-
-        if (!empty($filters['expertise']))
-            $q->where('expertise', 'like', '%'.$filters['expertise'].'%');
-
-        if (!empty($filters['language']))
-            $q->whereJsonContains('languages', $filters['language']);
-
-        if (!empty($filters['min_rating']))
-            $q->where('rating', '>=', (float)$filters['min_rating']);
-
-        if (!empty($filters['consultation_type']) && $filters['consultation_type'] !== 'all')
-            $q->where(fn($s) => $s->where('consultation_type', $filters['consultation_type'])
-                ->orWhere('consultation_type', 'all'));
-
-        match ($filters['sort'] ?? 'top_rated') {
-            'price_low'  => $q->orderBy('price_per_minute'),
-            'price_high' => $q->orderByDesc('price_per_minute'),
-            'experience' => $q->orderByDesc('experience'),
-            'newest'     => $q->orderByDesc('astrologers.created_at'),
-            default      => $q->orderByDesc('rating'),
-        };
-
-        return $q->paginate(12);
+        return AstrologerQuery::publicBase($filters)->paginate(12);
     }
 
+    /* ── Public single ──────────────────────────────── */
     public function findPublic(int $id): Astrologer
     {
         return Astrologer::with('user')
@@ -52,22 +34,11 @@ class AstrologerService
             ->findOrFail($id);
     }
 
-    /* ── Admin listing ──────────────────────────────── */
+    /* ── Admin listing (delegate to AstrologerQuery) ── */
+    // FIX BUG-8: Same — AstrologerQuery.adminBase() use kiya
     public function adminList(array $filters = [])
     {
-        $q = Astrologer::withTrashed()->with('user')->latest();
-
-        if (!empty($filters['search'])) {
-            $s = '%'.$filters['search'].'%';
-            $q->whereHas('user', fn($sq) =>
-                $sq->where('name','like',$s)->orWhere('email','like',$s)
-            )->orWhere('expertise','like',$s);
-        }
-
-        if (isset($filters['is_verified']))
-            $q->where('is_verified', (bool)$filters['is_verified']);
-
-        return $q->paginate(15);
+        return AstrologerQuery::adminBase($filters)->paginate(15);
     }
 
     /* ── Create with user ───────────────────────────── */
@@ -96,13 +67,18 @@ class AstrologerService
                 'skills'            => $data['skills']            ?? [],
                 'consultation_type' => $data['consultation_type'] ?? 'all',
                 'is_verified'       => true,
+                'is_available'      => true,
             ]);
 
-            return ['user' => $user, 'astrologer' => $astrologer->load('user'), 'password' => $password];
+            return [
+                'user'       => $user,
+                'astrologer' => $astrologer->load('user'),
+                'password'   => $password,
+            ];
         });
     }
 
-    /* ── Update ─────────────────────────────────────── */
+    /* ── Admin update ───────────────────────────────── */
     public function update(Astrologer $astrologer, array $data): Astrologer
     {
         return DB::transaction(function () use ($astrologer, $data) {
@@ -112,10 +88,14 @@ class AstrologerService
                     'email' => $data['email'] ?? null,
                 ]));
             }
-            $allowed = ['experience','price_per_minute','bio','expertise',
-                        'languages','skills','consultation_type','is_available',
-                        'is_verified','profile_image','gallery'];
+
+            $allowed = [
+                'experience', 'price_per_minute', 'bio', 'expertise',
+                'languages', 'skills', 'consultation_type', 'is_available',
+                'is_verified', 'profile_image', 'gallery',
+            ];
             $astrologer->update(array_intersect_key($data, array_flip($allowed)));
+
             return $astrologer->fresh(['user']);
         });
     }
@@ -123,16 +103,30 @@ class AstrologerService
     /* ── Self update (astrologer portal) ────────────── */
     public function selfUpdate(Astrologer $astrologer, array $data): Astrologer
     {
-        $allowed = ['bio','experience','price_per_minute','languages',
-                    'skills','consultation_type','profile_image','gallery','is_available'];
+        $allowed = [
+            'bio', 'experience', 'price_per_minute', 'languages',
+            'skills', 'consultation_type', 'profile_image', 'gallery', 'is_available',
+        ];
         $astrologer->update(array_intersect_key($data, array_flip($allowed)));
         return $astrologer->fresh(['user']);
     }
 
-    /* ── Toggle online ──────────────────────────────── */
+    /* ── Toggle online status ───────────────────────── */
+    // FIX BUG-7: Pehle sirf is_online toggle hota tha
+    //             is_available ka status galat rehta tha — astrologer offline tha
+    //             but is_available=true rehta tha → frontend mein "Available" dikhta tha
+    //             Ab dono sync hote hain:
+    //               Online ho  → is_online=true,  is_available=true
+    //               Offline ho → is_online=false, is_available=false
     public function toggleOnline(Astrologer $astrologer): Astrologer
     {
-        $astrologer->update(['is_online' => !$astrologer->is_online]);
+        $goingOnline = !$astrologer->is_online;
+
+        $astrologer->update([
+            'is_online'    => $goingOnline,
+            'is_available' => $goingOnline,  // FIX: sync karo
+        ]);
+
         return $astrologer->fresh();
     }
 
@@ -150,12 +144,13 @@ class AstrologerService
         ]);
     }
 
-    /* ── Delete / Restore ───────────────────────────── */
+    /* ── Soft Delete ────────────────────────────────── */
     public function delete(Astrologer $astrologer): void
     {
         $astrologer->delete();
     }
 
+    /* ── Restore ────────────────────────────────────── */
     public function restore(int $id): Astrologer
     {
         $a = Astrologer::withTrashed()->findOrFail($id);

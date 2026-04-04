@@ -1,35 +1,34 @@
-import { baseApi } from "./baseApi";
+// PATH: src/store/api/admin.api.ts
+// FIX BUG-12: getDashboardStats return type sirf { total_users: number } tha
+//              DashboardPage total_astrologers, total_consultations, revenue bhi use karta tha
+//              TypeScript mein undefined tha — runtime mein always 0
+//              Ab DashboardStats type complete hai
+
+import { baseApi }             from "./baseApi";
 import { createCrudEndpoints } from "../crudBuilder";
 import type { User, Role, Permission } from "../../types/models";
+
+/* ── Dashboard stats type ── FIX BUG-12 ────────── */
+export interface DashboardStats {
+  total_users:         number;
+  total_astrologers:   number;  // was missing
+  total_consultations: number;  // was missing
+  revenue:             number;  // was missing
+}
 
 export const adminApi = baseApi.injectEndpoints({
   overrideExisting: false,
 
   endpoints: (builder) => ({
-    /* ================= GENERIC CRUD ================= */
 
-    ...createCrudEndpoints<User>(builder, {
-      resource: "users",
-      isPaginated: true,
-    }),
+    /* ── Generic CRUD ─────────────────────────────── */
+    ...createCrudEndpoints<User>(builder,       { resource: "users",       isPaginated: true  }),
+    ...createCrudEndpoints<Role>(builder,       { resource: "roles",       isPaginated: false }),
+    ...createCrudEndpoints<Permission>(builder, { resource: "permissions", isPaginated: false }),
 
-    ...createCrudEndpoints<Role>(builder, {
-      resource: "roles",
-      isPaginated: false,
-    }),
-
-    ...createCrudEndpoints<Permission>(builder, {
-      resource: "permissions",
-      isPaginated: false,
-    }),
-
-    /* ================= USERS EXTRA ================= */
-
+    /* ── Users extra ──────────────────────────────── */
     restoreUser: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/admin/users/${id}/restore`,
-        method: "PATCH", // ✅ FIXED
-      }),
+      query: (id) => ({ url: `/admin/users/${id}/restore`, method: "PATCH" }),
       invalidatesTags: [{ type: "Users", id: "LIST" }],
     }),
 
@@ -38,9 +37,9 @@ export const adminApi = baseApi.injectEndpoints({
       { id: number; roles: string[] }
     >({
       query: ({ id, roles }) => ({
-        url: `/admin/users/${id}/assign-role`,
+        url:    `/admin/users/${id}/assign-role`,
         method: "POST",
-        body: { roles },
+        body:   { roles },
       }),
       invalidatesTags: [{ type: "Users", id: "LIST" }],
     }),
@@ -49,9 +48,9 @@ export const adminApi = baseApi.injectEndpoints({
       { permissions: Permission[]; assigned: string[] },
       number
     >({
-      query: (id) => `/admin/users/${id}/permissions`,
+      query:             (id) => `/admin/users/${id}/permissions`,
       transformResponse: (res: any) => res.data,
-      providesTags: (_r, _e, id) => [{ type: "Users", id }],
+      providesTags:      (_r, _e, id) => [{ type: "Users", id }],
     }),
 
     assignUserPermissions: builder.mutation<
@@ -59,22 +58,21 @@ export const adminApi = baseApi.injectEndpoints({
       { id: number; permissions: string[] }
     >({
       query: ({ id, permissions }) => ({
-        url: `/admin/users/${id}/permissions`,
+        url:    `/admin/users/${id}/permissions`,
         method: "POST",
-        body: { permissions },
+        body:   { permissions },
       }),
       invalidatesTags: (_r, _e, { id }) => [{ type: "Users", id }],
     }),
 
-    /* ================= ROLES ================= */
-
+    /* ── Roles extra ──────────────────────────────── */
     getRolePermissions: builder.query<
       { permissions: Permission[]; assigned: string[] },
       number
     >({
-      query: (id) => `/admin/roles/${id}/permissions`,
+      query:             (id) => `/admin/roles/${id}/permissions`,
       transformResponse: (res: any) => res.data,
-      providesTags: (_r, _e, id) => [{ type: "Roles", id }],
+      providesTags:      (_r, _e, id) => [{ type: "Roles", id }],
     }),
 
     assignRolePermissions: builder.mutation<
@@ -82,39 +80,33 @@ export const adminApi = baseApi.injectEndpoints({
       { id: number; permissions: string[] }
     >({
       query: ({ id, permissions }) => ({
-        url: `/admin/roles/${id}/permissions`,
+        url:    `/admin/roles/${id}/permissions`,
         method: "POST",
-        body: { permissions },
+        body:   { permissions },
       }),
       invalidatesTags: (_r, _e, { id }) => [{ type: "Roles", id }],
     }),
 
-    /* ================= SIDEBAR ================= */
-
+    /* ── Sidebar ──────────────────────────────────── */
     getSidebar: builder.query<any[], void>({
-      query: () => "/admin/sidebar",
+      query:             () => "/admin/sidebar",
       transformResponse: (res: any) => res.data ?? [],
-      providesTags: ["Sidebar"],
+      providesTags:      ["Sidebar"],
     }),
 
-    /* ================= DASHBOARD ================= */
-
-    getDashboardStats: builder.query<
-      { total_users: number },
-      void
-    >({
-      query: () => "/admin/dashboard/stats",
+    /* ── Dashboard stats — FIX BUG-12 ────────────── */
+    // BEFORE: { total_users: number } — incomplete type
+    // AFTER:  DashboardStats — all 4 fields typed
+    getDashboardStats: builder.query<DashboardStats, void>({
+      query:             () => "/admin/dashboard/stats",
       transformResponse: (res: any) => res.data ?? {},
+      providesTags:      ["Dashboard"],
     }),
   }),
 });
 
-/* ======================================================
-   EXPORT HOOKS
-====================================================== */
-
+/* ── Export hooks ─────────────────────────────────── */
 export const {
-  /* USERS */
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -124,7 +116,6 @@ export const {
   useGetUserPermissionsQuery,
   useAssignUserPermissionsMutation,
 
-  /* ROLES */
   useGetRolesQuery,
   useCreateRoleMutation,
   useUpdateRoleMutation,
@@ -132,15 +123,11 @@ export const {
   useGetRolePermissionsQuery,
   useAssignRolePermissionsMutation,
 
-  /* PERMISSIONS */
   useGetPermissionsQuery,
   useCreatePermissionMutation,
   useUpdatePermissionMutation,
   useDeletePermissionMutation,
 
-  /* SIDEBAR */
   useGetSidebarQuery,
-
-  /* DASHBOARD */
   useGetDashboardStatsQuery,
 } = adminApi;

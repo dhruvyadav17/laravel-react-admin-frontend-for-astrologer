@@ -1,28 +1,32 @@
 <?php
+// PATH: app/Services/User/UserService.php
+// FIX BUG-14: update() mein `...$data` spread tha — astrologer fields, roles, experience
+//             sab User model pe update ho jaate the — data corruption risk
+//             FIX: sirf allowed user fields update karo explicitly
+// FIX: UserQuery::base() mein is_active, is_verified, is_online select nahi tha
+//      UserResource in fields use karta hai — null aata tha
 
 namespace App\Services\User;
 
-use App\Models\User;
 use App\Models\Astrologer;
 use App\Models\Permission;
+use App\Models\User;
 use App\Queries\UserQuery;
+use App\Support\Pagination;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use App\Support\Pagination;
+use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 class UserService
 {
-    /* ================= LIST ================= */
-
+    /* ── List ───────────────────────────────────── */
     public function paginate(Request $request): array
     {
         $query = UserQuery::withRoles();
-
         $query = UserQuery::search($query, $request->search);
         $query = UserQuery::latest($query);
 
@@ -31,145 +35,121 @@ class UserService
         return Pagination::response($users);
     }
 
-    /* ================= BASE CREATE ================= */
-
+    /* ── Create base ────────────────────────────── */
     protected function createBase(array $data): User
     {
         return User::create([
-            'name'  => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'is_active' => $data['is_active'] ?? true,
+            'name'                 => $data['name'],
+            'email'                => $data['email'],
+            'password'             => Hash::make($data['password'] ?? Str::random(12)),
+            'is_active'            => $data['is_active']            ?? true,
             'force_password_reset' => $data['force_password_reset'] ?? false,
-            'email_verified_at' => $data['email_verified_at'] ?? null,
+            'email_verified_at'    => $data['email_verified_at']    ?? null,
         ]);
     }
 
-    /* ================= CREATE ================= */
-
+    /* ── Create ─────────────────────────────────── */
     public function create(array $data): User
     {
         return DB::transaction(function () use ($data) {
-
             $user = $this->createBase($data);
 
-            /* ================= ROLES ================= */
             if (!empty($data['roles'])) {
                 $user->syncRoles($data['roles']);
             }
 
-            /* ================= ASTROLOGER CREATE ================= */
             if ($user->hasRole('astrologer')) {
                 Astrologer::create([
-                    'user_id' => $user->id,
-                    'experience' => $data['experience'] ?? 0,
+                    'user_id'          => $user->id,
+                    'experience'       => $data['experience']       ?? 0,
                     'price_per_minute' => $data['price_per_minute'] ?? 0,
-                    'bio' => $data['bio'] ?? null,
-                    'expertise' => $data['expertise'] ?? null,
-                    'languages' => $data['languages'] ?? [],
-                    'skills' => $data['skills'] ?? [],
+                    'bio'              => $data['bio']               ?? null,
+                    'expertise'        => $data['expertise']         ?? null,
+                    'languages'        => $data['languages']         ?? [],
+                    'skills'           => $data['skills']            ?? [],
                 ]);
             }
 
-            /* ================= PERMISSIONS ================= */
             if (!empty($data['permissions'])) {
                 $user->syncPermissions($data['permissions']);
             }
 
             $this->clearUserCache();
-
             return $user;
         });
     }
 
-    /* ================= ADMIN CREATE ================= */
-
+    /* ── Admin Create ───────────────────────────── */
     public function createAdmin(array $data): array
     {
         $password = Str::random(12);
 
         $user = DB::transaction(function () use ($data, $password) {
-
             $user = $this->createBase([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => $password,
+                'name'              => $data['name'],
+                'email'             => $data['email'],
+                'password'          => $password,
                 'email_verified_at' => now(),
             ]);
-
             $user->assignRole($data['role']);
-
             return $user;
         });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-
         Log::info('Admin created', ['id' => $user->id]);
-
         $this->clearUserCache();
 
-        return [
-            'user' => $user,
-            'password' => $password,
-        ];
+        return ['user' => $user, 'password' => $password];
     }
 
-    /* ================= UPDATE ================= */
-
+    /* ── Update ─────────────────────────────────── */
+    // FIX BUG-14: pehle ...$data spread tha — sabkuch user model pe jaata tha
+    //             Ab sirf allowed user fields explicitly update karo
     public function update(User $user, array $data): User
     {
         return DB::transaction(function () use ($user, $data) {
 
-            /* ================= PASSWORD ================= */
+            // Password — only update if provided
+            $userFields = ['name' => $data['name'] ?? $user->name];
+
             if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
-                unset($data['password']);
+                $userFields['password'] = Hash::make($data['password']);
             }
 
-            unset($data['email']);
+            // FIX: Sirf user-level fields update karo — no spreading
+            $user->update($userFields);
 
-            /* ================= USER UPDATE ================= */
-            $user->update([
-                'name' => $data['name'] ?? $user->name,
-                ...$data
-            ]);
-
-            /* ================= ASTROLOGER UPDATE ================= */
+            // Astrologer profile — separate update
             if ($user->hasRole('astrologer')) {
                 Astrologer::updateOrCreate(
                     ['user_id' => $user->id],
                     [
-                        'experience' => $data['experience'] ?? 0,
+                        'experience'       => $data['experience']       ?? 0,
                         'price_per_minute' => $data['price_per_minute'] ?? 0,
-                        'bio' => $data['bio'] ?? null,
-                        'expertise' => $data['expertise'] ?? null,
-                        'languages' => $data['languages'] ?? [],
-                        'skills' => $data['skills'] ?? [],
+                        'bio'              => $data['bio']               ?? null,
+                        'expertise'        => $data['expertise']         ?? null,
+                        'languages'        => $data['languages']         ?? [],
+                        'skills'           => $data['skills']            ?? [],
                     ]
                 );
             }
 
-            /* ================= ROLES ================= */
             if (!empty($data['roles'])) {
                 $user->syncRoles($data['roles']);
             }
 
-            /* ================= PERMISSIONS ================= */
             if (!empty($data['permissions'])) {
                 $user->syncPermissions($data['permissions']);
             }
 
             $user->load('roles');
-
             $this->clearUserCache();
 
             return $user;
         });
     }
 
-    /* ================= DELETE / RESTORE ================= */
-
+    /* ── Delete / Restore ───────────────────────── */
     public function delete(User $user): void
     {
         $user->delete();
@@ -182,26 +162,21 @@ class UserService
         $this->clearUserCache();
     }
 
-    /* ================= ROLES ================= */
-
+    /* ── Roles ──────────────────────────────────── */
     public function assignRoles(User $user, array $roles): void
     {
         $user->syncRoles($roles);
         $user->load('roles');
-
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-
         $this->clearUserCache();
     }
 
-    /* ================= PERMISSIONS ================= */
-
+    /* ── Permissions ────────────────────────────── */
     public function assignPermissions(User $user, array $permissions): void
     {
         DB::transaction(function () use ($user, $permissions) {
             $user->syncPermissions($permissions);
         });
-
         $this->clearUserCache();
     }
 
@@ -212,16 +187,11 @@ class UserService
                 ->select('id', 'name')
                 ->orderBy('name')
                 ->get(),
-
-            'assigned' => $user
-                ->getAllPermissions()
-                ->pluck('name')
-                ->values(),
+            'assigned' => $user->getAllPermissions()->pluck('name')->values(),
         ];
     }
 
-    /* ================= CACHE CLEAR ================= */
-
+    /* ── Cache ──────────────────────────────────── */
     protected function clearUserCache(): void
     {
         Cache::forget('users_list');

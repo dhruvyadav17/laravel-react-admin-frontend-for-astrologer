@@ -1,3 +1,10 @@
+// PATH: src/astrologer/features/dashboard/DashboardPage.tsx
+// FIX BUG-3: QuickLink mein <a href> tha — React Router mein ye full page reload karta hai
+//             ab <Link to> use kar rahe hain (SPA navigation)
+// IMPROVEMENT: StatCard aur QuickLink separate file nahi banaye (DashboardPage hi kaafi small hai)
+//              shared constants import kiye
+
+import { Link } from "react-router-dom";
 import { useMyStatsQuery, useToggleAvailabilityMutation } from "../../../store/api/astrologer.api";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { toast } from "react-toastify";
@@ -12,11 +19,11 @@ function StatCard({
   value,
   sub,
 }: {
-  icon: string;
+  icon:  string;
   color: string;
   title: string;
   value: string | number;
-  sub: string;
+  sub:   string;
 }) {
   return (
     <div className="col-6 col-md-3">
@@ -36,27 +43,32 @@ function StatCard({
 
 /* =====================================================
  | QUICK LINK
+ | FIX BUG-3: <a href> → <Link to> (SPA navigation, no page reload)
  ===================================================== */
 function QuickLink({
-  href,
+  to,
   icon,
   label,
   color,
 }: {
-  href: string;
-  icon: string;
+  to:    string;
+  icon:  string;
   label: string;
   color: string;
 }) {
   return (
     <div className="col-md-4">
-      <a href={href} className={`card text-${color} text-decoration-none h-100`}>
+      <Link
+        to={to}
+        className={`card text-${color} text-decoration-none h-100`}
+        style={{ display: "block" }}
+      >
         <div className="card-body d-flex align-items-center gap-3 py-3">
           <i className={`fas ${icon} fs-4`} />
           <span className="fw-semibold">{label}</span>
           <i className="fas fa-chevron-right ms-auto small opacity-50" />
         </div>
-      </a>
+      </Link>
     </div>
   );
 }
@@ -65,9 +77,9 @@ function QuickLink({
  | MAIN PAGE
  ===================================================== */
 export default function DashboardPage() {
-  const { user }                                 = useAuth();
-  const { data: stats, isLoading }               = useMyStatsQuery();
-  const [toggleAvail, { isLoading: toggling }]   = useToggleAvailabilityMutation();
+  const { user }                               = useAuth();
+  const { data: stats, isLoading }             = useMyStatsQuery();
+  const [toggleAvail, { isLoading: toggling }] = useToggleAvailabilityMutation();
 
   const handleToggle = async () => {
     try {
@@ -98,7 +110,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Online toggle */}
+            {/* Online / Offline toggle */}
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted small fw-semibold">Go Online:</span>
               <div className="form-check form-switch mb-0">
@@ -125,7 +137,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats row */}
         {isLoading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status" />
@@ -163,11 +175,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Quick links */}
+        {/* Quick links — FIX: <Link to> instead of <a href> */}
         <div className="row g-3">
-          <QuickLink href="/astrologer/profile"  icon="fa-user-edit"    label="Edit My Profile"    color="primary" />
-          <QuickLink href="/astrologer/schedule" icon="fa-calendar-alt" label="Manage Schedule"    color="info"    />
-          <QuickLink href="/astrologer/reviews"  icon="fa-star"         label="View My Reviews"    color="warning" />
+          <QuickLink to="/astrologer/profile"  icon="fa-user-edit"    label="Edit My Profile"  color="primary" />
+          <QuickLink to="/astrologer/schedule" icon="fa-calendar-alt" label="Manage Schedule"  color="info"    />
+          <QuickLink to="/astrologer/reviews"  icon="fa-star"         label="View My Reviews"  color="warning" />
         </div>
 
       </div>

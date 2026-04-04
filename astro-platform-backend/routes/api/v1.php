@@ -15,10 +15,11 @@ use App\Http\Controllers\Api\Auth\LogoutController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\Auth\RegisterController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\Password\ForgotPasswordController;
 use App\Http\Controllers\Api\Password\ResetPasswordController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -43,6 +44,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/me',      ProfileController::class);
         Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify']);
         Route::post('/email/resend',            [EmailVerificationController::class, 'resend']);
+
+        Route::post('/upload/image', [UploadController::class, 'image']);
 
         // Submit review – role:user only NEW
         Route::post('/astrologers/{id}/reviews', [AstrologerController::class, 'submitReview'])

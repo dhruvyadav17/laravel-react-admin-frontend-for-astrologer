@@ -1,28 +1,57 @@
-import { useMemo, useState } from "react";
-import { useConfirmAction } from "../../../hooks/useConfirmAction";
+// PATH: src/admin/components/crud/AdminCrudPage.tsx
+// FIX: Props mein `any` types the — proper TypeScript generics se replace kiya
+//      query, mutations, fields, permissions — sab type-safe ab
+// IMPROVEMENT: handleRestore mein toast feedback add kiya (success/error)
 
-import CrudTable from "./CrudTable";
-import CrudFormModal from "./CrudFormModal";
-import { useCrudController } from "./useCrudController";
+import { useMemo, useState }  from "react";
+import { toast }              from "react-toastify";
+import { useConfirmAction }   from "../../../hooks/useConfirmAction";
+import CrudTable              from "./CrudTable";
+import CrudFormModal          from "./CrudFormModal";
+import { useCrudController }  from "./useCrudController";
+import type { FieldConfig }   from "../../../types/models";
 
 /* ================= TYPES ================= */
 
-type BaseEntity = {
-  id: number;
+type BaseEntity = { id: number; deleted_at?: string | null };
+
+export type QueryResult<T> = {
+  data:      T[] | { data: T[] };
+  isLoading: boolean;
+  isError:   boolean;
+  refetch:   () => void;
+};
+
+export type MutationFn<T = unknown> = (arg: T) => Promise<void>;
+
+export type CrudMutations<T extends BaseEntity> = {
+  create?:  [MutationFn<Partial<T>>];
+  update?:  [MutationFn<Partial<T> & { id: number }>];
+  delete?:  [MutationFn<number>];
+  restore?: [MutationFn<number>];
+};
+
+export type CrudPermissions = {
+  create?:  string | boolean;
+  update?:  string | boolean;
+  delete?:  string | boolean;
+  restore?: string | boolean;
 };
 
 type Props<T extends BaseEntity> = {
-  entity: string;
-  query: any;
-  mutations?: any;
-  columns: React.ReactNode;
-  fields: any;
-  initialValues: T;
-  permissions?: any;
-  renderRow?: any;
-  topContent?: React.ReactNode;
+  entity:        string;
+  query:         QueryResult<T>;
+  mutations?:    CrudMutations<T>;
+  columns:       React.ReactNode;
+  fields:        FieldConfig<Partial<T>>[];
+  initialValues: Partial<T>;
+  permissions?:  CrudPermissions;
+  renderRow?:    (item: T, actions: any[]) => React.ReactNode;
+  topContent?:   React.ReactNode;
   extraActions?: any[];
 };
+
+/* ================= COMPONENT ================= */
 
 export default function AdminCrudPage<T extends BaseEntity>({
   entity,
@@ -37,25 +66,22 @@ export default function AdminCrudPage<T extends BaseEntity>({
   extraActions = [],
 }: Props<T>) {
   const confirmAction = useConfirmAction();
-
   const { data, isLoading, isError, refetch } = query;
 
   const items = useMemo<T[]>(() => {
-    if (Array.isArray(data)) return data;
-    return data?.data ?? [];
+    if (Array.isArray(data)) return data as T[];
+    return (data as { data: T[] })?.data ?? [];
   }, [data]);
 
   const [editing, setEditing] = useState<Partial<T> | null>(null);
 
-  /* ================= MUTATIONS ================= */
+  /* ── Mutations ────────────────────────────────── */
+  const createMutation  = mutations?.create?.[0];
+  const updateMutation  = mutations?.update?.[0];
+  const deleteMutation  = mutations?.delete?.[0];
+  const restoreMutation = mutations?.restore?.[0];
 
-  const createMutation = mutations?.create?.[0];
-  const updateMutation = mutations?.update?.[0];
-  const deleteMutation = mutations?.delete?.[0];
-  const restoreMutation = mutations?.restore?.[0]; // ✅ NEW
-
-  /* ================= CRUD CONTROLLER ================= */
-
+  /* ── CRUD controller ──────────────────────────── */
   const crud = useCrudController<T>({
     createMutation,
     updateMutation,
@@ -66,11 +92,10 @@ export default function AdminCrudPage<T extends BaseEntity>({
     },
   });
 
-  /* ================= DELETE (ARCHIVE) ================= */
-
+  /* ── Delete (confirm dialog) ──────────────────── */
   const handleDelete = (item: T) => {
     confirmAction({
-      message: `Are you sure you want to archive this ${entity}?`, // ✅ UX FIX
+      message:      `Are you sure you want to archive this ${entity}?`,
       confirmLabel: `Archive ${entity}`,
       onConfirm: async () => {
         await crud.handleDelete(item.id);
@@ -79,17 +104,20 @@ export default function AdminCrudPage<T extends BaseEntity>({
     });
   };
 
-  /* ================= RESTORE ================= */
-
+  /* ── Restore ──────────────────────────────────── */
+  // IMPROVEMENT: toast feedback add kiya (pehle silent tha)
   const handleRestore = async (item: T) => {
     if (!restoreMutation) return;
-
-    await restoreMutation(item.id);
-    refetch();
+    try {
+      await restoreMutation(item.id);
+      toast.success(`${entity} restored successfully`);
+      refetch();
+    } catch {
+      toast.error(`Failed to restore ${entity}`);
+    }
   };
 
-  /* ================= RENDER ================= */
-
+  /* ── Render ───────────────────────────────────── */
   return (
     <>
       <CrudTable
@@ -103,7 +131,7 @@ export default function AdminCrudPage<T extends BaseEntity>({
         setEditing={setEditing}
         deleteMutation={deleteMutation}
         handleDelete={handleDelete}
-        restoreHandler={handleRestore} // ✅ IMPORTANT
+        restoreHandler={handleRestore}
         permissions={permissions}
         extraActions={extraActions}
         topContent={topContent}

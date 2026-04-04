@@ -1,10 +1,11 @@
 // PATH: src/user/features/astrologers/AstrologerDetailPage.tsx
-// FIX: useGetAstrologerQuery import astrologer.api se (not user.api)
-//      Reviews section add kiya
-//      Skills rendering bug fix kiya
+// FIX: CONSULT_LABELS duplicate tha — shared constants/astrologer.ts se import kiya
+// FIX: review: any → review: Review (proper type, imports added)
+// IMPROVEMENT: review comment minLength validation feedback add kiya
+// IMPROVEMENT: login prompt if not logged in (tab pe seedha redirect nahi, pehle message dikhao)
 
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   useGetAstrologerQuery,
   useGetAstrologerReviewsQuery,
@@ -12,6 +13,8 @@ import {
 } from "../../../store/api/astrologer.api";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { toast } from "react-toastify";
+import { CONSULTATION_LABELS } from "../../../constants/astrologer";
+import type { Review } from "../../../types/models";
 
 /* ── Star display ─────────────────────────────────── */
 function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
@@ -25,13 +28,43 @@ function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
   );
 }
 
-/* ── Consultation label ───────────────────────────── */
-const CONSULT_LABELS: Record<string, string> = {
-  chat:  "Chat",
-  call:  "Call",
-  video: "Video",
-  all:   "Chat, Call & Video",
-};
+/* ── Review card ──────────────────────────────────── */
+function ReviewItem({ review }: { review: Review }) {
+  return (
+    <div className="border-bottom py-3">
+      <div className="d-flex align-items-center gap-2 mb-1">
+        {review.user.profile_image ? (
+          <img
+            src={review.user.profile_image}
+            alt={review.user.name}
+            className="rounded-circle flex-shrink-0"
+            style={{ width: 36, height: 36, objectFit: "cover" }}
+          />
+        ) : (
+          <div
+            className="rounded-circle bg-secondary text-white d-flex
+                        align-items-center justify-content-center fw-bold flex-shrink-0"
+            style={{ width: 36, height: 36, fontSize: 14 }}
+          >
+            {review.user.name?.[0]?.toUpperCase()}
+          </div>
+        )}
+        <div className="flex-grow-1">
+          <div className="fw-semibold small">{review.user.name}</div>
+          <div className="text-muted" style={{ fontSize: 11 }}>
+            {review.created_at}
+          </div>
+        </div>
+        <Stars rating={review.rating} size={14} />
+      </div>
+      {review.comment && (
+        <p className="mb-0 text-muted ps-5" style={{ fontSize: 14 }}>
+          {review.comment}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /* ── Main component ───────────────────────────────── */
 export default function AstrologerDetailPage() {
@@ -54,10 +87,13 @@ export default function AstrologerDetailPage() {
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuth) { navigate("/login"); return; }
+    if (!isAuth) {
+      navigate("/login", { state: { from: { pathname: `/astrologers/${astroId}` } } });
+      return;
+    }
     try {
       await submitReview({ astrologerId: astroId, ...reviewForm }).unwrap();
-      toast.success("Review submitted!");
+      toast.success("Review submitted! Thank you.");
       setShowForm(false);
       setReviewForm({ rating: 5, comment: "" });
     } catch (err: any) {
@@ -117,10 +153,7 @@ export default function AstrologerDetailPage() {
             </div>
 
             <h4 className="fw-bold mb-1">{astro.name}</h4>
-
-            <p className="text-muted mb-2">
-              {astro.expertise || "Astrology Expert"}
-            </p>
+            <p className="text-muted mb-2">{astro.expertise || "Astrology Expert"}</p>
 
             {/* Rating */}
             <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
@@ -129,9 +162,7 @@ export default function AstrologerDetailPage() {
               <span className="text-muted small">({astro.total_reviews} reviews)</span>
             </div>
 
-            <div className="small text-muted mb-1">
-              {astro.experience || 0}+ years experience
-            </div>
+            <div className="small text-muted mb-1">{astro.experience || 0}+ years experience</div>
 
             {/* Quick stats */}
             <div className="row g-0 text-center border rounded my-3">
@@ -151,7 +182,8 @@ export default function AstrologerDetailPage() {
 
             {/* Price */}
             <h4 className="text-danger fw-bold mb-1">
-              ₹{astro.price_per_minute}<span className="fs-6 text-muted fw-normal">/min</span>
+              ₹{astro.price_per_minute}
+              <span className="fs-6 text-muted fw-normal">/min</span>
             </h4>
 
             {/* Verified badge */}
@@ -198,10 +230,8 @@ export default function AstrologerDetailPage() {
             <div className="app-card mb-4">
               <h5 className="section-title mb-3">Specialization</h5>
               <div className="d-flex flex-wrap gap-2">
-                {astro.skills.map((skill: string, i: number) => (
-                  <span key={i} className="badge badge-accent px-3 py-2">
-                    {skill}
-                  </span>
+                {astro.skills.map((skill, i) => (
+                  <span key={i} className="badge badge-accent px-3 py-2">{skill}</span>
                 ))}
               </div>
             </div>
@@ -214,7 +244,7 @@ export default function AstrologerDetailPage() {
                 <i className="fas fa-language me-2" />Languages
               </h5>
               <div className="d-flex flex-wrap gap-2">
-                {astro.languages.map((lang: string, i: number) => (
+                {astro.languages.map((lang, i) => (
                   <span key={i} className="badge bg-primary-subtle text-primary border px-3 py-2">
                     {lang}
                   </span>
@@ -223,13 +253,13 @@ export default function AstrologerDetailPage() {
             </div>
           )}
 
-          {/* Consultation type */}
+          {/* Consultation type — FIX: shared CONSULTATION_LABELS */}
           <div className="app-card mb-4">
             <h5 className="section-title mb-3">
               <i className="fas fa-video me-2" />Consultation Via
             </h5>
             <span className="badge bg-info-subtle text-info border px-3 py-2">
-              {CONSULT_LABELS[astro.consultation_type] ?? "All Modes"}
+              {CONSULTATION_LABELS[astro.consultation_type] ?? "All Modes"}
             </span>
           </div>
 
@@ -240,8 +270,13 @@ export default function AstrologerDetailPage() {
                 <i className="fas fa-star text-warning me-2" />
                 Reviews ({astro.total_reviews})
               </h5>
-              {/* Show write-review button only for logged-in users with role:user */}
-              {isAuth && hasRole("user") && (
+
+              {/* IMPROVEMENT: Login prompt if not logged in */}
+              {!isAuth ? (
+                <Link to="/login" className="btn btn-sm btn-outline-primary">
+                  <i className="fas fa-sign-in-alt me-1" />Login to Review
+                </Link>
+              ) : hasRole("user") ? (
                 <button
                   className="btn btn-sm btn-outline-primary"
                   onClick={() => setShowForm((v) => !v)}
@@ -249,7 +284,7 @@ export default function AstrologerDetailPage() {
                   <i className="fas fa-pen me-1" />
                   {showForm ? "Cancel" : "Write Review"}
                 </button>
-              )}
+              ) : null}
             </div>
 
             {/* Review form */}
@@ -266,9 +301,7 @@ export default function AstrologerDetailPage() {
                         key={star}
                         type="button"
                         className="btn btn-sm border-0 p-0"
-                        onClick={() =>
-                          setReviewForm((p) => ({ ...p, rating: star }))
-                        }
+                        onClick={() => setReviewForm((p) => ({ ...p, rating: star }))}
                         style={{ fontSize: 32, lineHeight: 1 }}
                       >
                         <span className={star <= reviewForm.rating ? "text-warning" : "text-muted"}>
@@ -280,33 +313,36 @@ export default function AstrologerDetailPage() {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">
-                    Comment <span className="text-muted small fw-normal">(optional)</span>
+                    Comment{" "}
+                    <span className="text-muted small fw-normal">(optional, min 10 chars)</span>
                   </label>
                   <textarea
                     className="form-control"
                     rows={3}
                     placeholder="Share your experience..."
                     value={reviewForm.comment}
-                    onChange={(e) =>
-                      setReviewForm((p) => ({ ...p, comment: e.target.value }))
-                    }
+                    onChange={(e) => setReviewForm((p) => ({ ...p, comment: e.target.value }))}
                     minLength={10}
                   />
+                  {/* IMPROVEMENT: character count feedback */}
+                  {reviewForm.comment.length > 0 && reviewForm.comment.length < 10 && (
+                    <div className="form-text text-danger">
+                      {10 - reviewForm.comment.length} more characters needed
+                    </div>
+                  )}
                 </div>
                 <button
                   type="submit"
                   className="btn btn-primary btn-sm"
                   disabled={submitting}
                 >
-                  {submitting && (
-                    <span className="spinner-border spinner-border-sm me-1" />
-                  )}
+                  {submitting && <span className="spinner-border spinner-border-sm me-1" />}
                   Submit Review
                 </button>
               </form>
             )}
 
-            {/* Reviews list */}
+            {/* Reviews list — FIX: review: Review (not any) */}
             {reviews.length === 0 ? (
               <div className="text-center py-4 text-muted">
                 <i className="fas fa-star fa-2x d-block mb-2 opacity-25" />
@@ -314,39 +350,8 @@ export default function AstrologerDetailPage() {
               </div>
             ) : (
               <div>
-                {reviews.map((review: any) => (
-                  <div key={review.id} className="border-bottom py-3">
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      {review.user?.profile_image ? (
-                        <img
-                          src={review.user.profile_image}
-                          alt={review.user.name}
-                          className="rounded-circle flex-shrink-0"
-                          style={{ width: 36, height: 36, objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div
-                          className="rounded-circle bg-secondary text-white d-flex
-                                      align-items-center justify-content-center fw-bold flex-shrink-0"
-                          style={{ width: 36, height: 36, fontSize: 14 }}
-                        >
-                          {review.user?.name?.[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-grow-1">
-                        <div className="fw-semibold small">{review.user?.name}</div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>
-                          {review.created_at}
-                        </div>
-                      </div>
-                      <Stars rating={review.rating} size={14} />
-                    </div>
-                    {review.comment && (
-                      <p className="mb-0 text-muted ps-5" style={{ fontSize: 14 }}>
-                        {review.comment}
-                      </p>
-                    )}
-                  </div>
+                {reviews.map((review: Review) => (
+                  <ReviewItem key={review.id} review={review} />
                 ))}
               </div>
             )}

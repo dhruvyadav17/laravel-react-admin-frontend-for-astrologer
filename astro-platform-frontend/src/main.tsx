@@ -1,15 +1,19 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+// PATH: src/main.tsx
+// FIX BUG-16: listenAuthEvents → hamesha /login redirect karta tha
+//              Admin user dusre tab mein logout kare → /admin/login chahiye
+//              Ab currentPath check karke context-aware redirect
 
-import App from "./App";
-import { Provider } from "react-redux";
-import { store } from "./store";
-import { setStore } from "./store/storeAccessor";
+import React           from "react";
+import ReactDOM        from "react-dom/client";
+import App             from "./App";
+import { Provider }    from "react-redux";
+import { store }       from "./store";
+import { setStore }    from "./store/storeAccessor";
 import { listenAuthEvents } from "./utils/authEvents";
 import { logoutThunk } from "./store/authSlice";
-import ErrorBoundary from "./components/feedback/ErrorBoundary";
+import ErrorBoundary   from "./components/feedback/ErrorBoundary";
 
-/* ── CSS order — DO NOT CHANGE ─── */
+/* ── CSS order — DO NOT CHANGE ──────────────────── */
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -19,15 +23,23 @@ import "./admin/styles/adminlte-sidebar-fix.css";
 
 setStore(store);
 
+/* FIX BUG-16: context-aware redirect on cross-tab logout
+   Before: always → /login (wrong for admin tabs)
+   After:  admin path → /admin/login
+           user path  → /login                         */
 listenAuthEvents(() => {
   store.dispatch(logoutThunk());
-  window.location.replace("/login");
+
+  const currentPath   = window.location.pathname;
+  const redirectTo    = currentPath.startsWith("/admin")
+    ? "/admin/login"
+    : "/login";
+
+  window.location.replace(redirectTo);
 });
 
 // ❌ NO <BrowserRouter> here
-// ✅ AppRoutes already uses createBrowserRouter + RouterProvider internally
-// Wrapping with BrowserRouter causes: "You cannot render a <Router> inside another <Router>"
-
+// ✅ AppRoutes uses createBrowserRouter + RouterProvider internally
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>

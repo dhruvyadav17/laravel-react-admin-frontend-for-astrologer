@@ -1,4 +1,8 @@
 <?php
+// PATH: app/Queries/UserQuery.php
+// FIX BUG-14: base() mein sirf basic columns the — is_active, is_verified, is_online missing the
+//              UserResource in fields use karta hai → null aata tha list response mein
+//              Ab saare columns select kiye jo Resource needs karta hai
 
 namespace App\Queries;
 
@@ -14,6 +18,11 @@ class UserQuery
             'name',
             'email',
             'profile_image',
+            'is_active',      // FIX: missing tha
+            'is_verified',    // FIX: missing tha
+            'is_online',      // FIX: missing tha
+            'email_verified_at',
+            'last_login_at',
             'deleted_at',
             'created_at',
         ]);
@@ -30,7 +39,7 @@ class UserQuery
     {
         return $query->when($search, function ($q) use ($search) {
             $q->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('name',  'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
         });

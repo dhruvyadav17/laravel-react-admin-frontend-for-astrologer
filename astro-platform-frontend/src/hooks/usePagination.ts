@@ -1,66 +1,83 @@
-import { useSearchParams } from "react-router-dom";
+// PATH: src/hooks/usePagination.ts
+// IMPROVEMENT: Debounce add kiya search ke liye
+//              Pehle har keystroke pe URL update hoti thi → API call
+//              Ab: searchInput (immediate UI) aur search (debounced, URL + API)
+//              User 400ms tak type karna band kare tab API call hogi
+
+import { useSearchParams }  from "react-router-dom";
+import { useState, useEffect } from "react";
 
 type Options = {
-  defaultPage?: number;
+  defaultPage?:   number;
   defaultSearch?: string;
+  debounceMs?:    number;
 };
 
 export function usePagination(options: Options = {}) {
   const {
-    defaultPage = 1,
+    defaultPage   = 1,
     defaultSearch = "",
+    debounceMs    = 400,
   } = options;
 
-  const [searchParams, setSearchParams] =
-    useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  /* ================= READ FROM URL ================= */
+  /* ── Read from URL ──────────────────────────── */
+  const page = Number(searchParams.get("page")) || defaultPage;
+  const urlSearch = searchParams.get("search") ?? defaultSearch;
 
-  const page =
-    Number(searchParams.get("page")) ||
-    defaultPage;
+  /* ── Local input state (instant) ───────────── */
+  const [searchInput, setSearchInput] = useState(urlSearch);
 
-  const search =
-    searchParams.get("search") ??
-    defaultSearch;
+  /* ── Debounced value (goes to URL + API) ────── */
+  const [search, setSearch] = useState(urlSearch);
 
-  /* ================= UPDATE PAGE ================= */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
 
+      const params = new URLSearchParams(searchParams);
+      if (searchInput.trim()) {
+        params.set("search", searchInput.trim());
+      } else {
+        params.delete("search");
+      }
+      params.delete("page"); // reset page on new search
+      setSearchParams(params);
+    }, debounceMs);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, debounceMs]);
+
+  /* ── Page change ────────────────────────────── */
   const setPage = (newPage: number) => {
-    const params =
-      new URLSearchParams(searchParams);
-
+    const params = new URLSearchParams(searchParams);
     if (newPage > 1) {
       params.set("page", String(newPage));
     } else {
       params.delete("page");
     }
-
     setSearchParams(params);
   };
 
-  /* ================= UPDATE SEARCH ================= */
-
-  const setSearch = (value: string) => {
-    const params =
-      new URLSearchParams(searchParams);
-
-    if (value.trim()) {
-      params.set("search", value.trim());
-    } else {
-      params.delete("search");
-    }
-
-    // 🔥 Reset page when searching
+  /* ── Clear search ───────────────────────────── */
+  const clearSearch = () => {
+    setSearchInput("");
+    setSearch("");
+    const params = new URLSearchParams(searchParams);
+    params.delete("search");
     params.delete("page");
-
     setSearchParams(params);
   };
 
   return {
     page,
     setPage,
-    search,
-    setSearch,
+    search,        // debounced → use for API
+    searchInput,   // immediate → use for input value
+    setSearchInput,// use for onChange
+    clearSearch,
+    // backward compat
+    setSearch: setSearchInput,
   };
 }
