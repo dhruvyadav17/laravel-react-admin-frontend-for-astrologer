@@ -12,13 +12,15 @@ export const baseApi = createApi({
   tagTypes: [
     'User',
     'Astrologer',
-    'Review',              // NEW
+    'Review',
     'Role',
     'Permission',
     'Sidebar',
     'Dashboard',
-    'MyAstrologerProfile', // NEW
-    'MySchedule',          // NEW
+    'MyAstrologerProfile',
+    'MySchedule',
+    'Consultation',   // NEW
+    'ChatMessage',    // NEW
   ],
 
   endpoints: () => ({}),

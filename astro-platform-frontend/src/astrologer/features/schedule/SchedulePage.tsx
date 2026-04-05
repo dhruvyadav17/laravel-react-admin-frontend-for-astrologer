@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState }         from "react";
 import {
   useMyScheduleQuery,
   useSaveScheduleMutation,
 } from "../../../store/api/astrologer.api";
+import { PageLoader } from "../../../components/ui/States";
 import type { AstrologerSchedule } from "../../../types/models";
 import { toast } from "react-toastify";
 
@@ -83,13 +84,7 @@ export default function SchedulePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status" />
-      </div>
-    );
-  }
+  if (isLoading) return <PageLoader />;
 
   const activeDays = rows.filter((r) => r.is_active).length;
 

@@ -1,105 +1,111 @@
 // PATH: src/user/components/AstrologerCard.tsx
-// IMPROVEMENT: CTA button add kiya — "Talk Now" if online, "Notify Me" if offline
-//              Better visual hierarchy, price more prominent
-//              Consultation type icon more visible
+// ADD: Heart/favorite button using useFavorites hook
+// ADD: StarRating component
 
-import { Link }              from "react-router-dom";
-import type { Astrologer }   from "../../types/models";
+import { Link }         from "react-router-dom";
+import StarRating       from "../../components/ui/StarRating";
+import { useFavorites } from "../../hooks/useFavorites";
 
-type Props = { astrologer: Astrologer };
+type Props = {
+  astrologer: {
+    id:                 number;
+    name:               string;
+    profile_image?:     string | null;
+    expertise?:         string;
+    rating?:            number;
+    price_per_minute?:  number;
+    experience?:        number;
+    is_online?:         boolean;
+    is_available?:      boolean;
+    languages?:         string[];
+    total_reviews?:     number;
+    consultation_type?: string;
+  };
+};
 
 const CONSULT_ICONS: Record<string, string> = {
-  chat:  "fa-comment",
-  call:  "fa-phone",
-  video: "fa-video",
-  all:   "fa-th-large",
+  chat: "fa-comment", call: "fa-phone", video: "fa-video", all: "fa-th-large",
 };
 
-const CONSULT_LABELS: Record<string, string> = {
-  chat: "Chat", call: "Call", video: "Video", all: "All",
-};
+export default function AstrologerCard({ astrologer }: Props) {
+  const {
+    id, name = "", profile_image, expertise,
+    rating = 0, price_per_minute = 0, experience = 0,
+    is_online = false, is_available = false,
+    languages = [], total_reviews = 0, consultation_type = "all",
+  } = astrologer;
 
-export default function AstrologerCard({ astrologer: a }: Props) {
-  const available = a.is_online && a.is_available;
-  const stars     = Math.min(Math.max(Math.round(a.rating ?? 0), 0), 5);
-  const avatar    = a.profile_image ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name ?? "")}&background=e63946&color=fff&size=150`;
+  const { isFavorite, toggle } = useFavorites();
+  const available = is_online && is_available;
+  const avatar    = profile_image ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e63946&color=fff&size=150`;
 
   return (
-    <div className="astro-card-new h-100 d-flex flex-column">
+    <div className="astro-card-new h-100 d-flex flex-column text-center position-relative">
 
-      {/* Top: Avatar + online indicator */}
-      <div className="text-center position-relative mb-2">
-        <Link to={`/astrologers/${a.id}`} className="text-decoration-none d-block">
-          <div className="astro-img-wrap mx-auto">
-            <img src={avatar} alt={a.name} />
-            <span className={`online-dot ${available ? "on" : ""}`} />
+      {/* Heart button — ADD: save to favorites */}
+      <button
+        className="position-absolute top-0 end-0 m-2 btn btn-sm border-0 p-1"
+        style={{ zIndex: 10, background: "rgba(255,255,255,0.9)", borderRadius: "50%", lineHeight: 1 }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(id); }}
+        title={isFavorite(id) ? "Remove from saved" : "Save astrologer"}
+      >
+        <i className={`fas fa-heart ${isFavorite(id) ? "text-danger" : "text-muted"}`}
+          style={{ fontSize: 14 }} />
+      </button>
+
+      {/* Avatar + online dot */}
+      <Link to={`/astrologers/${id}`} className="text-decoration-none d-block">
+        <div className="astro-img-wrap mb-2 mx-auto">
+          <img src={avatar} alt={name} />
+          <span className={`online-dot ${available ? "on" : ""}`} />
+        </div>
+
+        <h6 className="fw-bold mb-1 text-dark">{name}</h6>
+        <p className="text-muted small mb-1">{expertise || "Astrology Expert"}</p>
+
+        {/* StarRating — ADD: shared component */}
+        <div className="mb-1"><StarRating rating={rating} size={13} /></div>
+        <div className="small text-muted mb-1">
+          {rating.toFixed(1)} rating
+          {total_reviews > 0 && <span className="ms-1">({total_reviews})</span>}
+        </div>
+
+        <div className="small text-muted mb-2">{experience}+ years experience</div>
+
+        {languages.length > 0 && (
+          <div className="d-flex flex-wrap gap-1 mb-2 justify-content-center">
+            {languages.slice(0, 3).map((l) => (
+              <span key={l} className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{l}</span>
+            ))}
+            {languages.length > 3 && (
+              <span className="badge bg-light text-muted border" style={{ fontSize: 10 }}>+{languages.length - 3}</span>
+            )}
           </div>
-        </Link>
-      </div>
-
-      {/* Name + expertise */}
-      <Link to={`/astrologers/${a.id}`} className="text-decoration-none">
-        <h6 className="fw-bold mb-0 text-dark text-center">{a.name}</h6>
-      </Link>
-      <p className="text-muted small mb-1 text-center">{a.expertise || "Astrology Expert"}</p>
-
-      {/* Rating */}
-      <div className="d-flex align-items-center justify-content-center gap-1 mb-1">
-        <span className="text-warning" style={{ fontSize: 13 }}>
-          {"★".repeat(stars)}{"☆".repeat(5 - stars)}
-        </span>
-        <span className="small fw-semibold">{(a.rating ?? 0).toFixed(1)}</span>
-        {(a.total_reviews ?? 0) > 0 && (
-          <span className="text-muted" style={{ fontSize: 11 }}>({a.total_reviews})</span>
         )}
-      </div>
+      </Link>
 
-      {/* Experience */}
-      <div className="small text-muted mb-2 text-center">
-        {a.experience ?? 0}+ years experience
-      </div>
-
-      {/* Languages */}
-      {(a.languages ?? []).length > 0 && (
-        <div className="d-flex flex-wrap gap-1 mb-2 justify-content-center">
-          {(a.languages ?? []).slice(0, 3).map((l) => (
-            <span key={l} className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{l}</span>
-          ))}
-          {(a.languages ?? []).length > 3 && (
-            <span className="badge bg-light text-muted border" style={{ fontSize: 10 }}>
-              +{(a.languages ?? []).length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Spacer */}
-      <div className="flex-grow-1" />
-
-      {/* Footer: price + consult type */}
-      <div className="border-top pt-2 mt-2">
+      {/* Footer */}
+      <div className="mt-auto pt-2 border-top">
         <div className="d-flex align-items-center justify-content-between mb-2">
-          <div>
-            <span className="fw-bold text-danger">₹{a.price_per_minute}</span>
-            <span className="text-muted small">/min</span>
+          <div className="price mb-0">
+            ₹{price_per_minute}<span className="text-muted small fw-normal">/min</span>
           </div>
-          <span className="badge bg-light text-primary border" style={{ fontSize: 10 }}>
-            <i className={`fas ${CONSULT_ICONS[a.consultation_type ?? "all"]} me-1`} />
-            {CONSULT_LABELS[a.consultation_type ?? "all"]}
-          </span>
+          <div className="d-flex gap-1">
+            <span className="badge bg-light text-primary border" style={{ fontSize: 10 }}>
+              <i className={`fas ${CONSULT_ICONS[consultation_type] ?? "fa-th-large"} me-1`} />
+              {consultation_type === "all" ? "All" : consultation_type}
+            </span>
+            <span className={`badge ${available ? "bg-success" : "bg-secondary"}`} style={{ fontSize: 10 }}>
+              {available ? "Online" : "Offline"}
+            </span>
+          </div>
         </div>
-
-        {/* CTA button */}
-        <Link
-          to={`/astrologers/${a.id}`}
-          className={`btn w-100 btn-sm ${available ? "btn-call" : "btn-outline-secondary"}`}
-        >
-          {available ? (
-            <><i className="fas fa-phone me-1" />Talk Now</>
-          ) : (
-            <><i className="fas fa-clock me-1" />View Profile</>
-          )}
+        <Link to={`/astrologers/${id}`}
+          className={`btn w-100 btn-sm ${available ? "btn-call" : "btn-outline-secondary"}`}>
+          {available
+            ? <><i className="fas fa-phone me-1" />Talk Now</>
+            : <><i className="fas fa-clock me-1" />View Profile</>}
         </Link>
       </div>
 

@@ -1,10 +1,11 @@
 // PATH: src/astrologer/features/dashboard/DashboardPage.tsx
-// FIX: QuickLink mein <a href> tha — full page reload
-//      <Link to> se replace kiya
+// REFACTOR: Avatar + PageLoader use kiya
 
 import { Link }                                           from "react-router-dom";
 import { useMyStatsQuery, useToggleAvailabilityMutation } from "../../../store/api/astrologer.api";
 import { useAuth }                                        from "../../../auth/hooks/useAuth";
+import Avatar                                             from "../../../components/ui/Avatar";
+import { PageLoader }                                     from "../../../components/ui/States";
 import { toast }                                          from "react-toastify";
 
 function StatCard({ icon, color, title, value, sub }: {
@@ -14,9 +15,7 @@ function StatCard({ icon, color, title, value, sub }: {
     <div className="col-6 col-md-3">
       <div className="card h-100">
         <div className="card-body text-center py-4">
-          <div className={`text-${color} mb-2`} style={{ fontSize: 32 }}>
-            <i className={`fas ${icon}`} />
-          </div>
+          <div className={`text-${color} mb-2`} style={{ fontSize: 32 }}><i className={`fas ${icon}`} /></div>
           <div className="fw-bold fs-4">{value}</div>
           <div className="fw-semibold small">{title}</div>
           <div className="text-muted" style={{ fontSize: 12 }}>{sub}</div>
@@ -26,9 +25,7 @@ function StatCard({ icon, color, title, value, sub }: {
   );
 }
 
-function QuickLink({ to, icon, label, color }: {
-  to: string; icon: string; label: string; color: string;
-}) {
+function QuickLink({ to, icon, label, color }: { to: string; icon: string; label: string; color: string }) {
   return (
     <div className="col-md-4">
       <Link to={to} className={`card text-${color} text-decoration-none h-100`}>
@@ -63,32 +60,21 @@ export default function DashboardPage() {
         <div className="card mb-4">
           <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div className="d-flex align-items-center gap-3">
-              <div className="rounded-circle bg-primary text-white d-flex align-items-center
-                              justify-content-center fw-bold"
-                style={{ width: 48, height: 48, fontSize: 18 }}>
-                {user?.name?.[0]?.toUpperCase()}
-              </div>
+              <Avatar name={user?.name} size={48} />
               <div>
                 <h5 className="mb-0 fw-bold">Welcome, {user?.name}</h5>
                 <small className="text-muted">Astrologer Dashboard</small>
               </div>
             </div>
-
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted small fw-semibold">Go Online:</span>
               <div className="form-check form-switch mb-0">
-                <input
-                  className="form-check-input" type="checkbox" role="switch"
-                  id="onlineToggle"
-                  checked={stats?.is_online ?? false}
-                  onChange={handleToggle}
-                  disabled={toggling}
-                  style={{ width: "3em", height: "1.5em", cursor: "pointer" }}
-                />
-                <label
-                  className={`form-check-label fw-semibold ${stats?.is_online ? "text-success" : "text-secondary"}`}
-                  htmlFor="onlineToggle"
-                >
+                <input className="form-check-input" type="checkbox" role="switch"
+                  id="onlineToggle" checked={stats?.is_online ?? false}
+                  onChange={handleToggle} disabled={toggling}
+                  style={{ width: "3em", height: "1.5em", cursor: "pointer" }} />
+                <label className={`form-check-label fw-semibold ${stats?.is_online ? "text-success" : "text-secondary"}`}
+                  htmlFor="onlineToggle">
                   {toggling ? "..." : stats?.is_online ? "Online" : "Offline"}
                 </label>
               </div>
@@ -96,13 +82,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-5"><div className="spinner-border text-primary" role="status" /></div>
-        ) : (
+        {isLoading ? <PageLoader /> : (
           <div className="row g-3 mb-4">
-            <StatCard icon="fa-star"     color="warning"                                    title="Rating"        value={`${stats?.rating?.toFixed(1) ?? "0.0"} / 5.0`} sub="average rating" />
-            <StatCard icon="fa-comments" color="primary"                                    title="Reviews"       value={stats?.total_reviews ?? 0}       sub="from clients" />
-            <StatCard icon="fa-phone"    color="success"                                    title="Consultations" value={stats?.total_consultations ?? 0} sub="completed" />
+            <StatCard icon="fa-star"     color="warning"                                     title="Rating"        value={`${stats?.rating?.toFixed(1) ?? "0.0"} / 5.0`} sub="average rating" />
+            <StatCard icon="fa-comments" color="primary"                                     title="Reviews"       value={stats?.total_reviews ?? 0}       sub="from clients" />
+            <StatCard icon="fa-phone"    color="success"                                     title="Consultations" value={stats?.total_consultations ?? 0} sub="completed" />
             <StatCard icon="fa-circle"   color={stats?.is_available ? "success" : "secondary"} title="Availability"  value={stats?.is_available ? "Available" : "Busy"} sub="current status" />
           </div>
         )}

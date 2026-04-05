@@ -1,66 +1,49 @@
 // PATH: src/astrologer/layouts/AstrologerLayout.tsx
-// FIX: <a href="/astrologer/dashboard"> → <Link to>
-//      <a href="/astrologer/profile">   → <Link to>  (dropdown mein)
-//      <a href="#"> sidebar toggle      → button onClick se handle
+// REFACTOR: Avatar component use kiya — 2 jagah repeated block tha (navbar + sidebar)
 
-import { NavLink, Link, Outlet }          from "react-router-dom";
-import { useAuth }                         from "../../auth/hooks/useAuth";
-import { useLogout }                       from "../../auth/hooks/useLogout";
-import { useMyAstrologerProfileQuery }     from "../../store/api/astrologer.api";
+import { NavLink, Link, Outlet }       from "react-router-dom";
+import { useAuth }                     from "../../auth/hooks/useAuth";
+import { useLogout }                   from "../../auth/hooks/useLogout";
+import { useMyAstrologerProfileQuery } from "../../store/api/astrologer.api";
+import Avatar                          from "../../components/ui/Avatar";
 
 const NAV_ITEMS = [
-  { path: "/astrologer/dashboard", icon: "fa-tachometer-alt", label: "Dashboard" },
-  { path: "/astrologer/profile",   icon: "fa-user-edit",      label: "My Profile" },
-  { path: "/astrologer/schedule",  icon: "fa-calendar-alt",   label: "Schedule"   },
-  { path: "/astrologer/reviews",   icon: "fa-star",           label: "Reviews"    },
+  { path: "/astrologer/dashboard",     icon: "fa-tachometer-alt", label: "Dashboard"     },
+  { path: "/astrologer/consultations", icon: "fa-phone",          label: "Consultations" },
+  { path: "/astrologer/profile",       icon: "fa-user-edit",      label: "My Profile"    },
+  { path: "/astrologer/schedule",      icon: "fa-calendar-alt",   label: "Schedule"      },
+  { path: "/astrologer/reviews",       icon: "fa-star",           label: "Reviews"       },
+  { path: "/astrologer/earnings",      icon: "fa-rupee-sign",     label: "Earnings"      },
 ];
 
 export default function AstrologerLayout() {
-  const { user }  = useAuth();
-  const logout    = useLogout();
+  const { user }          = useAuth();
+  const logout            = useLogout();
   const { data: profile } = useMyAstrologerProfileQuery();
 
   return (
     <div className="wrapper">
 
-      {/* ── NAVBAR ─────────────────────────────────── */}
+      {/* Navbar */}
       <nav className="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
         <ul className="navbar-nav">
           <li className="nav-item">
-            {/* FIX: <a href="#"> → button */}
-            <button
-              className="nav-link btn btn-link"
-              data-lte-toggle="sidebar"
-              onClick={(e) => e.preventDefault()}
-            >
+            <button className="nav-link btn btn-link" data-lte-toggle="sidebar"
+              onClick={(e) => e.preventDefault()}>
               <i className="fas fa-bars" />
             </button>
           </li>
         </ul>
-
         <ul className="navbar-nav ms-auto me-2">
           <li className="nav-item dropdown">
-            {/* FIX: <a href="#"> → button */}
-            <button
-              className="nav-link btn btn-link dropdown-toggle d-flex align-items-center gap-2 py-1"
-              data-bs-toggle="dropdown"
-            >
-              {profile?.profile_image ? (
-                <img src={profile.profile_image} alt="avatar" className="rounded-circle"
-                  style={{ width: 30, height: 30, objectFit: "cover" }} />
-              ) : (
-                <div className="rounded-circle bg-primary text-white d-flex align-items-center
-                                justify-content-center fw-bold"
-                  style={{ width: 30, height: 30, fontSize: 13 }}>
-                  {user?.name?.[0]?.toUpperCase()}
-                </div>
-              )}
+            <button className="nav-link btn btn-link dropdown-toggle d-flex align-items-center gap-2 py-1"
+              data-bs-toggle="dropdown">
+              {/* BEFORE: 8-line if/else block | AFTER: 1 line */}
+              <Avatar name={user?.name} src={profile?.profile_image} size={30} />
               <span className="d-none d-md-inline small fw-semibold">{user?.name}</span>
             </button>
-
             <ul className="dropdown-menu dropdown-menu-end shadow-sm">
               <li>
-                {/* FIX: <a href="/astrologer/profile"> → <Link to> */}
                 <Link className="dropdown-item" to="/astrologer/profile">
                   <i className="fas fa-user me-2 text-muted" />Profile
                 </Link>
@@ -76,28 +59,18 @@ export default function AstrologerLayout() {
         </ul>
       </nav>
 
-      {/* ── SIDEBAR ────────────────────────────────── */}
+      {/* Sidebar */}
       <aside className="main-sidebar sidebar-dark-primary elevation-4">
-        {/* FIX: <a href="/astrologer/dashboard"> → <Link to> */}
         <Link to="/astrologer/dashboard" className="brand-link px-3 py-3">
           <span className="brand-text fw-bold">
             <i className="fas fa-star text-warning me-2" />AstroPortal
           </span>
         </Link>
-
         <div className="sidebar">
+          {/* User strip — BEFORE: 8-line block | AFTER: Avatar */}
           <div className="user-panel mt-3 pb-3 mb-3 d-flex align-items-center px-3">
             <div className="image">
-              {profile?.profile_image ? (
-                <img src={profile.profile_image} className="img-circle elevation-2" alt="avatar"
-                  style={{ width: 33, height: 33, objectFit: "cover" }} />
-              ) : (
-                <div className="img-circle bg-primary text-white d-flex align-items-center
-                                justify-content-center fw-bold"
-                  style={{ width: 33, height: 33, fontSize: 14 }}>
-                  {user?.name?.[0]?.toUpperCase()}
-                </div>
-              )}
+              <Avatar name={user?.name} src={profile?.profile_image} size={33} />
             </div>
             <div className="info ms-2 overflow-hidden">
               <span className="d-block text-white text-truncate" style={{ fontSize: 13 }}>
@@ -111,27 +84,21 @@ export default function AstrologerLayout() {
               )}
             </div>
           </div>
-
           <nav className="mt-2">
             <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
               {NAV_ITEMS.map((item) => (
                 <li className="nav-item" key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-                  >
+                  <NavLink to={item.path}
+                    className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
                     <i className={`nav-icon fas ${item.icon}`} />
                     <p>{item.label}</p>
                   </NavLink>
                 </li>
               ))}
               <li className="nav-item mt-3">
-                <button
-                  className="nav-link text-danger border-0 bg-transparent w-100 text-start"
-                  onClick={() => logout("/login")}
-                >
-                  <i className="nav-icon fas fa-sign-out-alt" />
-                  <p>Logout</p>
+                <button className="nav-link text-danger border-0 bg-transparent w-100 text-start"
+                  onClick={() => logout("/login")}>
+                  <i className="nav-icon fas fa-sign-out-alt" /><p>Logout</p>
                 </button>
               </li>
             </ul>
@@ -139,11 +106,7 @@ export default function AstrologerLayout() {
         </div>
       </aside>
 
-      {/* ── CONTENT ────────────────────────────────── */}
-      <div className="content-wrapper">
-        <Outlet />
-      </div>
-
+      <div className="content-wrapper"><Outlet /></div>
       <footer className="main-footer text-center py-2">
         <small className="text-muted">AstroPortal &copy; {new Date().getFullYear()}</small>
       </footer>
