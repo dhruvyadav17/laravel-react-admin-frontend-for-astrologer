@@ -1,29 +1,14 @@
 // PATH: src/astrologer/features/dashboard/DashboardPage.tsx
-// FIX BUG-3: QuickLink mein <a href> tha — React Router mein ye full page reload karta hai
-//             ab <Link to> use kar rahe hain (SPA navigation)
-// IMPROVEMENT: StatCard aur QuickLink separate file nahi banaye (DashboardPage hi kaafi small hai)
-//              shared constants import kiye
+// FIX: QuickLink mein <a href> tha — full page reload
+//      <Link to> se replace kiya
 
-import { Link } from "react-router-dom";
+import { Link }                                           from "react-router-dom";
 import { useMyStatsQuery, useToggleAvailabilityMutation } from "../../../store/api/astrologer.api";
-import { useAuth } from "../../../auth/hooks/useAuth";
-import { toast } from "react-toastify";
+import { useAuth }                                        from "../../../auth/hooks/useAuth";
+import { toast }                                          from "react-toastify";
 
-/* =====================================================
- | STAT CARD
- ===================================================== */
-function StatCard({
-  icon,
-  color,
-  title,
-  value,
-  sub,
-}: {
-  icon:  string;
-  color: string;
-  title: string;
-  value: string | number;
-  sub:   string;
+function StatCard({ icon, color, title, value, sub }: {
+  icon: string; color: string; title: string; value: string | number; sub: string;
 }) {
   return (
     <div className="col-6 col-md-3">
@@ -41,28 +26,12 @@ function StatCard({
   );
 }
 
-/* =====================================================
- | QUICK LINK
- | FIX BUG-3: <a href> → <Link to> (SPA navigation, no page reload)
- ===================================================== */
-function QuickLink({
-  to,
-  icon,
-  label,
-  color,
-}: {
-  to:    string;
-  icon:  string;
-  label: string;
-  color: string;
+function QuickLink({ to, icon, label, color }: {
+  to: string; icon: string; label: string; color: string;
 }) {
   return (
     <div className="col-md-4">
-      <Link
-        to={to}
-        className={`card text-${color} text-decoration-none h-100`}
-        style={{ display: "block" }}
-      >
+      <Link to={to} className={`card text-${color} text-decoration-none h-100`}>
         <div className="card-body d-flex align-items-center gap-3 py-3">
           <i className={`fas ${icon} fs-4`} />
           <span className="fw-semibold">{label}</span>
@@ -73,9 +42,6 @@ function QuickLink({
   );
 }
 
-/* =====================================================
- | MAIN PAGE
- ===================================================== */
 export default function DashboardPage() {
   const { user }                               = useAuth();
   const { data: stats, isLoading }             = useMyStatsQuery();
@@ -94,14 +60,12 @@ export default function DashboardPage() {
     <section className="content pt-3">
       <div className="container-fluid">
 
-        {/* Header card */}
         <div className="card mb-4">
           <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div className="d-flex align-items-center gap-3">
-              <div
-                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
-                style={{ width: 48, height: 48, fontSize: 18 }}
-              >
+              <div className="rounded-circle bg-primary text-white d-flex align-items-center
+                              justify-content-center fw-bold"
+                style={{ width: 48, height: 48, fontSize: 18 }}>
                 {user?.name?.[0]?.toUpperCase()}
               </div>
               <div>
@@ -110,14 +74,11 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Online / Offline toggle */}
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted small fw-semibold">Go Online:</span>
               <div className="form-check form-switch mb-0">
                 <input
-                  className="form-check-input"
-                  type="checkbox"
-                  role="switch"
+                  className="form-check-input" type="checkbox" role="switch"
                   id="onlineToggle"
                   checked={stats?.is_online ?? false}
                   onChange={handleToggle}
@@ -125,9 +86,7 @@ export default function DashboardPage() {
                   style={{ width: "3em", height: "1.5em", cursor: "pointer" }}
                 />
                 <label
-                  className={`form-check-label fw-semibold ${
-                    stats?.is_online ? "text-success" : "text-secondary"
-                  }`}
+                  className={`form-check-label fw-semibold ${stats?.is_online ? "text-success" : "text-secondary"}`}
                   htmlFor="onlineToggle"
                 >
                   {toggling ? "..." : stats?.is_online ? "Online" : "Offline"}
@@ -137,49 +96,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats row */}
         {isLoading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status" />
-          </div>
+          <div className="text-center py-5"><div className="spinner-border text-primary" role="status" /></div>
         ) : (
           <div className="row g-3 mb-4">
-            <StatCard
-              icon="fa-star"
-              color="warning"
-              title="Rating"
-              value={`${stats?.rating?.toFixed(1) ?? "0.0"} / 5.0`}
-              sub="average rating"
-            />
-            <StatCard
-              icon="fa-comments"
-              color="primary"
-              title="Reviews"
-              value={stats?.total_reviews ?? 0}
-              sub="from clients"
-            />
-            <StatCard
-              icon="fa-phone"
-              color="success"
-              title="Consultations"
-              value={stats?.total_consultations ?? 0}
-              sub="completed"
-            />
-            <StatCard
-              icon="fa-circle"
-              color={stats?.is_available ? "success" : "secondary"}
-              title="Availability"
-              value={stats?.is_available ? "Available" : "Busy"}
-              sub="current status"
-            />
+            <StatCard icon="fa-star"     color="warning"                                    title="Rating"        value={`${stats?.rating?.toFixed(1) ?? "0.0"} / 5.0`} sub="average rating" />
+            <StatCard icon="fa-comments" color="primary"                                    title="Reviews"       value={stats?.total_reviews ?? 0}       sub="from clients" />
+            <StatCard icon="fa-phone"    color="success"                                    title="Consultations" value={stats?.total_consultations ?? 0} sub="completed" />
+            <StatCard icon="fa-circle"   color={stats?.is_available ? "success" : "secondary"} title="Availability"  value={stats?.is_available ? "Available" : "Busy"} sub="current status" />
           </div>
         )}
 
-        {/* Quick links — FIX: <Link to> instead of <a href> */}
         <div className="row g-3">
-          <QuickLink to="/astrologer/profile"  icon="fa-user-edit"    label="Edit My Profile"  color="primary" />
-          <QuickLink to="/astrologer/schedule" icon="fa-calendar-alt" label="Manage Schedule"  color="info"    />
-          <QuickLink to="/astrologer/reviews"  icon="fa-star"         label="View My Reviews"  color="warning" />
+          <QuickLink to="/astrologer/profile"  icon="fa-user-edit"    label="Edit My Profile" color="primary" />
+          <QuickLink to="/astrologer/schedule" icon="fa-calendar-alt" label="Manage Schedule" color="info"    />
+          <QuickLink to="/astrologer/reviews"  icon="fa-star"         label="View My Reviews" color="warning" />
         </div>
 
       </div>

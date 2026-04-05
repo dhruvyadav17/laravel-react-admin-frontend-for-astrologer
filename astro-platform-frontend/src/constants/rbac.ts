@@ -21,7 +21,7 @@ export const PERMISSIONS = {
     RESTORE: 'astrologer-restore',
     VERIFY:  'astrologer-verify',
   },
-  ROLE:       { MANAGE: 'role-manage' },
+  ROLE:       { MANAGE: 'role-manage', ASSIGN_PERMISSION: 'role-manage'},
   PERMISSION: { MANAGE: 'permission-manage' },
   DASHBOARD:  { VIEW:   'dashboard-view' },
 } as const;

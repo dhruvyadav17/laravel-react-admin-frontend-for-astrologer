@@ -62,7 +62,8 @@ export const astrologerApi = baseApi.injectEndpoints({
       query: (params = {}) => ({ url: '/admin/astrologers', params }),
       transformResponse: (res: any) => ({
         data:       res.data             ?? [],
-        pagination: res.meta?.pagination ?? res.pagination ?? null,
+        // pagination: res.meta?.pagination ?? res.pagination ?? null,
+        pagination: res.meta ?? res.pagination ?? null,
       }),
       providesTags: [{ type: 'Astrologer', id: 'ADMIN-LIST' }],
     }),
