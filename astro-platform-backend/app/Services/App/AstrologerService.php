@@ -1,12 +1,7 @@
 <?php
 // PATH: app/Services/App/AstrologerService.php
-// FIX BUG-7: toggleOnline() sirf is_online toggle karta tha — is_available sync nahi hoti thi
-//             Frontend PATCH /astrologer/me/availability → { is_online, is_available } dono expect karta hai
-//             Logic: online karo → dono true; offline karo → is_online false, is_available false
-// FIX BUG-8: publicList() / adminList() mein inline query logic tha
-//             AstrologerQuery class already exist karti hai more complete logic ke saath
-//             (min_price, max_price support bhi tha jo service mein nahi tha)
-//             Ab service AstrologerQuery ko delegate karti hai — DRY, testable
+// FIX: findPublic() mein 'schedules' relation load nahi tha
+//      AstrologerDetailPage pe WeeklySchedule component always empty tha
 
 namespace App\Services\App;
 
@@ -18,30 +13,27 @@ use Illuminate\Support\Facades\Hash;
 
 class AstrologerService
 {
-    /* ── Public listing (delegate to AstrologerQuery) ── */
-    // FIX BUG-8: Inline filter logic hata ke AstrologerQuery use kiya
-    //             Ab min_price, max_price filters bhi kaam karenge
+    /* ── Public listing ─────────────────────────── */
     public function publicList(array $filters = [])
     {
         return AstrologerQuery::publicBase($filters)->paginate(12);
     }
 
-    /* ── Public single ──────────────────────────────── */
+    /* ── Public single — FIX: schedules load karo ─ */
     public function findPublic(int $id): Astrologer
     {
-        return Astrologer::with('user')
+        return Astrologer::with(['user', 'schedules'])  // FIX: schedules added
             ->where('is_verified', true)
             ->findOrFail($id);
     }
 
-    /* ── Admin listing (delegate to AstrologerQuery) ── */
-    // FIX BUG-8: Same — AstrologerQuery.adminBase() use kiya
+    /* ── Admin listing ──────────────────────────── */
     public function adminList(array $filters = [])
     {
         return AstrologerQuery::adminBase($filters)->paginate(15);
     }
 
-    /* ── Create with user ───────────────────────────── */
+    /* ── Create with user ───────────────────────── */
     public function createWithUser(array $data): array
     {
         return DB::transaction(function () use ($data) {
@@ -78,7 +70,7 @@ class AstrologerService
         });
     }
 
-    /* ── Admin update ───────────────────────────────── */
+    /* ── Admin update ───────────────────────────── */
     public function update(Astrologer $astrologer, array $data): Astrologer
     {
         return DB::transaction(function () use ($astrologer, $data) {
@@ -100,7 +92,7 @@ class AstrologerService
         });
     }
 
-    /* ── Self update (astrologer portal) ────────────── */
+    /* ── Self update (astrologer portal) ────────── */
     public function selfUpdate(Astrologer $astrologer, array $data): Astrologer
     {
         $allowed = [
@@ -111,26 +103,18 @@ class AstrologerService
         return $astrologer->fresh(['user']);
     }
 
-    /* ── Toggle online status ───────────────────────── */
-    // FIX BUG-7: Pehle sirf is_online toggle hota tha
-    //             is_available ka status galat rehta tha — astrologer offline tha
-    //             but is_available=true rehta tha → frontend mein "Available" dikhta tha
-    //             Ab dono sync hote hain:
-    //               Online ho  → is_online=true,  is_available=true
-    //               Offline ho → is_online=false, is_available=false
+    /* ── Toggle online ──────────────────────────── */
     public function toggleOnline(Astrologer $astrologer): Astrologer
     {
         $goingOnline = !$astrologer->is_online;
-
         $astrologer->update([
             'is_online'    => $goingOnline,
-            'is_available' => $goingOnline,  // FIX: sync karo
+            'is_available' => $goingOnline,
         ]);
-
         return $astrologer->fresh();
     }
 
-    /* ── Recalculate rating ─────────────────────────── */
+    /* ── Recalculate rating ─────────────────────── */
     public function recalculateRating(Astrologer $astrologer): void
     {
         $stats = $astrologer->reviews()
@@ -144,13 +128,13 @@ class AstrologerService
         ]);
     }
 
-    /* ── Soft Delete ────────────────────────────────── */
+    /* ── Delete ─────────────────────────────────── */
     public function delete(Astrologer $astrologer): void
     {
         $astrologer->delete();
     }
 
-    /* ── Restore ────────────────────────────────────── */
+    /* ── Restore ────────────────────────────────── */
     public function restore(int $id): Astrologer
     {
         $a = Astrologer::withTrashed()->findOrFail($id);

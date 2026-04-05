@@ -1,45 +1,62 @@
 // PATH: src/user/features/astrologers/AstrologersPage.tsx
-// IMPROVEMENT: Duplicate constants (EXPERTISE_OPTIONS, LANGUAGE_OPTIONS, SORT_OPTIONS)
-//              shared constants/astrologer.ts se import kiye — DRY principle
-// BUG FIX: Auto-redirect jab sirf 1 result hota tha — ye filter ke saath problematic tha
-//           Ab sirf redirect karta hai jab koi active filter na ho aur total=1 ho
-//           (pehle aisa tha ki filter lagao, 1 result mile, redirect ho jao — wapas filter
-//            lagane ka koi rasta nahi tha)
+// FEATURE: min_price / max_price filter add kiya — backend pehle se support karta tha, UI missing tha
+// FEATURE: Debounce filter — useDebounce hook use kiya
+// FIX: Shared constants import, auto-redirect trap fix (previous rounds se)
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useGetAstrologersQuery } from "../../../store/api/astrologer.api";
-import AstrologerCard from "../../components/AstrologerCard";
+import { useState, useEffect }          from "react";
+import { useNavigate }                  from "react-router-dom";
+import { useGetAstrologersQuery }       from "../../../store/api/astrologer.api";
+import { useDebounce }                  from "../../../hooks/useDebounce";
+import AstrologerCard                   from "../../components/AstrologerCard";
 import {
-  EXPERTISE_OPTIONS,
-  LANGUAGE_OPTIONS,
-  SORT_OPTIONS,
+  EXPERTISE_OPTIONS, LANGUAGE_OPTIONS, SORT_OPTIONS,
 } from "../../../constants/astrologer";
 import type { AstrologerFilters, ConsultationType } from "../../../types/models";
 
 export default function AstrologersPage() {
   const navigate = useNavigate();
 
-  const [filters, setFilters]     = useState<AstrologerFilters>({ sort: "top_rated", page: 1 });
+  const [filters, setFilters]       = useState<AstrologerFilters>({ sort: "top_rated", page: 1 });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Price range local state — debounced to avoid API on every keystroke
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const debouncedMin = useDebounce(minPrice, 500);
+  const debouncedMax = useDebounce(maxPrice, 500);
+
+  // Apply debounced price to filters
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      min_price: debouncedMin ? parseFloat(debouncedMin) : undefined,
+      page: 1,
+    }));
+  }, [debouncedMin]);
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      max_price: debouncedMax ? parseFloat(debouncedMax) : undefined,
+      page: 1,
+    }));
+  }, [debouncedMax]);
 
   const { data, isLoading, isError, refetch } = useGetAstrologersQuery(filters);
 
   const astrologers = Array.isArray(data?.data) ? data.data : [];
   const pagination  = data?.pagination ?? null;
 
-  // FIX: Sirf tab redirect karo jab koi filter active na ho aur total 1 ho
-  // Pehle: filter ke saath bhi 1 result pe redirect hota tha — trap ban jaata tha
+  // Auto-redirect only when no filter active and total = 1
   const hasActiveFilters = !!(
-    filters.online ||
-    filters.expertise ||
-    filters.language ||
-    filters.min_rating ||
-    filters.consultation_type
+    filters.online || filters.expertise || filters.language ||
+    filters.min_rating || filters.consultation_type ||
+    debouncedMin || debouncedMax
   );
 
   useEffect(() => {
-    if (!isLoading && !isError && !hasActiveFilters && astrologers.length === 1 && pagination?.total === 1) {
+    if (!isLoading && !isError && !hasActiveFilters &&
+        astrologers.length === 1 && pagination?.total === 1) {
       navigate(`/astrologers/${astrologers[0].id}`, { replace: true });
     }
   }, [astrologers, isLoading, isError, hasActiveFilters, pagination, navigate]);
@@ -47,55 +64,46 @@ export default function AstrologersPage() {
   const setFilter = (key: keyof AstrologerFilters, value: unknown) =>
     setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 1 }));
 
-  const clearAll = () => setFilters({ sort: "top_rated", page: 1 });
+  const clearAll = () => {
+    setFilters({ sort: "top_rated", page: 1 });
+    setMinPrice("");
+    setMaxPrice("");
+  };
 
   const activeFilterCount = [
-    filters.online,
-    filters.expertise,
-    filters.language,
-    filters.min_rating,
-    filters.consultation_type,
+    filters.online, filters.expertise, filters.language,
+    filters.min_rating, filters.consultation_type,
+    debouncedMin, debouncedMax,
   ].filter(Boolean).length;
 
   return (
     <div className="container py-4">
 
-      {/* ── PAGE HEADER ─────────────────────────── */}
+      {/* Header */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
         <div>
           <h2 className="fw-bold mb-1">
-            <i className="fas fa-star text-warning me-2" />
-            Talk to an Astrologer
+            <i className="fas fa-star text-warning me-2" />Talk to an Astrologer
           </h2>
           <p className="text-muted mb-0">
-            {pagination
-              ? `${pagination.total} verified astrologers`
-              : "Find your perfect guide"}
+            {pagination ? `${pagination.total} verified astrologers` : "Find your perfect guide"}
           </p>
         </div>
 
         <div className="d-flex gap-2 flex-wrap align-items-center">
-          <select
-            className="form-select form-select-sm"
-            style={{ minWidth: 190 }}
+          <select className="form-select form-select-sm" style={{ minWidth: 190 }}
             value={filters.sort ?? "top_rated"}
-            onChange={(e) => setFilter("sort", e.target.value)}
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
+            onChange={(e) => setFilter("sort", e.target.value)}>
+            {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
 
           <button
             className={`btn btn-sm ${showFilters ? "btn-primary" : "btn-outline-primary"}`}
-            onClick={() => setShowFilters((v) => !v)}
-          >
+            onClick={() => setShowFilters((v) => !v)}>
             <i className="fas fa-sliders-h me-1" />
             Filters
             {activeFilterCount > 0 && (
-              <span className="badge bg-danger ms-1 rounded-pill">
-                {activeFilterCount}
-              </span>
+              <span className="badge bg-danger ms-1 rounded-pill">{activeFilterCount}</span>
             )}
           </button>
 
@@ -107,80 +115,115 @@ export default function AstrologersPage() {
         </div>
       </div>
 
-      {/* ── FILTER PANEL ────────────────────────── */}
+      {/* Filter panel */}
       {showFilters && (
         <div className="card mb-4 border-primary border-opacity-25">
           <div className="card-body">
             <div className="row g-3 align-items-end">
+
               <div className="col-md-3">
                 <label className="form-label small fw-semibold mb-1">Expertise</label>
-                <select
-                  className="form-select form-select-sm"
+                <select className="form-select form-select-sm"
                   value={filters.expertise ?? ""}
-                  onChange={(e) => setFilter("expertise", e.target.value)}
-                >
+                  onChange={(e) => setFilter("expertise", e.target.value)}>
                   <option value="">All Expertise</option>
                   {EXPERTISE_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
+
               <div className="col-md-3">
                 <label className="form-label small fw-semibold mb-1">Language</label>
-                <select
-                  className="form-select form-select-sm"
+                <select className="form-select form-select-sm"
                   value={filters.language ?? ""}
-                  onChange={(e) => setFilter("language", e.target.value)}
-                >
+                  onChange={(e) => setFilter("language", e.target.value)}>
                   <option value="">All Languages</option>
                   {LANGUAGE_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
+
               <div className="col-md-2">
                 <label className="form-label small fw-semibold mb-1">Consult Via</label>
-                <select
-                  className="form-select form-select-sm"
+                <select className="form-select form-select-sm"
                   value={filters.consultation_type ?? ""}
-                  onChange={(e) => setFilter("consultation_type", e.target.value as ConsultationType)}
-                >
+                  onChange={(e) => setFilter("consultation_type", e.target.value as ConsultationType)}>
                   <option value="">Any</option>
                   <option value="chat">Chat</option>
                   <option value="call">Call</option>
                   <option value="video">Video</option>
                 </select>
               </div>
+
               <div className="col-md-2">
                 <label className="form-label small fw-semibold mb-1">Min Rating</label>
-                <select
-                  className="form-select form-select-sm"
+                <select className="form-select form-select-sm"
                   value={filters.min_rating ?? ""}
-                  onChange={(e) => setFilter("min_rating", e.target.value ? parseFloat(e.target.value) : undefined)}
-                >
+                  onChange={(e) => setFilter("min_rating", e.target.value ? parseFloat(e.target.value) : undefined)}>
                   <option value="">Any Rating</option>
-                  <option value="4.5">4.5 ★ &amp; above</option>
-                  <option value="4">4.0 ★ &amp; above</option>
-                  <option value="3">3.0 ★ &amp; above</option>
+                  <option value="4.5">4.5★ & above</option>
+                  <option value="4">4.0★ & above</option>
+                  <option value="3">3.0★ & above</option>
                 </select>
               </div>
+
               <div className="col-md-2 d-flex align-items-center pb-1">
                 <div className="form-check form-switch mb-0">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="onlineOnly"
+                  <input className="form-check-input" type="checkbox" id="onlineOnly"
                     checked={!!filters.online}
                     onChange={(e) => setFilter("online", e.target.checked ? true : undefined)}
-                    style={{ cursor: "pointer" }}
-                  />
+                    style={{ cursor: "pointer" }} />
                   <label className="form-check-label small fw-semibold" htmlFor="onlineOnly">
                     Online Only
                   </label>
                 </div>
               </div>
+
+              {/* FEATURE: Price range filter */}
+              <div className="col-12">
+                <label className="form-label small fw-semibold mb-1">
+                  Price Range (₹/min)
+                </label>
+                <div className="d-flex align-items-center gap-2">
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    placeholder="Min ₹"
+                    value={minPrice}
+                    min={0}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    style={{ maxWidth: 120 }}
+                  />
+                  <span className="text-muted small">to</span>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    placeholder="Max ₹"
+                    value={maxPrice}
+                    min={0}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    style={{ maxWidth: 120 }}
+                  />
+                  {(minPrice || maxPrice) && (
+                    <button className="btn btn-sm btn-outline-secondary"
+                      onClick={() => { setMinPrice(""); setMaxPrice(""); }}>
+                      <i className="fas fa-times" />
+                    </button>
+                  )}
+                  <span className="text-muted small">
+                    {minPrice && maxPrice
+                      ? `₹${minPrice}–₹${maxPrice}/min`
+                      : minPrice ? `Min ₹${minPrice}/min`
+                      : maxPrice ? `Max ₹${maxPrice}/min`
+                      : ""}
+                  </span>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
       )}
 
-      {/* ── RESULTS ─────────────────────────────── */}
+      {/* Results */}
       {isLoading ? (
         <div className="text-center py-5">
           <div className="spinner-border text-primary mb-3" style={{ width: 48, height: 48 }} role="status" />
@@ -213,20 +256,13 @@ export default function AstrologersPage() {
               <nav>
                 <ul className="pagination">
                   <li className={`page-item ${pagination.current_page === 1 ? "disabled" : ""}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setFilter("page", pagination.current_page - 1)}
-                    >
+                    <button className="page-link"
+                      onClick={() => setFilter("page", pagination.current_page - 1)}>
                       ‹ Prev
                     </button>
                   </li>
-
                   {Array.from({ length: pagination.last_page }, (_, i) => i + 1)
-                    .filter((p) =>
-                      p === 1 ||
-                      p === pagination.last_page ||
-                      Math.abs(p - pagination.current_page) <= 2
-                    )
+                    .filter((p) => p === 1 || p === pagination.last_page || Math.abs(p - pagination.current_page) <= 2)
                     .reduce<number[]>((acc, p, idx, arr) => {
                       if (idx > 0 && arr[idx - 1] !== p - 1) acc.push(-1);
                       acc.push(p);
@@ -234,29 +270,16 @@ export default function AstrologersPage() {
                     }, [])
                     .map((p, idx) =>
                       p === -1 ? (
-                        <li key={`e-${idx}`} className="page-item disabled">
-                          <span className="page-link">…</span>
-                        </li>
+                        <li key={`e-${idx}`} className="page-item disabled"><span className="page-link">…</span></li>
                       ) : (
-                        <li
-                          key={p}
-                          className={`page-item ${p === pagination.current_page ? "active" : ""}`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() => setFilter("page", p)}
-                          >
-                            {p}
-                          </button>
+                        <li key={p} className={`page-item ${p === pagination.current_page ? "active" : ""}`}>
+                          <button className="page-link" onClick={() => setFilter("page", p)}>{p}</button>
                         </li>
                       )
                     )}
-
                   <li className={`page-item ${pagination.current_page === pagination.last_page ? "disabled" : ""}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setFilter("page", pagination.current_page + 1)}
-                    >
+                    <button className="page-link"
+                      onClick={() => setFilter("page", pagination.current_page + 1)}>
                       Next ›
                     </button>
                   </li>

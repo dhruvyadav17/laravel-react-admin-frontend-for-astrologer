@@ -12,7 +12,8 @@ import type { User, Role, Permission } from "../../types/models";
 export interface DashboardStats {
   total_users:         number;
   total_astrologers:   number;  // was missing
-  total_consultations: number;  // was missing
+  total_consultations: number;
+  online_astrologers:   number;  // was missing
   revenue:             number;  // was missing
 }
 

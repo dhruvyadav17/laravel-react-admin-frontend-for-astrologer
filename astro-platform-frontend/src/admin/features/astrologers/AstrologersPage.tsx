@@ -1,10 +1,9 @@
 // PATH: src/admin/features/astrologers/AstrologersPage.tsx
-// FIX: renderRow signature correct kiya — (item: Astrologer, actions: RowAction[])
-//      CrudTable renderRow(item, actions) call karta hai
-//      actions = RowAction[] — edit/delete/restore already included by CrudTable
-//      verify button ko actions array mein push karke RowActions component se render kiya
+// FIX: Pagination nahi tha — sare astrologers ek hi page pe load hote the
+//      Ab page state add kiya, Pagination component use kiya
+// FIX: Search debounce — TableSearch already debounced hai ab
 
-import { useState } from "react";
+import { useState }                    from "react";
 import {
   useAdminGetAstrologersQuery,
   useAdminCreateAstrologerMutation,
@@ -13,23 +12,19 @@ import {
   useAdminRestoreAstrologerMutation,
   useAdminVerifyAstrologerMutation,
 } from "../../../store/api/astrologer.api";
-import AdminCrudPage from "../../components/crud/AdminCrudPage";
-import RowActions from "../../../components/table/RowActions";
-import { PERMISSIONS } from "../../../constants/rbac";
+import AdminCrudPage                   from "../../components/crud/AdminCrudPage";
+import RowActions                      from "../../../components/table/RowActions";
+import Pagination                      from "../../../components/table/Pagination";
+import { TableSearch }                 from "../../../components/table/table.helpers";
+import { PERMISSIONS }                 from "../../../constants/rbac";
 import type { Astrologer, FieldConfig } from "../../../types/models";
-import { toast } from "react-toastify";
+import { toast }                       from "react-toastify";
 
-/* ─── Form config ─────────────────────────────────── */
+/* ─── Form config ──────────────────────────────────── */
 const INITIAL_VALUES: Partial<Astrologer> = {
-  name:              "",
-  email:             "",
-  bio:               "",
-  expertise:         "",
-  experience:        1,
-  price_per_minute:  10,
-  languages:         [],
-  skills:            [],
-  consultation_type: "all",
+  name: "", email: "", bio: "", expertise: "",
+  experience: 1, price_per_minute: 10,
+  languages: [], skills: [], consultation_type: "all",
 };
 
 const FIELDS: FieldConfig<Partial<Astrologer>>[] = [
@@ -52,14 +47,16 @@ const FIELDS: FieldConfig<Partial<Astrologer>>[] = [
   },
 ];
 
-/* ─── Main Page ───────────────────────────────────── */
+/* ─── Main page ────────────────────────────────────── */
 export default function AstrologersPage() {
   const [search,   setSearch]   = useState("");
   const [verified, setVerified] = useState("");
+  const [page,     setPage]     = useState(1);   // FIX: pagination state
 
   const { data, isLoading, isError, refetch } = useAdminGetAstrologersQuery({
     search:      search   || undefined,
     is_verified: verified === "" ? undefined : verified === "true",
+    page,                                           // FIX: pass page to API
   });
 
   const [create]  = useAdminCreateAstrologerMutation();
@@ -69,6 +66,7 @@ export default function AstrologersPage() {
   const [verify]  = useAdminVerifyAstrologerMutation();
 
   const astrologers = data?.data ?? [];
+  const meta        = data?.pagination ?? null;   // FIX: pagination meta
 
   const handleVerify = async (id: number, isVerified: boolean) => {
     try {
@@ -80,7 +78,11 @@ export default function AstrologersPage() {
     }
   };
 
-  /* ─── Columns ────────────────────────────────────── */
+  // Reset to page 1 when filters change
+  const handleSearch = (val: string) => { setSearch(val); setPage(1); };
+  const handleVerifiedChange = (val: string) => { setVerified(val); setPage(1); };
+
+  /* ─── Columns ───────────────────────────────────── */
   const columns = (
     <tr>
       <th>#</th>
@@ -95,12 +97,7 @@ export default function AstrologersPage() {
     </tr>
   );
 
-  /* ─── renderRow ──────────────────────────────────────
-   * SIGNATURE: (item: Astrologer, actions: RowAction[])
-   * CrudTable calls: renderRow(item, actions)
-   * actions[] already has: edit, delete/restore from CrudTable
-   * We inject verify as an extra RowAction here
-   ──────────────────────────────────────────────────── */
+  /* ─── renderRow ─────────────────────────────────── */
   const renderRow = (a: Astrologer, actions: any[]) => {
     const verifyAction = {
       key:     "verify",
@@ -111,29 +108,21 @@ export default function AstrologersPage() {
       onClick: () => handleVerify(a.id, a.is_verified),
     };
 
-    // inject verify before edit/delete
     const allActions = [verifyAction, ...actions];
 
     return (
       <tr key={a.id} className={a.deleted_at ? "table-secondary opacity-75" : ""}>
         <td className="text-muted small">{a.id}</td>
 
-        {/* Avatar + Name */}
         <td>
           <div className="d-flex align-items-center gap-2">
             {a.profile_image ? (
-              <img
-                src={a.profile_image}
-                alt={a.name}
-                className="rounded-circle flex-shrink-0"
-                style={{ width: 34, height: 34, objectFit: "cover" }}
-              />
+              <img src={a.profile_image} alt={a.name} className="rounded-circle flex-shrink-0"
+                style={{ width: 34, height: 34, objectFit: "cover" }} />
             ) : (
-              <div
-                className="rounded-circle bg-primary text-white d-flex align-items-center
-                            justify-content-center fw-bold flex-shrink-0"
-                style={{ width: 34, height: 34, fontSize: 13 }}
-              >
+              <div className="rounded-circle bg-primary text-white d-flex align-items-center
+                              justify-content-center fw-bold flex-shrink-0"
+                style={{ width: 34, height: 34, fontSize: 13 }}>
                 {a.name?.[0]?.toUpperCase()}
               </div>
             )}
@@ -144,34 +133,28 @@ export default function AstrologersPage() {
           </div>
         </td>
 
-        <td>
-          <span className="badge bg-primary-subtle text-primary border">{a.expertise}</span>
-        </td>
+        <td><span className="badge bg-primary-subtle text-primary border">{a.expertise}</span></td>
         <td className="small">{a.experience} yrs</td>
-        <td className="small">₹{a.price_per_minute}</td>
+        <td className="small">₹{a.price_per_minute}/min</td>
 
-        {/* Rating */}
         <td>
           <span className="text-warning small">★ </span>
           <span className="fw-semibold small">{a.rating?.toFixed(1)}</span>
           <span className="text-muted" style={{ fontSize: 11 }}> ({a.total_reviews})</span>
         </td>
 
-        {/* Online */}
         <td>
           <span className={`badge ${a.is_online ? "bg-success" : "bg-secondary"}`}>
             {a.is_online ? "Online" : "Offline"}
           </span>
         </td>
 
-        {/* Verified badge */}
         <td>
           <span className={`badge ${a.is_verified ? "bg-success" : "bg-warning text-dark"}`}>
             {a.is_verified ? "✓ Verified" : "Unverified"}
           </span>
         </td>
 
-        {/* Actions — verify + edit/delete/restore */}
         <td className="text-end pe-3">
           <RowActions actions={allActions} />
         </td>
@@ -179,75 +162,66 @@ export default function AstrologersPage() {
     );
   };
 
-  /* ─── Top filter bar ─────────────────────────────── */
+  /* ─── Filter bar ────────────────────────────────── */
   const topContent = (
     <div className="card mb-3">
       <div className="card-body py-2">
         <div className="row g-2 align-items-center">
           <div className="col-md-5">
-            <div className="input-group input-group-sm">
-              <span className="input-group-text bg-white">
-                <i className="fas fa-search text-muted" />
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by name, email or expertise..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button
-                  className="btn btn-outline-secondary"
-                  type="button"
-                  onClick={() => setSearch("")}
-                >
-                  <i className="fas fa-times" />
-                </button>
-              )}
-            </div>
+            {/* FIX: TableSearch now debounced internally */}
+            <TableSearch
+              value={search}
+              onChange={handleSearch}
+              placeholder="Search by name, email or expertise..."
+            />
           </div>
           <div className="col-md-3">
-            <select
-              className="form-select form-select-sm"
-              value={verified}
-              onChange={(e) => setVerified(e.target.value)}
-            >
+            <select className="form-select form-select-sm" value={verified}
+              onChange={(e) => handleVerifiedChange(e.target.value)}>
               <option value="">All Astrologers</option>
               <option value="true">Verified Only</option>
               <option value="false">Unverified Only</option>
             </select>
           </div>
           <div className="col-md-4 text-muted small">
-            Showing {astrologers.length} astrologer{astrologers.length !== 1 ? "s" : ""}
+            {meta
+              ? `${meta.total} astrologer${meta.total !== 1 ? "s" : ""} total`
+              : `${astrologers.length} shown`}
           </div>
         </div>
       </div>
     </div>
   );
 
-  /* ─── Render ──────────────────────────────────────── */
+  /* ─── Render ────────────────────────────────────── */
   return (
-    <AdminCrudPage<Astrologer>
-      entity="Astrologer"
-      query={{ data: astrologers, isLoading, isError, refetch }}
-      mutations={{
-        create:  [async (d: Partial<Astrologer>) => { await create(d).unwrap(); }],
-        update:  [async (d: Partial<Astrologer> & { id: number }) => { await update({ id: d.id, data: d }).unwrap(); }],
-        delete:  [async (id: number) => { await remove(id).unwrap(); }],
-        restore: [async (id: number) => { await restore(id).unwrap(); }],
-      }}
-      columns={columns}
-      fields={FIELDS}
-      initialValues={INITIAL_VALUES}
-      permissions={{
-        create:  PERMISSIONS.ASTROLOGER.CREATE,
-        update:  PERMISSIONS.ASTROLOGER.UPDATE,
-        delete:  PERMISSIONS.ASTROLOGER.DELETE,
-        restore: PERMISSIONS.ASTROLOGER.RESTORE,
-      }}
-      renderRow={renderRow}
-      topContent={topContent}
-    />
+    <>
+      <AdminCrudPage<Astrologer>
+        entity="Astrologer"
+        query={{ data: astrologers, isLoading, isError, refetch }}
+        mutations={{
+          create:  [async (d: Partial<Astrologer>) => { await create(d).unwrap(); }],
+          update:  [async (d: Partial<Astrologer> & { id: number }) => { await update({ id: d.id, data: d }).unwrap(); }],
+          delete:  [async (id: number) => { await remove(id).unwrap(); }],
+          restore: [async (id: number) => { await restore(id).unwrap(); }],
+        }}
+        columns={columns}
+        fields={FIELDS}
+        initialValues={INITIAL_VALUES}
+        permissions={{
+          create:  PERMISSIONS.ASTROLOGER.CREATE,
+          update:  PERMISSIONS.ASTROLOGER.UPDATE,
+          delete:  PERMISSIONS.ASTROLOGER.DELETE,
+          restore: PERMISSIONS.ASTROLOGER.RESTORE,
+        }}
+        renderRow={renderRow}
+        topContent={topContent}
+      />
+
+      {/* FIX: Pagination add kiya */}
+      {meta && meta.last_page > 1 && (
+        <Pagination meta={meta} onPageChange={setPage} />
+      )}
+    </>
   );
 }
