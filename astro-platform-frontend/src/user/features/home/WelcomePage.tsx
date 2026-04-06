@@ -1,45 +1,69 @@
 // PATH: src/user/features/home/WelcomePage.tsx
-// FIX BUG-21: <Link><button> — invalid HTML (button inside anchor tag)
-//              Browser warnings + accessibility issues
-//              Fix: Link ko directly button styling dedo — no nested button
+// IMPROVE: Register link add kiya, better visual
 
 import { Link } from "react-router-dom";
 
 export default function WelcomePage() {
   return (
-    <div className="d-flex align-items-center justify-content-center min-vh-100">
-      <div className="app-card text-center px-4 py-5" style={{ maxWidth: 420, width: "100%" }}>
+    <div className="d-flex align-items-center justify-content-center min-vh-100"
+      style={{ background: "linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)" }}>
 
-        <h2 className="fw-bold mb-2">🔱 Astro</h2>
-        <p className="text-muted mb-4">Choose your access to continue</p>
+      <div style={{ width: "100%", maxWidth: 440, padding: "0 16px" }}>
 
-        {/* FIX BUG-21: Link directly styled — no <button> inside <Link> */}
-        <div className="d-grid gap-3">
-          <Link
-            to="/home"
-            className="btn btn-primary-app btn-app w-100"
-          >
-            👤 Continue as User
-          </Link>
-
-          <Link
-            to="/admin/login"
-            className="btn btn-outline-app btn-app w-100"
-          >
-            🛠 Admin Login
-          </Link>
-
-          <Link
-            to="/login"
-            className="btn btn-outline-secondary btn-sm w-100"
-          >
-            Sign in to your account
-          </Link>
+        {/* Logo */}
+        <div className="text-center mb-5">
+          <div style={{ fontSize: 64 }}>🔱</div>
+          <h1 className="fw-bold text-white mb-1" style={{ fontSize: 32 }}>Astro</h1>
+          <p className="text-white opacity-75 small">
+            Certified astrologers · Instant consultation · 24/7
+          </p>
         </div>
 
-        <p className="text-muted small mt-4 mb-0">
-          Astrology platform for guidance & insights
-        </p>
+        {/* Card */}
+        <div className="bg-white rounded-4 p-4 shadow mb-3">
+          <h5 className="fw-bold text-center mb-1">Get Started</h5>
+          <p className="text-muted text-center small mb-4">
+            Talk to verified astrologers on love, career &amp; life
+          </p>
+
+          <div className="d-grid gap-2">
+            <Link to="/register"
+              className="btn btn-lg fw-semibold"
+              style={{ background: "#e63946", color: "#fff", borderRadius: 12 }}>
+              ✨ Create Free Account
+            </Link>
+            <Link to="/login"
+              className="btn btn-lg btn-outline-secondary fw-semibold"
+              style={{ borderRadius: 12 }}>
+              Sign In
+            </Link>
+          </div>
+
+          <div className="text-center mt-3">
+            <Link to="/home" className="text-muted small text-decoration-none">
+              Browse as guest →
+            </Link>
+          </div>
+        </div>
+
+        {/* Trust */}
+        <div className="d-flex justify-content-center gap-4 text-white opacity-75 mb-4">
+          {[["500+", "Astrologers"], ["50K+", "Users"], ["4.8★", "Rating"]].map(([val, lbl]) => (
+            <div key={lbl} className="text-center">
+              <div className="fw-bold">{val}</div>
+              <div style={{ fontSize: 11 }}>{lbl}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Admin link */}
+        <div className="text-center">
+          <Link to="/admin/login"
+            className="text-white opacity-25 small text-decoration-none"
+            style={{ fontSize: 11 }}>
+            Admin Access
+          </Link>
+        </div>
 
       </div>
     </div>

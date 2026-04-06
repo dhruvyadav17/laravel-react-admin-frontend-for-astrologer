@@ -54,8 +54,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
 
         <div className="card mb-4">
           <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -97,7 +97,6 @@ export default function DashboardPage() {
           <QuickLink to="/astrologer/reviews"  icon="fa-star"         label="View My Reviews" color="warning" />
         </div>
 
-      </div>
-    </section>
+    </>
   );
 }

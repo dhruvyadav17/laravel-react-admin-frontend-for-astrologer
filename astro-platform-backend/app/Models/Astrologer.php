@@ -36,6 +36,18 @@ class Astrologer extends Model
     public function user(): BelongsTo    { return $this->belongsTo(User::class); }
     public function reviews(): HasMany   { return $this->hasMany(AstrologerReview::class); }
     public function schedules(): HasMany { return $this->hasMany(AstrologerSchedule::class); }
+    public function consultations(): HasMany { return $this->hasMany(\App\Models\Consultation::class); }
+
+    /* ── Accessors — delegate to user relation ── */
+    public function getNameAttribute(): string
+    {
+        return $this->user?->name ?? '';
+    }
+
+    public function getEmailAttribute(): string
+    {
+        return $this->user?->email ?? '';
+    }
 
     public function scopeVerified($q)              { return $q->where('is_verified', true); }
     public function scopeOnline($q)                { return $q->where('is_online', true)->where('is_available', true); }

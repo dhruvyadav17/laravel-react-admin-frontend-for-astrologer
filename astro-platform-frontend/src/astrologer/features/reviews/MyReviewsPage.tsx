@@ -48,8 +48,8 @@ export default function MyReviewsPage() {
     : 0;
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
 
         {/* Summary stats */}
         {profile && (
@@ -106,7 +106,6 @@ export default function MyReviewsPage() {
           </div>
         </div>
 
-      </div>
-    </section>
+    </>
   );
 }

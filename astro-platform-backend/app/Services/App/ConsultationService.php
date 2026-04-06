@@ -30,6 +30,13 @@ class ConsultationService
             ]);
         }
 
+        // Astrologer must be online and available
+        if (!$astrologer->is_online || !$astrologer->is_available) {
+            throw ValidationException::withMessages([
+                'astrologer' => ['Astrologer abhi online nahi hai. Baad mein try karein.'],
+            ]);
+        }
+
         // Check no active/pending consultation already exists with this astrologer
         $existing = Consultation::where('user_id', $user->id)
             ->where('astrologer_id', $astrologer->id)

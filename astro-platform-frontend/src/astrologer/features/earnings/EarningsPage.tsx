@@ -14,8 +14,8 @@ export default function EarningsPage() {
   ];
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
 
         <div className="row g-3 mb-4">
           {cards.map(({ icon, color, label, value, sub }) => (
@@ -96,7 +96,6 @@ export default function EarningsPage() {
           </div>
         </div>
 
-      </div>
-    </section>
+    </>
   );
 }

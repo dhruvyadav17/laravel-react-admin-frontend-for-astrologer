@@ -7,6 +7,7 @@ import { useEffect, useState }           from "react";
 import { useMyAstrologerProfileQuery, useUpdateMyProfileMutation } from "../../../store/api/astrologer.api";
 import { toast }                          from "react-toastify";
 import ImageUpload                        from "../../../components/ui/ImageUpload";
+import { PageLoader }                     from "../../../components/ui/States";
 import {
   EXPERTISE_OPTIONS, LANGUAGE_OPTIONS, SKILL_OPTIONS, CONSULTATION_TYPE_OPTIONS,
 } from "../../../constants/astrologer";
@@ -75,12 +76,12 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-5"><div className="spinner-border text-primary" /></div>;
+    return <PageLoader />;
   }
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between">
             <h5 className="card-title mb-0">
@@ -197,7 +198,6 @@ export default function ProfilePage() {
             </div>
           </form>
         </div>
-      </div>
-    </section>
+    </>
   );
 }

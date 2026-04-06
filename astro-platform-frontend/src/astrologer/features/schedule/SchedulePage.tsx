@@ -89,8 +89,8 @@ export default function SchedulePage() {
   const activeDays = rows.filter((r) => r.is_active).length;
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between">
             <div>
@@ -202,7 +202,6 @@ export default function SchedulePage() {
             Changes are visible to users immediately after saving.
           </div>
         </div>
-      </div>
-    </section>
+    </>
   );
 }

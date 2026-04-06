@@ -1,7 +1,10 @@
 // PATH: src/astrologer/layouts/AstrologerLayout.tsx
-// REFACTOR: Avatar component use kiya — 2 jagah repeated block tha (navbar + sidebar)
+// FIX: AdminLTE v4 classes use kiye (app-wrapper/app-sidebar/app-main)
+//      admin-lte CSS+JS import add kiya — content blank tha isi wajah se
 
 import { NavLink, Link, Outlet }       from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import "admin-lte/dist/css/adminlte.min.css";
 import { useAuth }                     from "../../auth/hooks/useAuth";
 import { useLogout }                   from "../../auth/hooks/useLogout";
 import { useMyAstrologerProfileQuery } from "../../store/api/astrologer.api";
@@ -20,25 +23,43 @@ export default function AstrologerLayout() {
   const { user }          = useAuth();
   const logout            = useLogout();
   const { data: profile } = useMyAstrologerProfileQuery();
+  const sidebarRef        = useRef<HTMLElement | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    import("admin-lte/dist/js/adminlte.min.js");
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("sidebar-collapse", collapsed);
+    document.body.classList.toggle("sidebar-open",    !collapsed);
+    return () => {
+      document.body.classList.remove("sidebar-collapse", "sidebar-open");
+    };
+  }, [collapsed]);
 
   return (
-    <div className="wrapper">
+    <div className="app-wrapper layout-fixed">
 
-      {/* Navbar */}
-      <nav className="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
-        <ul className="navbar-nav">
+      {/* ── Navbar ─────────────────────────────── */}
+      <nav className="app-header navbar navbar-expand bg-body border-bottom">
+        <ul className="navbar-nav align-items-center">
           <li className="nav-item">
-            <button className="nav-link btn btn-link" data-lte-toggle="sidebar"
-              onClick={(e) => e.preventDefault()}>
+            <button type="button" className="nav-link btn btn-link"
+              onClick={() => setCollapsed(v => !v)}>
               <i className="fas fa-bars" />
             </button>
           </li>
+          <li className="nav-item d-none d-md-flex align-items-center ms-2">
+            <i className="fas fa-star text-warning me-2" />
+            <span className="fw-semibold">AstroPortal</span>
+          </li>
         </ul>
-        <ul className="navbar-nav ms-auto me-2">
+
+        <ul className="navbar-nav ms-auto align-items-center me-2">
           <li className="nav-item dropdown">
-            <button className="nav-link btn btn-link dropdown-toggle d-flex align-items-center gap-2 py-1"
+            <button className="nav-link btn btn-link dropdown-toggle d-flex align-items-center gap-2"
               data-bs-toggle="dropdown">
-              {/* BEFORE: 8-line if/else block | AFTER: 1 line */}
               <Avatar name={user?.name} src={profile?.profile_image} size={30} />
               <span className="d-none d-md-inline small fw-semibold">{user?.name}</span>
             </button>
@@ -50,7 +71,8 @@ export default function AstrologerLayout() {
               </li>
               <li><hr className="dropdown-divider" /></li>
               <li>
-                <button className="dropdown-item text-danger" onClick={() => logout("/login")}>
+                <button className="dropdown-item text-danger"
+                  onClick={() => logout("/login")}>
                   <i className="fas fa-sign-out-alt me-2" />Logout
                 </button>
               </li>
@@ -59,23 +81,24 @@ export default function AstrologerLayout() {
         </ul>
       </nav>
 
-      {/* Sidebar */}
-      <aside className="main-sidebar sidebar-dark-primary elevation-4">
-        <Link to="/astrologer/dashboard" className="brand-link px-3 py-3">
-          <span className="brand-text fw-bold">
-            <i className="fas fa-star text-warning me-2" />AstroPortal
-          </span>
-        </Link>
-        <div className="sidebar">
-          {/* User strip — BEFORE: 8-line block | AFTER: Avatar */}
-          <div className="user-panel mt-3 pb-3 mb-3 d-flex align-items-center px-3">
-            <div className="image">
-              <Avatar name={user?.name} src={profile?.profile_image} size={33} />
-            </div>
-            <div className="info ms-2 overflow-hidden">
-              <span className="d-block text-white text-truncate" style={{ fontSize: 13 }}>
+      {/* ── Sidebar ────────────────────────────── */}
+      <aside className="app-sidebar shadow" ref={sidebarRef}>
+        {/* Brand */}
+        <div className="sidebar-brand">
+          <Link to="/astrologer/dashboard" className="brand-link">
+            <i className="fas fa-star text-warning me-2" />
+            <span className="brand-text fw-bold">AstroPortal</span>
+          </Link>
+        </div>
+
+        <div className="sidebar overflow-auto">
+          {/* User strip */}
+          <div className="d-flex align-items-center gap-2 px-3 py-3 border-bottom border-secondary">
+            <Avatar name={user?.name} src={profile?.profile_image} size={36} />
+            <div className="overflow-hidden">
+              <div className="text-white fw-semibold text-truncate" style={{ fontSize: 13 }}>
                 {user?.name}
-              </span>
+              </div>
               {profile && (
                 <span className={`badge ${profile.is_online ? "bg-success" : "bg-secondary"}`}
                   style={{ fontSize: 10 }}>
@@ -84,21 +107,25 @@ export default function AstrologerLayout() {
               )}
             </div>
           </div>
-          <nav className="mt-2">
-            <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
-              {NAV_ITEMS.map((item) => (
+
+          {/* Nav */}
+          <nav className="mt-2 px-2">
+            <ul className="nav nav-pills nav-sidebar flex-column">
+              {NAV_ITEMS.map(item => (
                 <li className="nav-item" key={item.path}>
                   <NavLink to={item.path}
                     className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
                     <i className={`nav-icon fas ${item.icon}`} />
-                    <p>{item.label}</p>
+                    <p className="mb-0">{item.label}</p>
                   </NavLink>
                 </li>
               ))}
-              <li className="nav-item mt-3">
-                <button className="nav-link text-danger border-0 bg-transparent w-100 text-start"
+              <li className="nav-item mt-2 border-top border-secondary pt-2">
+                <button
+                  className="nav-link text-danger border-0 bg-transparent w-100 text-start"
                   onClick={() => logout("/login")}>
-                  <i className="nav-icon fas fa-sign-out-alt" /><p>Logout</p>
+                  <i className="nav-icon fas fa-sign-out-alt" />
+                  <p className="mb-0">Logout</p>
                 </button>
               </li>
             </ul>
@@ -106,10 +133,15 @@ export default function AstrologerLayout() {
         </div>
       </aside>
 
-      <div className="content-wrapper"><Outlet /></div>
-      <footer className="main-footer text-center py-2">
-        <small className="text-muted">AstroPortal &copy; {new Date().getFullYear()}</small>
-      </footer>
+      {/* ── Main content ───────────────────────── */}
+      <main className="app-main">
+        <div className="app-content">
+          <div className="container-fluid py-3">
+            <Outlet />
+          </div>
+        </div>
+      </main>
+
     </div>
   );
 }

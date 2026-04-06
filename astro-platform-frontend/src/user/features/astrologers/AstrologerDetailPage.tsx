@@ -10,21 +10,11 @@ import {
   useGetAstrologerReviewsQuery,
   useSubmitReviewMutation,
 } from "../../../store/api/astrologer.api";
-import { useAuth } from "../../../auth/hooks/useAuth";
-import { toast } from "react-toastify";
-import BookingModal from "../../components/BookingModal";
-
-/* ── Star display ─────────────────────────────────── */
-function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
-  const full  = Math.round(Math.min(Math.max(rating, 0), 5));
-  const empty = 5 - full;
-  return (
-    <span style={{ fontSize: size }}>
-      {"★".repeat(full)}
-      <span className="text-muted">{"☆".repeat(empty)}</span>
-    </span>
-  );
-}
+import { useAuth }     from "../../../auth/hooks/useAuth";
+import { toast }       from "react-toastify";
+import BookingModal    from "../../components/BookingModal";
+import StarRating      from "../../../components/ui/StarRating";
+import Avatar          from "../../../components/ui/Avatar";
 
 /* ── Consultation label ───────────────────────────── */
 const CONSULT_LABELS: Record<string, string> = {
@@ -126,7 +116,7 @@ export default function AstrologerDetailPage() {
 
             {/* Rating */}
             <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
-              <Stars rating={astro.rating} size={18} />
+              <StarRating rating={astro.rating} size={18} />
               <span className="fw-semibold">{astro.rating?.toFixed(1)}</span>
               <span className="text-muted small">({astro.total_reviews} reviews)</span>
             </div>
@@ -262,22 +252,13 @@ export default function AstrologerDetailPage() {
               >
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Your Rating</label>
-                  <div className="d-flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        className="btn btn-sm border-0 p-0"
-                        onClick={() =>
-                          setReviewForm((p) => ({ ...p, rating: star }))
-                        }
-                        style={{ fontSize: 32, lineHeight: 1 }}
-                      >
-                        <span className={star <= reviewForm.rating ? "text-warning" : "text-muted"}>
-                          ★
-                        </span>
-                      </button>
-                    ))}
+                  <div>
+                    <StarRating
+                      rating={reviewForm.rating}
+                      size={16}
+                      interactive
+                      onChange={(star) => setReviewForm((p) => ({ ...p, rating: star }))}
+                    />
                   </div>
                 </div>
                 <div className="mb-3">
@@ -319,29 +300,19 @@ export default function AstrologerDetailPage() {
                 {reviews.map((review: any) => (
                   <div key={review.id} className="border-bottom py-3">
                     <div className="d-flex align-items-center gap-2 mb-1">
-                      {review.user?.profile_image ? (
-                        <img
-                          src={review.user.profile_image}
-                          alt={review.user.name}
-                          className="rounded-circle flex-shrink-0"
-                          style={{ width: 36, height: 36, objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div
-                          className="rounded-circle bg-secondary text-white d-flex
-                                      align-items-center justify-content-center fw-bold flex-shrink-0"
-                          style={{ width: 36, height: 36, fontSize: 14 }}
-                        >
-                          {review.user?.name?.[0]?.toUpperCase()}
-                        </div>
-                      )}
+                      <Avatar
+                        name={review.user?.name}
+                        src={review.user?.profile_image}
+                        size={36}
+                        color="secondary"
+                      />
                       <div className="flex-grow-1">
                         <div className="fw-semibold small">{review.user?.name}</div>
                         <div className="text-muted" style={{ fontSize: 11 }}>
                           {review.created_at}
                         </div>
                       </div>
-                      <Stars rating={review.rating} size={14} />
+                      <StarRating rating={review.rating} size={14} />
                     </div>
                     {review.comment && (
                       <p className="mb-0 text-muted ps-5" style={{ fontSize: 14 }}>

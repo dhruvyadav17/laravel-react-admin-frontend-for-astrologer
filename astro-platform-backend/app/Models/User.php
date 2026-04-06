@@ -53,6 +53,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Astrologer::class);
     }
 
+    public function consultations()
+    {
+        return $this->hasMany(\App\Models\Consultation::class);
+    }
+
     public function isAstrologer(): bool
     {
         return $this->hasRole('astrologer');

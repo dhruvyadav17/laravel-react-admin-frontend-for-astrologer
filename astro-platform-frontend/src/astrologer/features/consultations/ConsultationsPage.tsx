@@ -230,8 +230,8 @@ export default function ConsultationsPage() {
   const pendingCount           = pendingData?.data.length ?? 0;
 
   return (
-    <section className="content pt-3">
-      <div className="container-fluid">
+    <>
+
 
         {/* Filter tabs */}
         <div className="card mb-3">
@@ -281,7 +281,6 @@ export default function ConsultationsPage() {
           consultations.map((c) => <ConsultCard key={c.id} c={c} />)
         )}
 
-      </div>
-    </section>
+    </>
   );
 }

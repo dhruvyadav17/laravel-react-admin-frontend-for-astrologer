@@ -75,6 +75,13 @@ const consultationApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { consultationId }) => [{ type: 'ChatMessage', id: consultationId }],
     }),
 
+    /* ── Astrologer: Single consultation ────── */
+    astrologerGetConsultation: build.query<Consultation, number>({
+      query: (id) => `/astrologer/consultations/${id}`,
+      transformResponse: (res: any) => res.data,
+      providesTags: (_r, _e, id) => [{ type: 'Consultation', id }],
+    }),
+
     /* ── Astrologer: List ───────────────────── */
     astrologerConsultations: build.query<{ data: Consultation[]; pagination: any }, { status?: string }>({
       query: (params) => ({ url: '/astrologer/consultations', params }),
@@ -120,6 +127,13 @@ const consultationApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { consultationId }) => [{ type: 'ChatMessage', id: consultationId }],
     }),
 
+    /* ── Astrologer: Get messages ───────────── */
+    astrologerGetMessages: build.query<ChatMessage[], number>({
+      query: (id) => `/astrologer/consultations/${id}/messages`,
+      transformResponse: (res: any) => res.data ?? [],
+      providesTags: (_r, _e, id) => [{ type: 'ChatMessage', id }],
+    }),
+
   }),
 });
 
@@ -130,10 +144,12 @@ export const {
   useCancelConsultationMutation,
   useGetMessagesQuery,
   useSendMessageMutation,
+  useAstrologerGetConsultationQuery,
   useAstrologerConsultationsQuery,
   useAcceptConsultationMutation,
   useRejectConsultationMutation,
   useStartConsultationMutation,
   useEndConsultationMutation,
   useAstrologerSendMessageMutation,
+  useAstrologerGetMessagesQuery,
 } = consultationApi;

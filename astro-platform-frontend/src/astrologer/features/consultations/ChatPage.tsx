@@ -3,8 +3,8 @@
 
 import { useEffect, useRef, useState }        from "react";
 import { useParams, useNavigate }             from "react-router-dom";
-import { useGetConsultationQuery,
-         useGetMessagesQuery,
+import { useAstrologerGetConsultationQuery,
+         useAstrologerGetMessagesQuery,
          useAstrologerSendMessageMutation,
          useStartConsultationMutation,
          useEndConsultationMutation }          from "../../../store/api/consultation.api";
@@ -23,12 +23,12 @@ export default function AstrologerChatPage() {
   const bottomRef             = useRef<HTMLDivElement>(null);
 
   // Use user-side query for fetching — same endpoint works (backend checks ownership)
-  const { data: consult, isLoading } = useGetConsultationQuery(consultId, {
+  const { data: consult, isLoading } = useAstrologerGetConsultationQuery(consultId, {
     skip:            !consultId,
     pollingInterval: 10000,
   });
 
-  const { data: messages = [] } = useGetMessagesQuery(consultId, {
+  const { data: messages = [] } = useAstrologerGetMessagesQuery(consultId, {
     skip:            !consultId || !["accepted", "in_progress", "completed"].includes(consult?.status ?? ""),
     pollingInterval: 4000,
   });
@@ -77,7 +77,7 @@ export default function AstrologerChatPage() {
   const isCompleted = consult.status === "completed";
 
   return (
-    <section className="content pt-3">
+    <>
       <div className="container-fluid" style={{ maxWidth: 760 }}>
 
         {/* Back */}
@@ -204,8 +204,8 @@ export default function AstrologerChatPage() {
             </div>
           )}
 
-        </div>
-      </div>
-    </section>
+          </div> {/* Chat window */}
+      </div> {/* container-fluid */}
+    </>
   );
 }

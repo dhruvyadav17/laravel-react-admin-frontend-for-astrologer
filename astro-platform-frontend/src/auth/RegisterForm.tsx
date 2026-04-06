@@ -1,173 +1,125 @@
 // PATH: src/auth/RegisterForm.tsx
-// IMPROVEMENT: Koi inline field validation nahi thi — sirf toast toast
-//              Ab API 422 errors field-level mein dikhte hain (e.g. "email already taken")
-//              Password show/hide toggle add kiya
-//              Password match validation client-side
-//              Back to login link
+// IMPROVE: Better UI, inline field errors, password show/hide, link to login
 
-import { useState }             from "react";
-import { useNavigate, Link }    from "react-router-dom";
-import { registerService }      from "../services/authService";
-import { showError, showSuccess } from "../utils/feedback";
+import { useState }          from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { registerService }   from "../services/authService";
 
-type FieldErrors = {
-  name?:     string[];
-  email?:    string[];
-  password?: string[];
-};
+type FieldErrors = Record<string, string>;
 
 export default function RegisterForm() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name:                  "",
-    email:                 "",
-    password:              "",
-    password_confirmation: "",
+    name: "", email: "", password: "", password_confirmation: "",
   });
+  const [showPw,   setShowPw]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [errors,   setErrors]   = useState<FieldErrors>({});
 
-  const [loading,    setLoading]    = useState(false);
-  const [showPass,   setShowPass]   = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [matchError,  setMatchError]  = useState<string | null>(null);
-
-  const set = (key: keyof typeof form, val: string) => {
-    setForm((prev) => ({ ...prev, [key]: val }));
-    setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
-    if (key === "password" || key === "password_confirmation") {
-      setMatchError(null);
-    }
+  const set = (k: keyof typeof form, v: string) => {
+    setForm((p) => ({ ...p, [k]: v }));
+    if (errors[k]) setErrors((p) => ({ ...p, [k]: "" }));
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFieldErrors({});
-    setMatchError(null);
+    setErrors({});
 
-    // Client-side password match
+    // Client-side check
     if (form.password !== form.password_confirmation) {
-      setMatchError("Passwords do not match");
+      setErrors({ password_confirmation: "Passwords do not match" });
       return;
     }
 
     try {
       setLoading(true);
       await registerService(form);
-      showSuccess("Account created! Please verify your email.");
       navigate("/verify-email", { replace: true });
-    } catch (error: any) {
-      // 422 → field errors
-      if (error?.response?.status === 422) {
-        setFieldErrors(error.response.data?.errors ?? {});
+    } catch (err: any) {
+      // 422 field errors from Laravel
+      const errs = err?.response?.data?.errors;
+      if (errs) {
+        const flat: FieldErrors = {};
+        Object.entries(errs).forEach(([k, v]) => {
+          flat[k] = Array.isArray(v) ? v[0] : String(v);
+        });
+        setErrors(flat);
       } else {
-        showError(error);
+        setErrors({ email: err?.response?.data?.message ?? "Registration failed" });
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const field = (label: string, key: keyof typeof form, type = "text", extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <div className="mb-3">
+      <label className="form-label fw-semibold small">{label}</label>
+      <input
+        {...extra}
+        className={`form-control ${errors[key] ? "is-invalid" : ""}`}
+        type={key.includes("password") ? (showPw ? "text" : "password") : type}
+        value={form[key]}
+        onChange={(e) => set(key, e.target.value)}
+        required
+      />
+      {errors[key] && <div className="invalid-feedback">{errors[key]}</div>}
+    </div>
+  );
+
   return (
     <form onSubmit={submit}>
+      {field("Full Name",        "name",                  "text",  { placeholder: "Rahul Sharma",    autoComplete: "name"     })}
+      {field("Email Address",    "email",                 "email", { placeholder: "rahul@email.com", autoComplete: "email"    })}
 
-      {/* Name */}
       <div className="mb-3">
-        <label className="form-label small fw-semibold">Full Name</label>
-        <input
-          className={`form-control ${fieldErrors.name ? "is-invalid" : ""}`}
-          placeholder="Your full name"
-          required
-          value={form.name}
-          onChange={(e) => set("name", e.target.value)}
-        />
-        {fieldErrors.name && (
-          <div className="invalid-feedback">{fieldErrors.name[0]}</div>
-        )}
-      </div>
-
-      {/* Email */}
-      <div className="mb-3">
-        <label className="form-label small fw-semibold">Email Address</label>
-        <input
-          className={`form-control ${fieldErrors.email ? "is-invalid" : ""}`}
-          type="email"
-          placeholder="your@email.com"
-          required
-          value={form.email}
-          onChange={(e) => set("email", e.target.value)}
-          autoComplete="email"
-        />
-        {fieldErrors.email && (
-          <div className="invalid-feedback">{fieldErrors.email[0]}</div>
-        )}
-      </div>
-
-      {/* Password */}
-      <div className="mb-3">
-        <label className="form-label small fw-semibold">Password</label>
-        <div className="input-group">
-          <input
-            className={`form-control ${fieldErrors.password || matchError ? "is-invalid" : ""}`}
-            type={showPass ? "text" : "password"}
-            placeholder="Min. 6 characters"
-            required
-            minLength={6}
-            value={form.password}
-            onChange={(e) => set("password", e.target.value)}
-            autoComplete="new-password"
-          />
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => setShowPass((v) => !v)}
-            tabIndex={-1}
-          >
-            <i className={`fas ${showPass ? "fa-eye-slash" : "fa-eye"}`} />
+        <div className="d-flex justify-content-between align-items-center mb-1">
+          <label className="form-label fw-semibold small mb-0">Password</label>
+          <button type="button" className="btn btn-link btn-sm p-0 text-muted"
+            onClick={() => setShowPw((v) => !v)}>
+            <i className={`fas fa-eye${showPw ? "-slash" : ""} me-1`} style={{ fontSize: 12 }} />
+            {showPw ? "Hide" : "Show"}
           </button>
         </div>
-        {fieldErrors.password && (
-          <div className="invalid-feedback d-block">{fieldErrors.password[0]}</div>
-        )}
-        {form.password.length > 0 && form.password.length < 6 && (
-          <div className="form-text text-danger">
-            {6 - form.password.length} more characters needed
-          </div>
-        )}
+        <input
+          className={`form-control ${errors.password ? "is-invalid" : ""}`}
+          type={showPw ? "text" : "password"}
+          placeholder="Min 6 characters"
+          value={form.password}
+          onChange={(e) => set("password", e.target.value)}
+          autoComplete="new-password"
+          minLength={6}
+          required
+        />
+        {errors.password && <div className="invalid-feedback">{errors.password}</div>}
       </div>
 
-      {/* Confirm Password */}
       <div className="mb-4">
-        <label className="form-label small fw-semibold">Confirm Password</label>
+        <label className="form-label fw-semibold small">Confirm Password</label>
         <input
-          className={`form-control ${matchError ? "is-invalid" : ""}`}
-          type={showPass ? "text" : "password"}
-          placeholder="Repeat your password"
-          required
+          className={`form-control ${errors.password_confirmation ? "is-invalid" : ""}`}
+          type={showPw ? "text" : "password"}
+          placeholder="Repeat password"
           value={form.password_confirmation}
           onChange={(e) => set("password_confirmation", e.target.value)}
-          autoComplete="new-password"
+          required
         />
-        {matchError && (
-          <div className="invalid-feedback d-block">
-            <i className="fas fa-exclamation-circle me-1" />
-            {matchError}
-          </div>
+        {errors.password_confirmation && (
+          <div className="invalid-feedback">{errors.password_confirmation}</div>
         )}
       </div>
 
-      <button className="btn btn-primary w-100 mb-3" disabled={loading}>
-        {loading ? (
-          <><span className="spinner-border spinner-border-sm me-2" />Creating account...</>
-        ) : (
-          "Create Account"
-        )}
+      <button className="btn btn-primary w-100 py-2 fw-semibold" disabled={loading}>
+        {loading
+          ? <><span className="spinner-border spinner-border-sm me-2" />Creating account...</>
+          : "Create Free Account"}
       </button>
 
-      <div className="text-center">
-        <span className="small text-muted">Already have an account? </span>
-        <Link to="/login" className="small">Sign in</Link>
-      </div>
-
+      <p className="text-center text-muted small mt-3 mb-0">
+        Already have an account?{" "}
+        <Link to="/login" className="text-decoration-none fw-semibold">Sign In</Link>
+      </p>
     </form>
   );
 }
