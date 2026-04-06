@@ -11,6 +11,7 @@ class AstrologerQuery
         return Astrologer::query()
             ->with('user')
             ->where('is_verified', true)
+            ->whereNull('deleted_at')
             ->when($filters['search'] ?? null, fn($q, $s) =>
                 $q->where('expertise', 'like', "%$s%")
             )

@@ -29,7 +29,7 @@ class AstrologerRequest extends FormRequest
             'skills'            => 'sometimes|array',
             'skills.*'          => 'string|max:50',
             'consultation_type' => 'sometimes|in:chat,call,video,all',  // NEW
-            'is_verified'       => 'sometimes|boolean',
+            'is_verified' => 'prohibited_if:role,astrologer',
             'is_available'      => 'sometimes|boolean',                  // NEW
             'profile_image'     => 'sometimes|nullable|url|max:500',
             'gallery'           => 'sometimes|array|max:10',             // NEW

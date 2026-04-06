@@ -11,6 +11,9 @@ class CreateAstrologer
 {
     public function execute(AstrologerData $dto): array
     {
+        if (User::where('email', $dto->email)->exists()) {
+            throw new \Exception('Email already exists');
+        }
         $password = str()->random(10);
 
         $user = User::create([

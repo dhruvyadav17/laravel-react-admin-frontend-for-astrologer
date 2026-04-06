@@ -6,6 +6,8 @@ use App\Models\Astrologer;
 use App\Domains\Astrologer\Queries\AstrologerQuery;
 use App\Domains\Astrologer\DTO\AstrologerData;
 use App\Domains\Astrologer\Actions\CreateAstrologer;
+use App\Domains\Astrologer\Actions\UpdateAstrologer;
+use App\Domains\Astrologer\Actions\DeleteAstrologer;
 use Illuminate\Support\Facades\DB;
 
 class AstrologerService
@@ -13,6 +15,8 @@ class AstrologerService
     public function __construct(
         protected AstrologerQuery $query,
         protected CreateAstrologer $createAction,
+        protected UpdateAstrologer $updateAction,
+        protected DeleteAstrologer $deleteAction,
     ) {}
 
     /* ── Public listing ─────────────────────────── */
@@ -45,30 +49,38 @@ class AstrologerService
     /* ── Update ─────────────────────────── */
     public function update(Astrologer $astrologer, array $data): Astrologer
     {
-        return DB::transaction(function () use ($astrologer, $data) {
-
-            if (isset($data['name']) || isset($data['email'])) {
-                $astrologer->user->update(array_filter([
-                    'name' => $data['name'] ?? null,
-                    'email' => $data['email'] ?? null,
-                ]));
-            }
-
-            $astrologer->update($data);
-
-            return $astrologer->fresh(['user']);
-        });
+        return $this->updateAction->execute($astrologer, $data);
     }
 
+    /* ── Self Update (Astrologer Panel) ───────────────── */
+    public function selfUpdate(Astrologer $astrologer, array $data): Astrologer
+    {
+        unset($data['is_verified']); // 🔥 security
+
+        return $this->updateAction->execute($astrologer, $data);
+    }
+
+    /* ── Delete ─────────────────────────── */
     public function delete(Astrologer $astrologer): void
     {
-        $astrologer->delete();
+        $this->deleteAction->execute($astrologer);
     }
 
+    /* ── Restore ─────────────────────────── */
     public function restore(int $id): Astrologer
     {
         $a = Astrologer::withTrashed()->findOrFail($id);
         $a->restore();
         return $a->fresh(['user']);
+    }
+
+    /* ── Toggle Online ─────────────────────────── */
+    public function toggleOnline(Astrologer $astrologer): Astrologer
+    {
+        $astrologer->update([
+            'is_online' => !$astrologer->is_online
+        ]);
+
+        return $astrologer->fresh();
     }
 }
