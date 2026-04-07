@@ -3,54 +3,74 @@
 //      (astrologer ki weekly availability public users ko dikhane ke liye)
 // CHANGE: getAstrologers mein debounce ke liye search param add kiya
 
-import { baseApi } from './baseApi';
+import { baseApi } from "./baseApi";
 import type {
-  Astrologer, AstrologerFilters, AstrologerSchedule,
-  PaginatedResponse, Review,
-} from '../../types/models';
+  Astrologer,
+  AstrologerFilters,
+  AstrologerSchedule,
+  PaginatedResponse,
+  Review,
+} from "../../types/models";
 
 export const astrologerApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-
     /* ── Public listing ─────────────────────────── */
-    getAstrologers: build.query<PaginatedResponse<Astrologer>, AstrologerFilters>({
-      query: (params = {}) => ({ url: '/astrologers', params }),
+    getAstrologers: build.query<
+      PaginatedResponse<Astrologer>,
+      AstrologerFilters
+    >({
+      query: (params = {}) => ({ url: "/astrologers", params }),
       transformResponse: (res: any) => ({
-        data:       res.data             ?? [],
+        data: res.data ?? [],
         pagination: res.meta?.pagination ?? res.pagination ?? null,
       }),
       providesTags: (result) =>
         result
-          ? [...result.data.map(({ id }) => ({ type: 'Astrologer' as const, id })),
-             { type: 'Astrologer', id: 'LIST' }]
-          : [{ type: 'Astrologer', id: 'LIST' }],
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: "Astrologer" as const,
+                id,
+              })),
+              { type: "Astrologer", id: "LIST" },
+            ]
+          : [{ type: "Astrologer", id: "LIST" }],
     }),
 
     /* ── Public single ──────────────────────────── */
     getAstrologer: build.query<Astrologer, number>({
       query: (id) => `/astrologers/${id}`,
       transformResponse: (res: any) => res.data,
-      providesTags: (_r, _e, id) => [{ type: 'Astrologer', id }],
+      providesTags: (_r, _e, id) => [{ type: "Astrologer", id }],
     }),
 
     /* ── Public reviews ─────────────────────────── */
-    getAstrologerReviews: build.query<PaginatedResponse<Review>, { id: number; page?: number }>({
-      query: ({ id, page = 1 }) => ({ url: `/astrologers/${id}/reviews`, params: { page } }),
-      transformResponse: (res: any) => ({
-        data:       res.data             ?? [],
-        pagination: res.meta?.pagination ?? res.pagination ?? null,
+    getAstrologerReviews: build.query<
+      { data: Review[]; pagination?: any },
+      { id: number; page?: number }
+    >({
+      query: ({ id, page = 1 }) => ({
+        url: `/astrologers/${id}/reviews`,
+        params: { page },
       }),
-      providesTags: (_r, _e, { id }) => [{ type: 'Review' as const, id }],
+      transformResponse: (res: any) => ({
+        data: res.data ?? [],
+        pagination: res.meta?.pagination ?? null,
+      }),
     }),
 
     /* ── Submit review ──────────────────────────── */
-    submitReview: build.mutation<void, { astrologerId: number; rating: number; comment?: string }>({
+    submitReview: build.mutation<
+      void,
+      { astrologerId: number; rating: number; comment?: string }
+    >({
       query: ({ astrologerId, ...body }) => ({
-        url: `/astrologers/${astrologerId}/reviews`, method: 'POST', body,
+        url: `/astrologers/${astrologerId}/reviews`,
+        method: "POST",
+        body,
       }),
       invalidatesTags: (_r, _e, { astrologerId }) => [
-        { type: 'Review',     id: astrologerId },
-        { type: 'Astrologer', id: astrologerId },
+        { type: "Review", id: astrologerId },
+        { type: "Astrologer", id: astrologerId },
       ],
     }),
 
@@ -59,13 +79,12 @@ export const astrologerApi = baseApi.injectEndpoints({
       PaginatedResponse<Astrologer>,
       { search?: string; is_verified?: boolean; page?: number }
     >({
-      query: (params = {}) => ({ url: '/admin/astrologers', params }),
+      query: (params = {}) => ({ url: "/admin/astrologers", params }),
       transformResponse: (res: any) => ({
-        data:       res.data             ?? [],
-        // pagination: res.meta?.pagination ?? res.pagination ?? null,
-        pagination: res.meta ?? res.pagination ?? null,
+        data: res.data ?? [],
+        pagination: res.meta?.pagination ?? res.pagination ?? null,
       }),
-      providesTags: [{ type: 'Astrologer', id: 'ADMIN-LIST' }],
+      providesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
     /* ── Admin create ───────────────────────────── */
@@ -73,85 +92,114 @@ export const astrologerApi = baseApi.injectEndpoints({
       { astrologer: Astrologer; email: string; password: string },
       Partial<Astrologer>
     >({
-      query: (body) => ({ url: '/admin/astrologers', method: 'POST', body }),
+      query: (body) => ({ url: "/admin/astrologers", method: "POST", body }),
       transformResponse: (res: any) => res.data,
-      invalidatesTags: [{ type: 'Astrologer', id: 'ADMIN-LIST' }],
+      invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
     /* ── Admin update ───────────────────────────── */
-    adminUpdateAstrologer: build.mutation<Astrologer, { id: number; data: Partial<Astrologer> }>({
-      query: ({ id, data }) => ({ url: `/admin/astrologers/${id}`, method: 'PUT', body: data }),
+    adminUpdateAstrologer: build.mutation<
+      Astrologer,
+      { id: number; data: Partial<Astrologer> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/admin/astrologers/${id}`,
+        method: "PUT",
+        body: data,
+      }),
       transformResponse: (res: any) => res.data,
       invalidatesTags: (_r, _e, { id }) => [
-        { type: 'Astrologer', id },
-        { type: 'Astrologer', id: 'ADMIN-LIST' },
+        { type: "Astrologer", id },
+        { type: "Astrologer", id: "ADMIN-LIST" },
       ],
     }),
 
     /* ── Admin delete ───────────────────────────── */
     adminDeleteAstrologer: build.mutation<void, number>({
-      query: (id) => ({ url: `/admin/astrologers/${id}`, method: 'DELETE' }),
-      invalidatesTags: [{ type: 'Astrologer', id: 'ADMIN-LIST' }],
+      query: (id) => ({ url: `/admin/astrologers/${id}`, method: "DELETE" }),
+      invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
     /* ── Admin restore ──────────────────────────── */
     adminRestoreAstrologer: build.mutation<Astrologer, number>({
-      query: (id) => ({ url: `/admin/astrologers/${id}/restore`, method: 'PATCH' }),
+      query: (id) => ({
+        url: `/admin/astrologers/${id}/restore`,
+        method: "PATCH",
+      }),
       transformResponse: (res: any) => res.data,
-      invalidatesTags: [{ type: 'Astrologer', id: 'ADMIN-LIST' }],
+      invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
     /* ── Admin verify ───────────────────────────── */
     adminVerifyAstrologer: build.mutation<Astrologer, number>({
-      query: (id) => ({ url: `/admin/astrologers/${id}/verify`, method: 'PATCH' }),
+      query: (id) => ({
+        url: `/admin/astrologers/${id}/verify`,
+        method: "PATCH",
+      }),
       transformResponse: (res: any) => res.data,
       invalidatesTags: (_r, _e, id) => [
-        { type: 'Astrologer', id },
-        { type: 'Astrologer', id: 'ADMIN-LIST' },
+        { type: "Astrologer", id },
+        { type: "Astrologer", id: "ADMIN-LIST" },
       ],
     }),
 
     /* ── Astrologer portal ──────────────────────── */
     myAstrologerProfile: build.query<Astrologer, void>({
-      query: () => '/astrologer/me',
+      query: () => "/astrologer/me",
       transformResponse: (res: any) => res.data,
-      providesTags: ['MyAstrologerProfile'],
+      providesTags: ["MyAstrologerProfile"],
     }),
 
-    updateMyProfile: build.mutation<Astrologer, Partial<Astrologer> & { profile_image?: string }>({
-      query: (body) => ({ url: '/astrologer/me', method: 'PATCH', body }),
+    updateMyProfile: build.mutation<
+      Astrologer,
+      Partial<Astrologer> & { profile_image?: string }
+    >({
+      query: (body) => ({ url: "/astrologer/me", method: "PATCH", body }),
       transformResponse: (res: any) => res.data,
-      invalidatesTags: ['MyAstrologerProfile'],
+      invalidatesTags: ["MyAstrologerProfile"],
     }),
 
-    toggleAvailability: build.mutation<{ is_online: boolean; is_available: boolean }, void>({
-      query: () => ({ url: '/astrologer/me/availability', method: 'PATCH' }),
+    toggleAvailability: build.mutation<
+      { is_online: boolean; is_available: boolean },
+      void
+    >({
+      query: () => ({ url: "/astrologer/me/availability", method: "PATCH" }),
       transformResponse: (res: any) => res.data,
-      invalidatesTags: ['MyAstrologerProfile'],
+      invalidatesTags: ["MyAstrologerProfile"],
     }),
 
-    myStats: build.query<{
-      rating: number; total_reviews: number; total_consultations: number;
-      is_online: boolean; is_available: boolean;
-    }, void>({
-      query: () => '/astrologer/me/stats',
+    myStats: build.query<
+      {
+        rating: number;
+        total_reviews: number;
+        total_consultations: number;
+        is_online: boolean;
+        is_available: boolean;
+      },
+      void
+    >({
+      query: () => "/astrologer/me/stats",
       transformResponse: (res: any) => res.data,
-      providesTags: ['MyAstrologerProfile'],
+      providesTags: ["MyAstrologerProfile"],
     }),
 
     mySchedule: build.query<AstrologerSchedule[], void>({
-      query: () => '/astrologer/me/schedule',
+      query: () => "/astrologer/me/schedule",
       transformResponse: (res: any) => res.data ?? [],
-      providesTags: ['MySchedule'],
+      providesTags: ["MySchedule"],
     }),
 
-    saveSchedule: build.mutation<AstrologerSchedule[], Omit<AstrologerSchedule, 'id'>[]>({
+    saveSchedule: build.mutation<
+      AstrologerSchedule[],
+      Omit<AstrologerSchedule, "id">[]
+    >({
       query: (schedules) => ({
-        url: '/astrologer/me/schedule', method: 'POST', body: { schedules },
+        url: "/astrologer/me/schedule",
+        method: "POST",
+        body: { schedules },
       }),
-      invalidatesTags: ['MySchedule', 'MyAstrologerProfile'],
+      invalidatesTags: ["MySchedule", "MyAstrologerProfile"],
     }),
-
   }),
 });
 

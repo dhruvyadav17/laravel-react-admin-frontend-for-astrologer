@@ -6,9 +6,9 @@
 // IMPROVEMENT: Role name badge show kiya — "super-admin" clearly highlighted
 
 import { memo, useState }       from "react";
-import AdminCrudPage             from "../../components/crud/AdminCrudPage";
+import AdminCrudPage             from "../../../admin/components/crud/AdminCrudPage";
 import RowActions                from "../../../components/table/RowActions";
-import AssignModal               from "../../components/modals/AssignModal";
+import AssignModal               from "../../../admin/components/modals/AssignModal";
 
 import {
   useGetRolesQuery,

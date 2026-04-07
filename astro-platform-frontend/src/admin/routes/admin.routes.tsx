@@ -5,12 +5,12 @@
 import { Navigate, Link }   from "react-router-dom";
 import AdminGuard             from "../../routes/guards/AdminGuard";
 import AdminLayout            from "../layouts/AdminLayout";
-import DashboardPage          from "../features/dashboard/DashboardPage";
-import UsersPage              from "../features/users/UsersPage";
-import AstrologersPage        from "../features/astrologers/AstrologersPage";
-import RolesPage              from "../features/roles/RolesPage";
-import PermissionsPage        from "../features/permissions/PermissionsPage";
-import AdminProfilePage       from "../features/profile/AdminProfilePage";
+import DashboardPage          from "../../features/admin/dashboard/DashboardPage";
+import UsersPage              from "../../features/admin/users/UsersPage";
+import AstrologersPage        from "../../features/admin/astrologers/AstrologersPage";
+import RolesPage              from "../../features/admin/roles/RolesPage";
+import PermissionsPage        from "../../features/admin/permissions/PermissionsPage";
+import AdminProfilePage       from "../../features/admin/profile/AdminProfilePage";
 
 export const adminRoutes = {
   path:    "admin",

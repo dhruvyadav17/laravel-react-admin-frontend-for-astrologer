@@ -6,10 +6,10 @@
 // IMPROVEMENT: Row mein verified/active status clearly visible
 
 import { useState }            from "react";
-import AdminCrudPage            from "../../components/crud/AdminCrudPage";
+import AdminCrudPage            from "../../../admin/components/crud/AdminCrudPage";
 import RowActions               from "../../../components/table/RowActions";
 import Pagination               from "../../../components/table/Pagination";
-import AssignModal              from "../../components/modals/AssignModal";
+import AssignModal              from "../../../admin/components/modals/AssignModal";
 import { TableSearch }          from "../../../components/table/table.helpers";
 
 import {
@@ -20,7 +20,7 @@ import {
   useRestoreUserMutation,
 } from "../../../store/api";
 
-import { usePagination }  from "../../../hooks/usePagination";
+import { usePagination }  from "../../../core/hooks/usePagination";
 import { useAuth }        from "../../../auth/hooks/useAuth";
 import { PERMISSIONS }    from "../../../constants/rbac";
 import { ICONS }          from "../../../constants/ui";

@@ -4,11 +4,11 @@
 import { Navigate, Link }         from "react-router-dom";
 import UserLayout                 from "../layouts/UserLayout";
 import UserGuard                  from "../../routes/guards/UserGuard";
-import WelcomePage                from "../features/home/WelcomePage";
-import HomePage                   from "../features/home/HomePage";
-import AstrologersPage            from "../features/astrologers/AstrologersPage";
-import AstrologerDetailPage       from "../features/astrologers/AstrologerDetailPage";
-import ProfilePage                from "../features/profile/ProfilePage";
+import WelcomePage                from "../../features/user/home/WelcomePage";
+import HomePage                   from "../../features/user/home/HomePage";
+import AstrologersPage            from "../../features/user/astrologers/AstrologersPage";
+import AstrologerDetailPage       from "../../features/user/astrologers/AstrologerDetailPage";
+import ProfilePage                from "../../features/user/profile/ProfilePage";
 import PanchangPage               from "../pages/PanchangPage";
 import HoroscopePage              from "../pages/HoroscopePage";
 import AboutPage                  from "../pages/AboutPage";

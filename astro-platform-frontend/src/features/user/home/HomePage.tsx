@@ -7,8 +7,8 @@
 import { Link }                    from "react-router-dom";
 import { useGetAstrologersQuery }  from "../../../store/api/astrologer.api";
 import { PageLoader }              from "../../../components/ui/States";
-import UserPage                    from "../../components/ui/UserPage";
-import AstrologerCard              from "../../components/AstrologerCard";
+import UserPage                    from "../../../user/components/ui/UserPage";
+import AstrologerCard              from "../../../user/components/AstrologerCard";
 
 const SERVICES = [
   { title: "Panchang",    icon: "📅", path: "/panchang",    desc: "Daily muhurat"      },

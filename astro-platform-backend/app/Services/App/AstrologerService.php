@@ -83,4 +83,12 @@ class AstrologerService
 
         return $astrologer->fresh();
     }
+    public function recalculateRating(Astrologer $astrologer): void
+    {
+        $avg = $astrologer->reviews()->avg('rating') ?? 0;
+
+        $astrologer->update([
+            'rating' => round($avg, 1),
+        ]);
+    }
 }

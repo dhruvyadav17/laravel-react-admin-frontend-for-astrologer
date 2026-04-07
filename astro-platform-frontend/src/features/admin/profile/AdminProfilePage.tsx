@@ -5,8 +5,8 @@
 
 import { useMemo }    from "react";
 import { useAuth }    from "../../../auth/hooks/useAuth";
-import AdminPage      from "../../components/page/AdminPage";
-import AdminCard      from "../../components/ui/AdminCard";
+import AdminPage      from "../../../admin/components/page/AdminPage";
+import AdminCard      from "../../../admin/components/ui/AdminCard";
 
 /* ── Role badge colors ──────────────────────────── */
 const ROLE_COLORS: Record<string, string> = {

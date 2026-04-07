@@ -17,7 +17,7 @@
 // - Returns public URL to parent
 
 import { useRef, useState, useCallback } from "react";
-import api from "../../api/axios";
+import api from "../../core/api/axios";
 
 type Props = {
   currentUrl?: string | null;

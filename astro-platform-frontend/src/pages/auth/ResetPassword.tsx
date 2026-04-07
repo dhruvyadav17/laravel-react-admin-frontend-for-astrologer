@@ -7,7 +7,7 @@
 
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useState }                           from "react";
-import api                                    from "../../api/axios";
+import api                                    from "../../core/api/axios";
 import { execute }                            from "../../utils/feedback";
 
 export default function ResetPassword() {

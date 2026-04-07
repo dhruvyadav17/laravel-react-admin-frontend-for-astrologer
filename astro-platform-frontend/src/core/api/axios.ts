@@ -5,8 +5,8 @@
 //              Ab currentPath check karke context-aware redirect karta hai
 
 import axios, { AxiosError } from "axios";
-import { getStore }          from "../store/storeAccessor";
-import { logoutThunk }       from "../store/authSlice";
+import { getStore }          from "../../store/storeAccessor";
+import { logoutThunk }       from "../../store/authSlice";
 
 /* =====================================================
    AXIOS INSTANCE

@@ -6,7 +6,7 @@
 
 import { useState }        from "react";
 import { Link }            from "react-router-dom";
-import api                 from "../../api/axios";
+import api                 from "../../core/api/axios";
 import { showError }       from "../../utils/feedback";
 
 export default function ForgotPassword() {

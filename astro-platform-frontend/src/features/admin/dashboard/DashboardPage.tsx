@@ -6,9 +6,9 @@
 import { useMemo }                  from "react";
 import { useNavigate }              from "react-router-dom";
 import { useGetDashboardStatsQuery } from "../../../store/api";
-import AdminPage                    from "../../components/page/AdminPage";
-import AdminCard                    from "../../components/ui/AdminCard";
-import InfoBox                      from "../../components/ui/InfoBox";
+import AdminPage                    from "../../../admin/components/page/AdminPage";
+import AdminCard                    from "../../../admin/components/ui/AdminCard";
+import InfoBox                      from "../../../admin/components/ui/InfoBox";
 
 /* ── Quick action card ────────────────────────────── */
 function QuickAction({

@@ -4,13 +4,13 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth }           from "../../auth/hooks/useAuth";
 import AstrologerLayout      from "../layouts/AstrologerLayout";
-import DashboardPage         from "../features/dashboard/DashboardPage";
-import ProfilePage           from "../features/profile/ProfilePage";
-import SchedulePage          from "../features/schedule/SchedulePage";
-import MyReviewsPage         from "../features/reviews/MyReviewsPage";
-import EarningsPage          from "../features/earnings/EarningsPage";
-import ConsultationsPage      from "../features/consultations/ConsultationsPage";
-import AstrologerChatPage     from "../features/consultations/ChatPage";
+import DashboardPage         from "../../features/astrologer/dashboard/DashboardPage";
+import ProfilePage           from "../../features/astrologer/profile/ProfilePage";
+import SchedulePage          from "../../features/astrologer/schedule/SchedulePage";
+import MyReviewsPage         from "../../features/astrologer/reviews/MyReviewsPage";
+import EarningsPage          from "../../features/astrologer/earnings/EarningsPage";
+import ConsultationsPage      from "../../features/astrologer/consultations/ConsultationsPage";
+import AstrologerChatPage     from "../../features/astrologer/consultations/ChatPage";
 
 function AstrologerGuard() {
   const { isAuth, hasRole, loading } = useAuth();

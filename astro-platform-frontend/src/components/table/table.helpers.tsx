@@ -2,7 +2,7 @@
 // ADD: OnlineBadge + VerifiedBadge (inline badge patterns replace karo)
 
 import { useState, useEffect } from "react";
-import { useDebounce }          from "../../hooks/useDebounce";
+import { useDebounce }          from "../../core/hooks/useDebounce";
 
 /* ── Table Search (Debounced) ─────────────────────── */
 export function TableSearch({ value, onChange, placeholder = "Search..." }: {

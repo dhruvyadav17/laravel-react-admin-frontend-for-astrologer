@@ -2,7 +2,7 @@
 // FIX: /app/profile → /me  (new v1.php ke routes se match karo)
 //      /app/logout  → /logout
 
-import api from "../api/axios";
+import api from "../core/api/axios";
 
 export const loginService = (email: string, password: string) => {
   return api.post("/login", { email, password });

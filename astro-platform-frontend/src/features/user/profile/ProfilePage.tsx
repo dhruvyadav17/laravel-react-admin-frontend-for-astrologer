@@ -6,7 +6,7 @@ import { Link }           from "react-router-dom";
 import { useAuth }        from "../../../auth/hooks/useAuth";
 import Avatar             from "../../../components/ui/Avatar";
 import { useFavorites }   from "../../../hooks/useFavorites";
-import UserPage           from "../../components/ui/UserPage";
+import UserPage           from "../../../user/components/ui/UserPage";
 
 export default function ProfilePage() {
   const { user }        = useAuth();

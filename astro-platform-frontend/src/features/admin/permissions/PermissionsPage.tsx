@@ -5,7 +5,7 @@
 // IMPROVEMENT: Permission name display — group prefix highlight kiya
 
 import { memo }                  from "react";
-import AdminCrudPage             from "../../components/crud/AdminCrudPage";
+import AdminCrudPage             from "../../../admin/components/crud/AdminCrudPage";
 import RowActions                from "../../../components/table/RowActions";
 
 import {

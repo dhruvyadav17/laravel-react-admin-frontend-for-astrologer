@@ -3,7 +3,7 @@
 import { useState, useEffect }          from "react";
 import { useNavigate }                  from "react-router-dom";
 import { useGetAstrologersQuery }       from "../../../store/api/astrologer.api";
-import AstrologerCard                  from "../../components/AstrologerCard";
+import AstrologerCard                  from "../../../user/components/AstrologerCard";
 import { PageLoader, EmptyState }       from "../../../components/ui/States";
 import type { AstrologerFilters, ConsultationType } from "../../../types/models";
 

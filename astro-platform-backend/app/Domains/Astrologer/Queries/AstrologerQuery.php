@@ -22,6 +22,7 @@ class AstrologerQuery
     {
         return Astrologer::query()
             ->with('user')
+            ->withTrashed()
             ->when($filters['search'] ?? null, fn($q, $s) =>
                 $q->whereHas('user', fn($q) =>
                     $q->where('name', 'like', "%$s%")
