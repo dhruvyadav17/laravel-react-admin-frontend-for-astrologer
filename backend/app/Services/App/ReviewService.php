@@ -10,6 +10,7 @@ namespace App\Services\App;
 
 use App\Models\AstrologerReview;
 use Illuminate\Support\Facades\DB;
+use App\Features\Astrologer\Services\AstrologerService;
 
 class ReviewService
 {

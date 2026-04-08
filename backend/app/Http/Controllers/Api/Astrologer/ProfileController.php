@@ -6,10 +6,10 @@
 namespace App\Http\Controllers\Api\Astrologer;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AstrologerRequest;
+use App\Features\Astrologer\Requests\AstrologerRequest;
 use App\Http\Resources\AstroResource;
 use App\Http\Resources\ReviewResource;
-use App\Services\App\AstrologerService;
+use App\Features\Astrologer\Services\AstrologerService;
 use App\Services\App\ReviewService;
 use App\Services\App\ScheduleService;
 use Illuminate\Http\Request;

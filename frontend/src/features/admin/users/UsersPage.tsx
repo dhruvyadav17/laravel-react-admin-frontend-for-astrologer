@@ -1,9 +1,4 @@
 // PATH: src/admin/features/users/UsersPage.tsx
-// IMPROVEMENT: Status aur Role rendering better kar diya (badges)
-// IMPROVEMENT: fields prop ab FieldConfig[] format mein (AdminCrudPage type-safe)
-//              CrudFormModal fields function bhi support karta hai (typeof fields === "function")
-//              toh yeh backward compatible hai
-// IMPROVEMENT: Row mein verified/active status clearly visible
 
 import { useState }            from "react";
 import AdminCrudPage            from "../../../admin/components/crud/AdminCrudPage";

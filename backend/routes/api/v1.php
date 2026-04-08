@@ -1,22 +1,20 @@
 <?php
 // PATH: routes/api/v1.php
-// ADD: Upload image route + UploadController import
-
-use App\Http\Controllers\Api\Admin\AdminUserController;
-use App\Http\Controllers\Api\Admin\AstrologerController as AdminAstrologerController;
+use App\Features\User\Controllers\AdminUserController;
+use App\Features\Astrologer\Controllers\AdminAstrologerController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\SidebarController;
-use App\Http\Controllers\Api\Admin\UserController;
-use App\Http\Controllers\Api\App\AstrologerController;
+use App\Features\User\Controllers\UserController;
+use App\Features\Astrologer\Controllers\UserAstrologerController;
 use App\Http\Controllers\Api\Astrologer\ProfileController as AstrologerProfileController;
-use App\Http\Controllers\Api\Auth\EmailVerificationController;
-use App\Http\Controllers\Api\Auth\LoginController;
-use App\Http\Controllers\Api\Auth\LogoutController;
-use App\Http\Controllers\Api\Auth\ProfileController;
-use App\Http\Controllers\Api\Auth\RefreshTokenController;
-use App\Http\Controllers\Api\Auth\RegisterController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\RoleController;
+use App\Features\Auth\Controllers\EmailVerificationController;
+use App\Features\Auth\Controllers\LoginController;
+use App\Features\Auth\Controllers\LogoutController;
+use App\Features\Auth\Controllers\ProfileController;
+use App\Features\Auth\Controllers\RefreshTokenController;
+use App\Features\Auth\Controllers\RegisterController;
+use App\Features\Permission\Controllers\PermissionController;
+use App\Features\Role\Controllers\RoleController;
 use App\Http\Controllers\Api\Password\ForgotPasswordController;
 use App\Http\Controllers\Api\Password\ResetPasswordController;
 use App\Http\Controllers\Api\UploadController;
@@ -33,9 +31,9 @@ Route::prefix('v1')->group(function () {
     Route::post('/reset-password',  ResetPasswordController::class);
     Route::post('/token/refresh',   RefreshTokenController::class);
 
-    Route::get('/astrologers',              [AstrologerController::class, 'index']);
-    Route::get('/astrologers/{id}',         [AstrologerController::class, 'show']);
-    Route::get('/astrologers/{id}/reviews', [AstrologerController::class, 'reviews']);
+    Route::get('/astrologers',              [UserAstrologerController::class, 'index']);
+    Route::get('/astrologers/{id}',         [UserAstrologerController::class, 'show']);
+    Route::get('/astrologers/{id}/reviews', [UserAstrologerController::class, 'reviews']);
 
     /* ── AUTHENTICATED ──────────────────────────────────────── */
     Route::middleware('auth:sanctum')->group(function () {
@@ -59,7 +57,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Submit review — role:user only
-        Route::post('/astrologers/{id}/reviews', [AstrologerController::class, 'submitReview'])
+        Route::post('/astrologers/{id}/reviews', [UserAstrologerController::class, 'submitReview'])
             ->middleware('role:user');
 
         /* ── ASTROLOGER PORTAL ───────────────────────────────── */
