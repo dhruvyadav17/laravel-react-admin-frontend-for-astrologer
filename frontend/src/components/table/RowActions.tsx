@@ -3,7 +3,7 @@ import Button from "../ui/Button";
 export type RowAction = {
   key: string;
   label?: string;
-  onClick: () => void;
+  onClick: (row?: any) => void;
   variant?: "primary" | "secondary" | "warning" | "danger" | "success";
   show?: boolean;
   disabled?: boolean;
@@ -13,9 +13,10 @@ export type RowAction = {
 
 type Props = {
   actions: RowAction[];
+  row?: any; 
 };
 
-export default function RowActions({ actions }: Props) {
+export default function RowActions({ actions, row }: Props) {
   const visible = actions.filter((a) => a.show !== false);
   if (!visible.length) return null;
 
@@ -27,7 +28,7 @@ export default function RowActions({ actions }: Props) {
           label={action.label}
           icon={action.icon}
           variant={action.variant}
-          onClick={action.onClick}
+          onClick={() => action.onClick(row)}
           disabled={action.disabled}
           size="sm"
           title={action.title}

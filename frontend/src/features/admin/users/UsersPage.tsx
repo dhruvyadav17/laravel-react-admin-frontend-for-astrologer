@@ -150,7 +150,7 @@ export default function UsersPage() {
 
             {/* Actions */}
             <td className="text-end pe-3">
-              <RowActions actions={actions} />
+              <RowActions actions={actions} row={user} />
             </td>
           </tr>
         )}
