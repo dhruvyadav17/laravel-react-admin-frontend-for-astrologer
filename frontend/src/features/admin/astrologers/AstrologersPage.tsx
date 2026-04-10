@@ -1,4 +1,10 @@
-import { useState } from "react";
+// PATH: src/features/admin/astrologers/AstrologersPage.tsx
+// FIX F10: useCrud update signature mismatch
+//   RTK adminUpdateAstrologer expects { id, data: {...} }
+//   useCrud calls update({ id, ...values }) — wrong shape
+// FIX: Direct RTK mutations pass karo AdminCrudPage ko
+
+import { useState }  from 'react';
 import {
   useAdminGetAstrologersQuery,
   useAdminCreateAstrologerMutation,
@@ -6,219 +12,140 @@ import {
   useAdminDeleteAstrologerMutation,
   useAdminRestoreAstrologerMutation,
   useAdminVerifyAstrologerMutation,
-} from "../../../store/api/astrologer.api";
+} from '../../../store/api/astrologer.api';
 
-import AdminCrudPage from "../../../admin/components/crud/AdminCrudPage";
-import RowActions from "../../../components/table/RowActions";
-import Avatar from "../../../components/ui/Avatar";
-import StarRating from "../../../components/ui/StarRating";
-import {
-  OnlineBadge,
-  VerifiedBadge,
-  TableSearch,
-} from "../../../components/table/table.helpers";
+import AdminCrudPage from '../../../admin/components/crud/AdminCrudPage';
+import RowActions    from '../../../components/table/RowActions';
+import Avatar        from '../../../components/ui/Avatar';
+import StarRating    from '../../../components/ui/StarRating';
+import { OnlineBadge, VerifiedBadge, TableSearch } from '../../../components/table/table.helpers';
 
-import { PERMISSIONS } from "../../../constants/rbac";
-import type { Astrologer, FieldConfig } from "../../../types/models";
-import { toast } from "react-toastify";
-import { useCrud } from "../../../core/crud/useCrud";
-
-/* ───────────────── INITIAL VALUES ───────────────── */
-
-const INITIAL_VALUES: Partial<Astrologer> = {
-  name: "",
-  email: "",
-  bio: "",
-  expertise: "",
-  experience: 1,
-  price_per_minute: 10,
-  languages: [],
-  skills: [],
-  consultation_type: "all",
-};
-
-/* ───────────────── FORM FIELDS ───────────────── */
+import { PERMISSIONS } from '../../../constants/rbac';
+import { useAuth }     from '../../../auth/hooks/useAuth';
+import { toast }       from 'react-toastify';
+import type { Astrologer, FieldConfig } from '../../../types/models';
 
 const FIELDS: FieldConfig<Partial<Astrologer>>[] = [
-  { name: "name", label: "Full Name", type: "text", required: true },
-  { name: "email", label: "Email Address", type: "email", required: true },
-  { name: "expertise", label: "Main Expertise", type: "text", required: true },
-  { name: "bio", label: "Bio", type: "textarea", required: true },
-  { name: "experience", label: "Experience", type: "number", min: 0 },
-  { name: "price_per_minute", label: "Price/Min", type: "number", min: 1 },
+  { name: 'name',             label: 'Full Name',        type: 'text',     required: true },
+  { name: 'email',            label: 'Email Address',    type: 'email',    required: true },
+  { name: 'expertise',        label: 'Main Expertise',   type: 'text',     required: true },
+  { name: 'bio',              label: 'Bio',              type: 'textarea', required: true, rows: 3 },
+  { name: 'experience',       label: 'Experience (yrs)', type: 'number',   min: 0, max: 50 },
+  { name: 'price_per_minute', label: 'Price/Min (₹)',    type: 'number',   min: 1 },
   {
-    name: "consultation_type",
-    label: "Consultation Type",
-    type: "select",
+    name: 'consultation_type', label: 'Consultation Type', type: 'select',
     options: [
-      { label: "All", value: "all" },
-      { label: "Chat", value: "chat" },
-      { label: "Call", value: "call" },
-      { label: "Video", value: "video" },
+      { label: 'All', value: 'all' }, { label: 'Chat', value: 'chat' },
+      { label: 'Call', value: 'call' }, { label: 'Video', value: 'video' },
     ],
   },
 ];
 
-/* ───────────────── COMPONENT ───────────────── */
+const INITIAL: Partial<Astrologer> = {
+  name: '', email: '', bio: '', expertise: '',
+  experience: 1, price_per_minute: 10,
+  languages: [], skills: [], consultation_type: 'all',
+};
 
 export default function AstrologersPage() {
-  const [search, setSearch] = useState("");
-  const [verified, setVerified] = useState("");
+  const { can }                 = useAuth();
+  const [search, setSearch]     = useState('');
+  const [verified, setVerified] = useState('');
 
-  const { data, isLoading, isError, refetch } = useAdminGetAstrologersQuery({
-    search: search || undefined,
-    is_verified: verified === "" ? undefined : verified === "true",
+  const query = useAdminGetAstrologersQuery({
+    search:      search   || undefined,
+    is_verified: verified === '' ? undefined : verified === 'true',
   });
 
-  const [create] = useAdminCreateAstrologerMutation();
-  const [update] = useAdminUpdateAstrologerMutation();
-  const [remove] = useAdminDeleteAstrologerMutation();
-  const [restore] = useAdminRestoreAstrologerMutation();
-  const [verify] = useAdminVerifyAstrologerMutation();
+  const [createAstrologer]  = useAdminCreateAstrologerMutation();
+  const [updateAstrologer]  = useAdminUpdateAstrologerMutation();
+  const [deleteAstrologer]  = useAdminDeleteAstrologerMutation();
+  const [restoreAstrologer] = useAdminRestoreAstrologerMutation();
+  const [verifyAstrologer]  = useAdminVerifyAstrologerMutation();
 
-  /* ✅ CLEAN CRUD */
-  const crud = useCrud<Astrologer>({
-    create,
-    update: ({ id, ...data }: any) => update({ id, data }),
-    remove,
-    onSuccess: refetch,
-  });
-
-  /* ───────────────── VERIFY ───────────────── */
-
-  const handleVerify = async (id: number, isVerified: boolean) => {
+  const handleVerify = async (a: Astrologer) => {
     try {
-      await verify(id).unwrap();
-      toast.success(
-        isVerified
-          ? "Verification revoked"
-          : "Astrologer verified successfully"
-      );
-      refetch();
+      await verifyAstrologer(a.id).unwrap();
+      toast.success(a.is_verified ? 'Verification revoked' : 'Astrologer verified');
+      query.refetch();
     } catch {
-      toast.error("Action failed");
+      toast.error('Verify action failed');
     }
   };
 
-  /* ───────────────── TABLE ───────────────── */
-
-  const columns = (
-    <tr>
-      <th>#</th>
-      <th>Astrologer</th>
-      <th>Expertise</th>
-      <th>Exp</th>
-      <th>Price</th>
-      <th>Rating</th>
-      <th>Online</th>
-      <th>Status</th>
-      <th className="text-end">Actions</th>
-    </tr>
-  );
-
-  const renderRow = (a: Astrologer, actions: any[]) => {
-    const verifyAction = {
-      key: "verify",
-      icon: a.is_verified ? "fas fa-check-circle" : "fas fa-circle",
-      variant: a.is_verified ? "success" : "secondary",
-      onClick: () => handleVerify(a.id, a.is_verified),
-    };
-
-    return (
-      <tr
-        key={a.id}
-        className={a.deleted_at ? "table-danger opacity-75" : ""}
-      >
-        <td>{a.id}</td>
-
-        <td className="d-flex align-items-center gap-2">
+  const renderRow = (a: Astrologer, actions: any[]) => (
+    <tr key={a.id} className={a.deleted_at ? 'table-danger opacity-75' : ''}>
+      <td className="text-muted small">{a.id}</td>
+      <td>
+        <div className="d-flex align-items-center gap-2">
           <Avatar name={a.name} src={a.profile_image} size={34} />
           <div>
-            <div>{a.name}</div>
-            <small className="text-muted">{a.email}</small>
+            <div className="fw-semibold small">{a.name}</div>
+            <div className="text-muted" style={{ fontSize: 11 }}>{a.email}</div>
           </div>
-        </td>
-
-        <td>{a.expertise}</td>
-        <td>{a.experience} yrs</td>
-        <td>₹{a.price_per_minute}</td>
-
-        <td>
-          <StarRating rating={a.rating ?? 0} size={12} />
-        </td>
-
-        <td>
-          <OnlineBadge online={a.is_online} />
-        </td>
-
-        <td>
-          <VerifiedBadge verified={a.is_verified} />
-        </td>
-
-        <td className="text-end">
-          <RowActions actions={[verifyAction, ...actions]} />
-        </td>
-      </tr>
-    );
-  };
-
-  /* ───────────────── UI ───────────────── */
-
-  const topContent = (
-    <div className="card mb-3">
-      <div className="card-body d-flex gap-2">
-        <TableSearch
-          value={search}
-          onChange={setSearch}
-          placeholder="Search astrologer..."
+        </div>
+      </td>
+      <td className="small">{a.expertise || '—'}</td>
+      <td className="small">{a.experience} yrs</td>
+      <td className="small">₹{a.price_per_minute}/min</td>
+      <td><StarRating rating={a.rating ?? 0} size={12} /></td>
+      <td><OnlineBadge online={a.is_online} /></td>
+      <td><VerifiedBadge verified={a.is_verified} /></td>
+      <td className="text-end pe-2">
+        <RowActions
+          actions={[
+            {
+              key: 'verify',
+              icon: a.is_verified ? 'fas fa-check-circle' : 'fas fa-times-circle',
+              variant: a.is_verified ? 'success' : 'secondary',
+              title: a.is_verified ? 'Revoke Verification' : 'Verify Astrologer',
+              show: can(PERMISSIONS.ASTROLOGER.VERIFY),
+              onClick: () => handleVerify(a),
+            },
+            ...actions,
+          ]}
         />
-
-        <select
-          className="form-select"
-          value={verified}
-          onChange={(e) => setVerified(e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="true">Verified</option>
-          <option value="false">Unverified</option>
-        </select>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
-
-  /* ───────────────── RENDER ───────────────── */
 
   return (
     <AdminCrudPage<Astrologer>
       entity="Astrologer"
-      query={{ data, isLoading, isError, refetch }}
+      query={query}
       mutations={{
-        create: [crud.create],
-        update: [crud.update],
-        delete: [crud.remove],
-        restore: [
-          async (id: number) => {
-            try {
-              await restore(id).unwrap();
-              // toast.success("Restored successfully");
-              refetch();
-            } catch {
-              toast.error("Restore failed");
-            }
-          },
-        ],
+        create:  createAstrologer  as any,
+        update:  updateAstrologer  as any,
+        delete:  deleteAstrologer  as any,
+        restore: restoreAstrologer as any,
       }}
-      columns={columns}
-      fields={FIELDS}
-      initialValues={INITIAL_VALUES}
       permissions={{
-        create: PERMISSIONS.ASTROLOGER.CREATE,
-        update: PERMISSIONS.ASTROLOGER.UPDATE,
-        delete: PERMISSIONS.ASTROLOGER.DELETE,
-        restore: PERMISSIONS.ASTROLOGER.RESTORE,
+        create:  can(PERMISSIONS.ASTROLOGER.CREATE),
+        update:  can(PERMISSIONS.ASTROLOGER.UPDATE),
+        delete:  can(PERMISSIONS.ASTROLOGER.DELETE),
+        restore: can(PERMISSIONS.ASTROLOGER.RESTORE),
       }}
+      columns={
+        <tr>
+          <th>#</th><th>Astrologer</th><th>Expertise</th><th>Exp</th>
+          <th>Price</th><th>Rating</th><th>Online</th><th>Status</th>
+          <th className="text-end">Actions</th>
+        </tr>
+      }
+      fields={FIELDS}
+      initialValues={INITIAL}
       renderRow={renderRow}
-      topContent={topContent}
+      topContent={
+        <div className="d-flex gap-2 mb-3">
+          <TableSearch value={search} onChange={setSearch} placeholder="Search astrologer..." />
+          <select className="form-select w-auto" value={verified}
+            onChange={(e) => setVerified(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="true">Verified</option>
+            <option value="false">Unverified</option>
+          </select>
+        </div>
+      }
     />
   );
 }

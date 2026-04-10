@@ -1,86 +1,82 @@
 <?php
+// PATH: app/Features/Auth/Services/LoginService.php
+// FIX B3: Login response mein refresh_token nahi tha
+//   Frontend baseQueryWithReauth: localStorage.getItem('refresh_token') → always null
+//   Token refresh kabhi kaam nahi karta tha → user 401 pe force logout hota tha
+// FIX: RefreshToken create karke response mein return karo
 
 namespace App\Features\Auth\Services;
 
+use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginService
 {
     public function login(array $credentials): array
     {
-        /* =====================================================
-           FEATURE FLAG
-        ===================================================== */
         if (! config('features.login_rate_limit')) {
             throw $this->error('Login temporarily disabled');
         }
 
-        /* =====================================================
-           USER FETCH (single query)
-        ===================================================== */
-        $user = User::query()
-            ->where('email', $credentials['email'])
-            ->first();
+        $user = User::where('email', $credentials['email'])->first();
 
-        /* =====================================================
-           CREDENTIAL CHECK
-        ===================================================== */
-        if (
-            ! $user ||
-            ! Hash::check($credentials['password'], $user->password)
-        ) {
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw $this->error('Invalid credentials');
         }
 
-        /* =====================================================
-           ACCOUNT STATE CHECKS
-        ===================================================== */
         if (! $user->is_active) {
             throw $this->error('Account is disabled');
         }
 
-        if (
-            config('features.email_verification') &&
-            ! $user->hasVerifiedEmail()
-        ) {
+        if (config('features.email_verification') && ! $user->hasVerifiedEmail()) {
             throw $this->error('Email not verified');
         }
 
-        /* =====================================================
-           TOKEN CREATION
-        ===================================================== */
-        $abilities = $user
-            ->getAllPermissions()
-            ->pluck('name')
-            ->all();
+        // Sanctum access token
+        $abilities = $user->getAllPermissions()->pluck('name')->all();
+        $token     = $user->createToken('api', $abilities)->plainTextToken;
 
-        $token = $user
-            ->createToken('api', $abilities)
-            ->plainTextToken;
+        // FIX B3: Refresh token create + return karo
+        $refreshToken = null;
+        if (config('features.refresh_token')) {
+            // Purane active tokens revoke karo (security)
+            RefreshToken::where('user_id', $user->id)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
 
-        /* =====================================================
-           LOGIN AUDIT (NON-BLOCKING)
-        ===================================================== */
+            $raw = Str::random(64);
+
+            RefreshToken::create([
+                'user_id'    => $user->id,
+                'token'      => $raw,
+                'expires_at' => now()->addDays(30),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            $refreshToken = $raw;
+        }
+
+        // Login audit
         $user->forceFill([
             'last_login_at' => now(),
             'last_login_ip' => request()->ip(),
         ])->save();
 
-        return [
-            'token' => $token,
-        ];
+        $result = ['token' => $token];
+
+        if ($refreshToken) {
+            $result['refresh_token'] = $refreshToken;
+        }
+
+        return $result;
     }
 
-    /* =====================================================
-       CENTRAL ERROR FORMAT
-       (keeps controller & service clean)
-    ===================================================== */
     protected function error(string $message): ValidationException
     {
-        return ValidationException::withMessages([
-            'email' => [$message],
-        ]);
+        return ValidationException::withMessages(['email' => [$message]]);
     }
 }

@@ -1,8 +1,13 @@
 <?php
+// PATH: app/Features/Auth/Services/RefreshTokenService.php
+// FIX B4: Refresh response mein new refresh_token nahi tha
+//   Old token revoke hota tha, naya nahi milta → next refresh fail → user logout
+// FIX: New refresh_token bhi generate karo (rotation pattern)
 
 namespace App\Features\Auth\Services;
 
 use App\Models\RefreshToken;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class RefreshTokenService
@@ -27,20 +32,27 @@ class RefreshTokenService
 
         $user = $record->user;
 
-        // 🔒 single-use rotation
-        $record->update([
-            'revoked_at' => now(),
+        // Purana token revoke karo (single-use)
+        $record->update(['revoked_at' => now()]);
+
+        // Naya access token
+        $abilities   = $user->getAllPermissions()->pluck('name')->toArray();
+        $accessToken = $user->createToken('api', $abilities)->plainTextToken;
+
+        // FIX B4: Naya refresh token bhi banao
+        $raw = Str::random(64);
+
+        RefreshToken::create([
+            'user_id'    => $user->id,
+            'token'      => $raw,
+            'expires_at' => now()->addDays(30),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
         ]);
 
-        $abilities = $user
-            ->getAllPermissions()
-            ->pluck('name')
-            ->toArray();
-
         return [
-            'token' => $user
-                ->createToken('api', $abilities)
-                ->plainTextToken,
+            'token'         => $accessToken,
+            'refresh_token' => $raw,
         ];
     }
 }

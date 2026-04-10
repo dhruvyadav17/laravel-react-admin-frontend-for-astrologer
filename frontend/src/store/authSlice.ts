@@ -1,248 +1,124 @@
-// src/store/authSlice.ts
+// PATH: src/store/authSlice.ts
+// FIX: setToken action add kiya
+//   baseQueryWithReauth refresh ke baad sirf localStorage update karta tha
+//   Redux state stale rehti thi → nayi requests wrong token bhejti thin
+// FIX: safeParse helper — malformed localStorage JSON crash nahi karta
 
-import {
-  createSlice,
-  createAsyncThunk,
-  PayloadAction,
-} from "@reduxjs/toolkit";
-
-import {
-  loginService,
-  profileService,
-} from "../services/authService";
-
-import type { User } from "../types/models";
-import { emitLogoutEvent } from "../utils/authEvents";
-
-/* =====================================================
-   TYPES
-===================================================== */
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { loginService, profileService }                  from '../services/authService';
+import type { User }                                     from '../types/models';
+import { emitLogoutEvent }                               from '../utils/authEvents';
 
 export type AuthState = {
-  user: User | null;
+  user:        User | null;
   permissions: string[];
-  token: string | null;
-  loading: boolean;
+  token:       string | null;
+  loading:     boolean;
 };
 
-/* =====================================================
-   INITIAL STATE (SAFE)
-===================================================== */
+function safeParse<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 const initialState: AuthState = {
-  user: (() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem("user") || "null"
-      );
-    } catch {
-      return null;
-    }
-  })(),
-
-  permissions: (() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem("permissions") || "[]"
-      );
-    } catch {
-      return [];
-    }
-  })(),
-
-  token: localStorage.getItem("token"),
-  loading: false,
+  user:        safeParse<User | null>('user', null),
+  permissions: safeParse<string[]>('permissions', []).filter((p): p is string => typeof p === 'string'),
+  token:       localStorage.getItem('token'),
+  loading:     false,
 };
 
-/* =====================================================
-   THUNKS
-===================================================== */
-
-/**
- * LOGIN
- */
 export const loginThunk = createAsyncThunk<
   { token: string; refresh_token?: string },
   { email: string; password: string },
   { rejectValue: string }
->("auth/login", async (data, { rejectWithValue }) => {
+>('auth/login', async (data, { rejectWithValue }) => {
   try {
-    const res = await loginService(
-      data.email,
-      data.password
-    );
-
-    // 🔥 SAFE ACCESS
+    const res     = await loginService(data.email, data.password);
     const payload = res?.data?.data;
-
-    if (!payload?.token) {
-      return rejectWithValue("Invalid login response");
-    }
-
+    if (!payload?.token) return rejectWithValue('Invalid login response');
     return payload;
   } catch (e: any) {
-    return rejectWithValue(
-      e.response?.data?.message ||
-        "Invalid credentials"
-    );
+    return rejectWithValue(e.response?.data?.message ?? 'Invalid credentials');
   }
 });
 
-/**
- * PROFILE
- */
 export const fetchProfileThunk = createAsyncThunk<
   { user: User; permissions: string[] },
   void,
   { rejectValue: string }
->("auth/profile", async (_, { rejectWithValue }) => {
+>('auth/profile', async (_, { rejectWithValue }) => {
   try {
-    const res = await profileService();
-
+    const res     = await profileService();
     const payload = res?.data?.data;
-
-    if (!payload?.user) {
-      return rejectWithValue(
-        "Invalid profile response"
-      );
-    }
-
+    if (!payload?.user) return rejectWithValue('Invalid profile response');
     return payload;
   } catch {
-    return rejectWithValue(
-      "Failed to load profile"
-    );
+    return rejectWithValue('Failed to load profile');
   }
 });
 
-/**
- * LOGOUT
- */
-export const logoutThunk = createAsyncThunk(
-  "auth/logout",
-  async () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("permissions");
-
-    emitLogoutEvent();
-
-    return true;
-  }
-);
-
-/* =====================================================
-   SLICE
-===================================================== */
+export const logoutThunk = createAsyncThunk('auth/logout', async () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('permissions');
+  emitLogoutEvent();
+  return true;
+});
 
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
 
   reducers: {
-    setPermissions(
-      state,
-      action: PayloadAction<string[]>
-    ) {
+    setPermissions(state, action: PayloadAction<string[]>) {
       state.permissions = action.payload;
+      localStorage.setItem('permissions', JSON.stringify(action.payload));
+    },
 
-      localStorage.setItem(
-        "permissions",
-        JSON.stringify(action.payload)
-      );
+    // FIX: Called by baseQueryWithReauth after token refresh
+    setToken(state, action: PayloadAction<string>) {
+      state.token = action.payload;
+      localStorage.setItem('token', action.payload);
     },
   },
 
   extraReducers: (builder) => {
     builder
-
-      /* ================= LOGIN ================= */
-
-      .addCase(loginThunk.pending, (state) => {
-        state.loading = true;
-      })
-
-      .addCase(
-        loginThunk.fulfilled,
-        (state, action) => {
-          state.loading = false;
-
-          const token =
-            action.payload?.token ?? null;
-
-          state.token = token;
-
-          if (token) {
-            localStorage.setItem("token", token);
-          }
-
-          if (action.payload?.refresh_token) {
-            localStorage.setItem(
-              "refresh_token",
-              action.payload.refresh_token
-            );
-          }
-        }
-      )
-
-      .addCase(loginThunk.rejected, (state) => {
+      .addCase(loginThunk.pending,   (state) => { state.loading = true; })
+      .addCase(loginThunk.rejected,  (state) => { state.loading = false; })
+      .addCase(loginThunk.fulfilled, (state, action) => {
         state.loading = false;
+        const token   = action.payload?.token ?? null;
+        state.token   = token;
+        if (token) localStorage.setItem('token', token);
+        if (action.payload?.refresh_token) {
+          localStorage.setItem('refresh_token', action.payload.refresh_token);
+        }
       })
 
-      /* ================= PROFILE ================= */
+      .addCase(fetchProfileThunk.fulfilled, (state, action) => {
+        state.user        = action.payload?.user        ?? null;
+        state.permissions = action.payload?.permissions ?? [];
+        localStorage.setItem('user',        JSON.stringify(state.user));
+        localStorage.setItem('permissions', JSON.stringify(state.permissions));
+      })
+      .addCase(fetchProfileThunk.rejected, (state) => {
+        state.user = null; state.permissions = [];
+      })
 
-      .addCase(
-        fetchProfileThunk.fulfilled,
-        (state, action) => {
-          const user =
-            action.payload?.user ?? null;
-
-          const permissions =
-            action.payload?.permissions ?? [];
-
-          state.user = user;
-          state.permissions = permissions;
-
-          localStorage.setItem(
-            "user",
-            JSON.stringify(user)
-          );
-
-          localStorage.setItem(
-            "permissions",
-            JSON.stringify(permissions)
-          );
-        }
-      )
-
-      .addCase(
-        fetchProfileThunk.rejected,
-        (state) => {
-          state.user = null;
-          state.permissions = [];
-        }
-      )
-
-      /* ================= LOGOUT ================= */
-
-      .addCase(
-        logoutThunk.fulfilled,
-        (state) => {
-          state.user = null;
-          state.permissions = [];
-          state.token = null;
-          state.loading = false;
-        }
-      );
+      .addCase(logoutThunk.fulfilled, (state) => {
+        state.user = null; state.permissions = [];
+        state.token = null; state.loading = false;
+      });
   },
 });
 
-/* =====================================================
-   EXPORTS
-===================================================== */
-
-export const { setPermissions } =
-  authSlice.actions;
-
+export const { setPermissions, setToken } = authSlice.actions;
 export default authSlice.reducer;

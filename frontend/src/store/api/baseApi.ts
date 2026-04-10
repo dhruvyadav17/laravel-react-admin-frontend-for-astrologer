@@ -1,8 +1,8 @@
-// PATH: src/store/api/baseApi.ts  UPDATE
-// CHANGE: tagTypes mein Review, MyAstrologerProfile, MySchedule add kiye
-// REASON: New endpoints ke cache invalidation kaam nahi karta tha — tags register nahi the
+// PATH: src/store/api/baseApi.ts
+// FIX: tagTypes consistent naming — 'User', 'Role', 'Permission' (not Users/Roles/Permissions)
+//   Mismatched tags = cache never invalidated after CRUD operations
 
-import { createApi } from '@reduxjs/toolkit/query/react';
+import { createApi }           from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from '../baseQueryWithReauth';
 
 export const baseApi = createApi({
@@ -19,8 +19,8 @@ export const baseApi = createApi({
     'Dashboard',
     'MyAstrologerProfile',
     'MySchedule',
-    'Consultation',   // NEW
-    'ChatMessage',    // NEW
+    'Consultation',
+    'ChatMessage',
   ],
 
   endpoints: () => ({}),

@@ -1,16 +1,15 @@
 <?php
 // PATH: app/Services/App/ReviewService.php
-// FIX BUG-4: ReviewService extend karta tha BaseService lekin kabhi model() implement nahi kiya
-//             aur constructor mein parent call nahi tha — design mismatch tha
-//             FIX: BaseService extend karna remove kiya (ReviewService ka restore/delete logic
-//             alag hai — wo sirf submit+list karta hai, BaseService ki zaroorat nahi)
-// IMPROVEMENT: forAstrologer() mein paginate ke saath page param support add kiya
+// FIX B7: submit() signature mismatch — controllers User/Astrologer objects pass karte hain
+// FIX B8: recalculate() mein is_approved filter add kiya — disapproved reviews rating mein nahi jaate
 
 namespace App\Services\App;
 
-use App\Models\AstrologerReview;
-use Illuminate\Support\Facades\DB;
 use App\Features\Astrologer\Services\AstrologerService;
+use App\Models\Astrologer;
+use App\Models\AstrologerReview;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ReviewService
 {
@@ -18,15 +17,13 @@ class ReviewService
         protected AstrologerService $astrologerService
     ) {}
 
-    /* ── Submit or Update review ────────────────────── */
-    public function submit(int $userId, int $astrologerId, array $data): AstrologerReview
+    public function submit(User $user, Astrologer $astrologer, array $data): AstrologerReview
     {
-        return DB::transaction(function () use ($userId, $astrologerId, $data) {
-
+        return DB::transaction(function () use ($user, $astrologer, $data) {
             $review = AstrologerReview::updateOrCreate(
                 [
-                    'user_id'       => $userId,
-                    'astrologer_id' => $astrologerId,
+                    'user_id'       => $user->id,
+                    'astrologer_id' => $astrologer->id,
                 ],
                 [
                     'rating'  => $data['rating'],
@@ -34,21 +31,37 @@ class ReviewService
                 ]
             );
 
-            // Rating recalculate karo har review ke baad
-            $astrologer = \App\Models\Astrologer::findOrFail($astrologerId);
-            $this->astrologerService->recalculateRating($astrologer);
+            $this->recalculate($astrologer);
 
-            return $review;
+            return $review->load('user:id,name,profile_image');
         });
     }
 
-    /* ── List approved reviews for an astrologer ────── */
-    public function forAstrologer(int $astrologerId, int $perPage = 10)
+    public function forAstrologer(Astrologer $astrologer, int $page = 1, int $perPage = 10)
     {
         return AstrologerReview::with('user:id,name,profile_image')
-            ->where('astrologer_id', $astrologerId)
+            ->where('astrologer_id', $astrologer->id)
             ->where('is_approved', true)
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    public function myReviews(Astrologer $astrologer, int $page = 1, int $perPage = 10)
+    {
+        return AstrologerReview::with('user:id,name,profile_image')
+            ->where('astrologer_id', $astrologer->id)
+            ->latest()
+            ->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    // FIX B8: Only approved reviews count in rating
+    public function recalculate(Astrologer $astrologer): void
+    {
+        $approved = $astrologer->reviews()->where('is_approved', true);
+
+        $astrologer->update([
+            'rating'        => round((float) ($approved->avg('rating') ?? 0), 1),
+            'total_reviews' => $approved->count(),
+        ]);
     }
 }

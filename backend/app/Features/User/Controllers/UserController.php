@@ -1,24 +1,26 @@
 <?php
+// PATH: app/Features/User/Controllers/UserController.php
+// FIX B5: Wrong UserRequest namespace
+//   BEFORE: use App\Http\Requests\UserRequest → file exist nahi → 500 error
+//   AFTER:  use App\Features\User\Requests\UserRequest → correct path
 
 namespace App\Features\User\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Features\User\Resources\UserResource;
+use App\Features\User\Requests\UserRequest;
 use App\Models\User;
 use App\Features\User\Services\UserService;
+use App\Support\Pagination;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Http\Requests\UserRequest;
 
 class UserController extends Controller
 {
-    public function __construct(
-        protected UserService $service
-    ) {}
+    public function __construct(protected UserService $service) {}
 
-    /* ================= LIST ================= */
-
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $result = $this->service->paginate($request);
 
@@ -29,81 +31,55 @@ class UserController extends Controller
         );
     }
 
-    /* ================= CREATE ================= */
-
-    public function store(UserRequest $request)
+    public function store(UserRequest $request): JsonResponse
     {
-        $user = $this->service->create(
-            $request->validated()
-        );
+        $user = $this->service->create($request->validated());
 
-        return $this->success(
-            'User created successfully',
-            new UserResource($user),
-            [],
-            201
-        );
+        return $this->success('User created successfully', new UserResource($user), [], 201);
     }
 
-    /* ================= ARCHIVE ================= */
+    public function update(UserRequest $request, User $user): JsonResponse
+    {
+        $updated = $this->service->update($user, $request->validated());
 
-    public function destroy(User $user)
+        return $this->success('User updated successfully', new UserResource($updated));
+    }
+
+    public function destroy(User $user): JsonResponse
     {
         $this->service->delete($user);
 
-        return $this->success(
-            'User archived successfully',
-            null
-        );
+        return $this->success('User archived successfully');
     }
 
-    /* ================= RESTORE ================= */
-
-    public function restore($id)
+    public function restore(int $id): JsonResponse
     {
         $user = User::withTrashed()->findOrFail($id);
-
         $this->service->restore($user);
 
-        return $this->success(
-            'User restored successfully',
-            null
-        );
+        return $this->success('User restored successfully');
     }
 
-    /* ================= ROLES ================= */
-
-    public function assignRole(Request $request, User $user)
+    public function assignRole(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
             'roles'   => ['array'],
             'roles.*' => ['string', 'exists:roles,name'],
         ]);
 
-        $this->service->assignRoles(
-            $user,
-            $data['roles'] ?? []
-        );
+        $this->service->assignRoles($user, $data['roles'] ?? []);
 
-        return $this->success(
-            'Roles assigned successfully',
-            [
-                'roles' => $user->getRoleNames()->values(),
-            ]
-        );
+        return $this->success('Roles assigned successfully', [
+            'roles' => $user->getRoleNames()->values(),
+        ]);
     }
 
-    /* ================= PERMISSIONS ================= */
-
-    public function permissions(User $user)
+    public function permissions(User $user): JsonResponse
     {
-        return $this->success(
-            'User permissions fetched',
-            $this->service->permissions($user)
-        );
+        return $this->success('User permissions fetched', $this->service->permissions($user));
     }
 
-    public function assignPermissions(Request $request, User $user)
+    public function assignPermissions(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
             'permissions'   => ['nullable', 'array'],
@@ -114,7 +90,6 @@ class UserController extends Controller
 
         $this->service->assignPermissions($user, $permissions);
 
-        // 🔥 Reload fresh permissions
         $user->load('permissions');
 
         Log::info('Assigned permissions to user', [
@@ -122,28 +97,8 @@ class UserController extends Controller
             'permissions' => $permissions,
         ]);
 
-        return $this->success(
-            'Permissions assigned successfully.',
-            [
-                'assigned' => $user->permissions
-                    ->pluck('name')
-                    ->values(),
-            ]
-        );
-    }
-
-    /* ================= UPDATE ================= */
-
-    public function update(UserRequest $request, User $user)
-    {
-        $updatedUser = $this->service->update(
-            $user,
-            $request->validated()
-        );
-
-        return $this->success(
-            'User updated successfully',
-            new UserResource($updatedUser)
-        );
+        return $this->success('Permissions assigned successfully', [
+            'assigned' => $user->permissions->pluck('name')->values(),
+        ]);
     }
 }

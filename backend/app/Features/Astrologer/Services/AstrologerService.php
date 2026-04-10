@@ -1,4 +1,9 @@
 <?php
+// PATH: app/Features/Astrologer/Services/AstrologerService.php
+// FIX B9: selfUpdate() sirf is_verified strip karta tha — whitelist approach use karo
+//   Astrologer rating, total_consultations etc khud set kar sakta tha
+// FIX B10: toggleAvailability() ab is_online + is_available dono toggle karta hai
+// FIX B8: recalculateRating() mein is_approved filter
 
 namespace App\Features\Astrologer\Services;
 
@@ -12,32 +17,35 @@ use Illuminate\Support\Facades\DB;
 
 class AstrologerService
 {
+    // FIX B9: Only these fields allowed for self-update
+    private const SELF_UPDATE_ALLOWED = [
+        'bio', 'expertise', 'languages', 'skills',
+        'consultation_type', 'price_per_minute',
+        'profile_image', 'gallery',
+    ];
+
     public function __construct(
-        protected AstrologerQuery $query,
+        protected AstrologerQuery  $query,
         protected CreateAstrologer $createAction,
         protected UpdateAstrologer $updateAction,
         protected DeleteAstrologer $deleteAction,
     ) {}
 
-    /* ── Public listing ─────────────────────────── */
     public function publicList(array $filters = [])
     {
         return $this->query->publicList($filters)->paginate(12);
     }
 
-    /* ── Public single ─────────────────────────── */
     public function findPublic(int $id): Astrologer
     {
         return $this->query->find($id);
     }
 
-    /* ── Admin listing ─────────────────────────── */
     public function adminList(array $filters = [])
     {
         return $this->query->adminList($filters)->paginate(15);
     }
 
-    /* ── Create ─────────────────────────── */
     public function createWithUser(array $data): array
     {
         return DB::transaction(function () use ($data) {
@@ -46,27 +54,24 @@ class AstrologerService
         });
     }
 
-    /* ── Update ─────────────────────────── */
     public function update(Astrologer $astrologer, array $data): Astrologer
     {
         return $this->updateAction->execute($astrologer, $data);
     }
 
-    /* ── Self Update (Astrologer Panel) ───────────────── */
+    // FIX B9: Whitelist — admin-only fields block kiye
     public function selfUpdate(Astrologer $astrologer, array $data): Astrologer
     {
-        unset($data['is_verified']); // 🔥 security
+        $safe = array_intersect_key($data, array_flip(self::SELF_UPDATE_ALLOWED));
 
-        return $this->updateAction->execute($astrologer, $data);
+        return $this->updateAction->execute($astrologer, $safe);
     }
 
-    /* ── Delete ─────────────────────────── */
     public function delete(Astrologer $astrologer): void
     {
         $this->deleteAction->execute($astrologer);
     }
 
-    /* ── Restore ─────────────────────────── */
     public function restore(int $id): Astrologer
     {
         $a = Astrologer::withTrashed()->findOrFail($id);
@@ -74,21 +79,27 @@ class AstrologerService
         return $a->fresh(['user']);
     }
 
-    /* ── Toggle Online ─────────────────────────── */
-    public function toggleOnline(Astrologer $astrologer): Astrologer
+    // FIX B10: Both is_online and is_available toggle together
+    public function toggleAvailability(Astrologer $astrologer): Astrologer
     {
+        $newOnline = ! $astrologer->is_online;
+
         $astrologer->update([
-            'is_online' => !$astrologer->is_online
+            'is_online'    => $newOnline,
+            'is_available' => $newOnline,
         ]);
 
         return $astrologer->fresh();
     }
+
+    // FIX B8: Only approved reviews
     public function recalculateRating(Astrologer $astrologer): void
     {
-        $avg = $astrologer->reviews()->avg('rating') ?? 0;
+        $approved = $astrologer->reviews()->where('is_approved', true);
 
         $astrologer->update([
-            'rating' => round($avg, 1),
+            'rating'        => round((float) ($approved->avg('rating') ?? 0), 1),
+            'total_reviews' => $approved->count(),
         ]);
     }
 }

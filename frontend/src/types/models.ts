@@ -1,12 +1,18 @@
-// PATH: src/types/models.ts  MAJOR UPDATE
-// CHANGES: Review, AstrologerSchedule, AstrologerFilters, ConsultationType types add kiye
-//          Astrologer: is_available, consultation_type, total_consultations add kiye
-//          FieldConfig: textarea + select + toggle support add kiya
-// REASON: New features ke liye types missing the. `any` types remove karne ke liye.
+// PATH: src/types/models.ts
+// FIX: Consultation + ChatMessage types yahan consolidated
+//   Was duplicated in consultation.api.ts → drift risk
+// FIX: ConsultationStatus type add kiya
+// FIX: Strict readonly for options arrays
 
 export type ID = number;
 
-// ── User ──────────────────────────────────────────────────────
+export type ConsultationStatus =
+  | 'pending' | 'accepted' | 'in_progress'
+  | 'completed' | 'rejected' | 'cancelled';
+
+export type ConsultationType = 'chat' | 'call' | 'video' | 'all';
+
+/* ── User ──────────────────────────────────── */
 export interface User {
   id:                ID;
   name:              string;
@@ -22,9 +28,7 @@ export interface User {
   deleted_at:        string | null;
 }
 
-// ── Astrologer ────────────────────────────────────────────────
-export type ConsultationType = 'chat' | 'call' | 'video' | 'all';
-
+/* ── Astrologer ────────────────────────────── */
 export interface Astrologer {
   id:                   ID;
   user_id:              ID;
@@ -37,12 +41,12 @@ export interface Astrologer {
   expertise:            string;
   languages:            string[];
   skills:               string[];
-  consultation_type:    ConsultationType;   // NEW
+  consultation_type:    ConsultationType;
   rating:               number;
   total_reviews:        number;
-  total_consultations:  number;             // NEW
+  total_consultations:  number;
   is_online:            boolean;
-  is_available:         boolean;            // NEW
+  is_available:         boolean;
   is_verified:          boolean;
   gallery:              string[];
   schedules?:           AstrologerSchedule[];
@@ -52,6 +56,7 @@ export interface Astrologer {
 }
 
 export interface AstrologerFilters {
+  search?:            string;
   online?:            boolean;
   expertise?:         string;
   language?:          string;
@@ -63,8 +68,8 @@ export interface AstrologerFilters {
   page?:              number;
 }
 
-// ── Schedule ──────────────────────────────────────────────────
-export interface AstrologerSchedule {  // NEW
+/* ── Schedule ──────────────────────────────── */
+export interface AstrologerSchedule {
   id:          ID;
   day_of_week: number;
   start_time:  string;
@@ -72,8 +77,8 @@ export interface AstrologerSchedule {  // NEW
   is_active:   boolean;
 }
 
-// ── Review ────────────────────────────────────────────────────
-export interface Review {  // NEW
+/* ── Review ────────────────────────────────── */
+export interface Review {
   id:         ID;
   rating:     number;
   comment:    string | null;
@@ -85,7 +90,34 @@ export interface Review {  // NEW
   };
 }
 
-// ── Role / Permission ─────────────────────────────────────────
+/* ── Consultation (single source of truth) ── */
+export interface Consultation {
+  id:                ID;
+  type:              Exclude<ConsultationType, 'all'>;
+  status:            ConsultationStatus;
+  user_note?:        string;
+  rejection_reason?: string;
+  rate_per_minute:   number;
+  total_amount?:     number;
+  duration_minutes?: number;
+  started_at?:       string;
+  ended_at?:         string;
+  created_at:        string;
+  user?:             Pick<User, 'id' | 'name' | 'profile_image'>;
+  astrologer?:       Pick<Astrologer, 'id' | 'name' | 'profile_image' | 'expertise' | 'price_per_minute'>;
+}
+
+/* ── Chat Message ──────────────────────────── */
+export interface ChatMessage {
+  id:         ID;
+  message:    string;
+  is_read:    boolean;
+  read_at?:   string | null;
+  created_at: string;
+  sender:     Pick<User, 'id' | 'name' | 'profile_image'>;
+}
+
+/* ── Role / Permission ─────────────────────── */
 export interface Role {
   id:         ID;
   name:       string;
@@ -98,23 +130,7 @@ export interface Permission {
   name: string;
 }
 
-// ── Auth ──────────────────────────────────────────────────────
-export interface AuthUser {
-  id:            ID;
-  name:          string;
-  email:         string;
-  profile_image: string | null;
-  roles:         string[];
-}
-
-export interface AuthState {
-  user:        AuthUser | null;
-  token:       string | null;
-  permissions: string[];
-  loading:     boolean;
-}
-
-// ── API Responses ─────────────────────────────────────────────
+/* ── API Responses ─────────────────────────── */
 export interface ApiResponse<T = unknown> {
   success:     boolean;
   message:     string;
@@ -134,12 +150,13 @@ export interface Pagination {
 
 export interface PaginatedResponse<T> {
   data:       T[];
-  pagination: Pagination;
+  pagination: Pagination | null;
 }
 
-// ── Form ──────────────────────────────────────────────────────
-// UPDATE: textarea, select, toggle type add kiye
-export type FieldType = 'text' | 'email' | 'password' | 'number' | 'textarea' | 'select' | 'toggle';
+/* ── Form ──────────────────────────────────── */
+export type FieldType =
+  | 'text' | 'email' | 'password' | 'number'
+  | 'textarea' | 'select' | 'toggle';
 
 export interface FieldConfig<T = Record<string, unknown>> {
   name:         keyof T;
@@ -148,13 +165,13 @@ export interface FieldConfig<T = Record<string, unknown>> {
   required?:    boolean;
   placeholder?: string;
   disabled?:    boolean;
-  options?:     { label: string; value: string | number }[];
+  options?:     ReadonlyArray<{ label: string; value: string | number }>;
   min?:         number;
   max?:         number;
   rows?:        number;
 }
 
-// ── Sidebar ───────────────────────────────────────────────────
+/* ── Sidebar ───────────────────────────────── */
 export interface SidebarItem {
   label:       string;
   path?:       string;

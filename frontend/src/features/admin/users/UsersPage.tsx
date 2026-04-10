@@ -1,11 +1,13 @@
-// PATH: src/admin/features/users/UsersPage.tsx
+// PATH: src/features/admin/users/UsersPage.tsx
+// FIX F9: mutations format wrong — RTK fn directly pass karo
+// FIX: Pagination meta correct path — (data as any)?.meta?.pagination
 
-import { useState }            from "react";
-import AdminCrudPage            from "../../../admin/components/crud/AdminCrudPage";
-import RowActions               from "../../../components/table/RowActions";
-import Pagination               from "../../../components/table/Pagination";
-import AssignModal              from "../../../admin/components/modals/AssignModal";
-import { TableSearch }          from "../../../components/table/table.helpers";
+import { useState }         from 'react';
+import AdminCrudPage         from '../../../admin/components/crud/AdminCrudPage';
+import RowActions            from '../../../components/table/RowActions';
+import Pagination            from '../../../components/table/Pagination';
+import AssignModal           from '../../../admin/components/modals/AssignModal';
+import { TableSearch }       from '../../../components/table/table.helpers';
 
 import {
   useGetUsersQuery,
@@ -13,24 +15,20 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useRestoreUserMutation,
-} from "../../../store/api";
+} from '../../../store/api';
 
-import { usePagination }  from "../../../core/hooks/usePagination";
-import { useAuth }        from "../../../auth/hooks/useAuth";
-import { PERMISSIONS }    from "../../../constants/rbac";
-import { ICONS }          from "../../../constants/ui";
-import type { User }      from "../../../types/models";
+import { usePagination } from '../../../core/hooks/usePagination';
+import { useAuth }       from '../../../auth/hooks/useAuth';
+import { PERMISSIONS }   from '../../../constants/rbac';
+import { ICONS }         from '../../../constants/ui';
+import type { User, FieldConfig } from '../../../types/models';
 
-/* ── Role badge ───────────────────────────────────── */
 function RoleBadge({ role }: { role: string }) {
   const colorMap: Record<string, string> = {
-    "super-admin": "danger",
-    "admin":       "warning",
-    "manager":     "info",
-    "astrologer":  "primary",
-    "user":        "secondary",
+    'super-admin': 'danger', 'admin': 'warning', 'manager': 'info',
+    'astrologer': 'primary', 'user': 'secondary',
   };
-  const color = colorMap[role] ?? "secondary";
+  const color = colorMap[role] ?? 'secondary';
   return (
     <span className={`badge bg-${color}-subtle text-${color} border me-1`} style={{ fontSize: 11 }}>
       {role}
@@ -38,66 +36,56 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
+function buildFields(isEdit: boolean): FieldConfig<Partial<User>>[] {
+  return [
+    { name: 'name',  label: 'Full Name', required: true },
+    { name: 'email', label: 'Email', required: true, type: 'email', disabled: isEdit },
+    ...(!isEdit ? [
+      { name: 'password' as keyof User,              label: 'Password',         type: 'password' as const },
+      { name: 'password_confirmation' as keyof User, label: 'Confirm Password', type: 'password' as const },
+    ] : []),
+  ];
+}
+
 export default function UsersPage() {
   const { page, setPage, search, setSearch } = usePagination();
-  const { can } = useAuth();
-  const [assignData, setAssignData] = useState<any>(null);
+  const { can }                               = useAuth();
+  const [assignData, setAssignData]           = useState<any>(null);
 
-  /* ── Query ────────────────────────────────────────── */
-  const query               = useGetUsersQuery({ page, search });
-  const { data }            = query;
-  const meta                = (data as any)?.meta;
+  const query      = useGetUsersQuery({ page, search });
+  const pagination = (query.data as any)?.meta?.pagination;
 
-  /* ── Mutations ────────────────────────────────────── */
-  const createMutation  = useCreateUserMutation();
-  const updateMutation  = useUpdateUserMutation();
-  const deleteMutation  = useDeleteUserMutation();
-  const restoreMutation = useRestoreUserMutation();
+  // FIX F9: RTK fn directly from tuple [0]
+  const [createUser]  = useCreateUserMutation();
+  const [updateUser]  = useUpdateUserMutation();
+  const [deleteUser]  = useDeleteUserMutation();
+  const [restoreUser] = useRestoreUserMutation();
 
-  /* ── Extra row actions ────────────────────────────── */
-  const extraActions = [
+  const extraActions = (user: User) => [
     {
-      key:   "roles",
-      icon:  ICONS.ROLE,
-      title: "Assign Roles",
-      show:  can(PERMISSIONS.USER.ASSIGN_ROLE),
-      onClick: (user: User) => setAssignData({ mode: "user-role", entity: user }),
+      key: 'roles', icon: ICONS.ROLE, title: 'Assign Roles',
+      show: can(PERMISSIONS.USER.ASSIGN_ROLE),
+      onClick: () => setAssignData({ mode: 'user-role', entity: user }),
     },
     {
-      key:   "permissions",
-      icon:  ICONS.PERMISSION,
-      title: "Assign Permissions",
-      show:  can(PERMISSIONS.USER.ASSIGN_PERMISSION),
-      onClick: (user: User) => setAssignData({ mode: "user-permission", entity: user }),
+      key: 'permissions', icon: ICONS.PERMISSION, title: 'Assign Permissions',
+      show: can(PERMISSIONS.USER.ASSIGN_PERMISSION),
+      onClick: () => setAssignData({ mode: 'user-permission', entity: user }),
     },
   ];
 
-  /* ── Fields (function — create vs edit) ───────────── */
-  const fields = (entity: any) => {
-    const isEdit = !!entity?.id;
-    return [
-      { name: "name",  label: "Full Name", required: true },
-      { name: "email", label: "Email",     required: true, type: "email", disabled: isEdit },
-      ...(!isEdit ? [
-        { name: "password",              label: "Password",         type: "password" },
-        { name: "password_confirmation", label: "Confirm Password", type: "password" },
-      ] : []),
-    ];
-  };
-
-  /* ── Render ───────────────────────────────────────── */
   return (
     <>
       <AdminCrudPage<User>
         entity="User"
         query={query}
         mutations={{
-          create:  [async (d) => { await (createMutation[0] as any)(d).unwrap(); }],
-          update:  [async (d: any) => { await (updateMutation[0] as any)({ id: d.id, ...d }).unwrap(); }],
-          delete:  [async (id) => { await (deleteMutation[0] as any)(id).unwrap(); }],
-          restore: [async (id) => { await (restoreMutation[0] as any)(id).unwrap(); }],
+          create:  createUser  as any,
+          update:  updateUser  as any,
+          delete:  deleteUser  as any,
+          restore: restoreUser as any,
         }}
-        permissions={{ create: true }}
+        permissions={{ create: can(PERMISSIONS.USER.CREATE) }}
         topContent={
           <TableSearch
             value={search}
@@ -107,70 +95,50 @@ export default function UsersPage() {
         }
         columns={
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Roles</th>
-            <th>Status</th>
-            <th className="text-end">Actions</th>
+            <th>Name</th><th>Email</th><th>Roles</th>
+            <th>Status</th><th className="text-end">Actions</th>
           </tr>
         }
+        fields={(editing) => buildFields(Boolean(editing?.id))}
+        initialValues={{ name: '', email: '' } as Partial<User>}
         renderRow={(user: User, actions) => (
-          <tr key={user.id} className={user.deleted_at ? "table-secondary opacity-75" : ""}>
-            {/* Name */}
+          <tr key={user.id} className={user.deleted_at ? 'table-secondary opacity-75' : ''}>
             <td>
               <div className="d-flex align-items-center gap-2">
-                <div
-                  className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                  style={{ width: 30, height: 30, fontSize: 12 }}
-                >
+                <div className="rounded-circle bg-primary text-white d-flex align-items-center
+                                justify-content-center fw-bold flex-shrink-0"
+                  style={{ width: 30, height: 30, fontSize: 12 }}>
                   {user.name?.[0]?.toUpperCase()}
                 </div>
                 <span className="fw-semibold small">{user.name}</span>
               </div>
             </td>
-
-            {/* Email */}
             <td className="small text-muted">{user.email}</td>
-
-            {/* Roles — IMPROVEMENT: badges */}
             <td>
               {user.roles?.length
                 ? user.roles.map((r) => <RoleBadge key={r} role={r} />)
                 : <span className="text-muted small">—</span>}
             </td>
-
-            {/* Status — IMPROVEMENT: badges */}
             <td>
-              {user.deleted_at ? (
-                <span className="badge bg-secondary">Archived</span>
-              ) : (
-                <span className="badge bg-success">Active</span>
-              )}
+              {user.deleted_at
+                ? <span className="badge bg-secondary">Archived</span>
+                : <span className="badge bg-success">Active</span>}
             </td>
-
-            {/* Actions */}
             <td className="text-end pe-3">
-              <RowActions actions={actions} row={user} />
+              <RowActions actions={actions} />
             </td>
           </tr>
         )}
         extraActions={extraActions}
-        initialValues={{ name: "", email: "" } as any}
-        fields={fields as any}
       />
 
-      {/* Pagination */}
-      {meta && meta.last_page > 1 && (
-        <Pagination meta={meta} onPageChange={setPage} />
+      {pagination && pagination.last_page > 1 && (
+        <Pagination meta={pagination} onPageChange={setPage} />
       )}
 
-      {/* Assign Modal */}
       {assignData && (
-        <AssignModal
-          mode={assignData.mode}
-          entity={assignData.entity}
-          onClose={() => setAssignData(null)}
-        />
+        <AssignModal mode={assignData.mode} entity={assignData.entity}
+          onClose={() => setAssignData(null)} />
       )}
     </>
   );

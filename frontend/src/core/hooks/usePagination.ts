@@ -1,32 +1,32 @@
-import { useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+// PATH: src/core/hooks/usePagination.ts
+// FIX F6: searchParams useEffect dependency missing → stale closure
+//   searchParams was used inside effect but not in deps array
+
+import { useSearchParams }     from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 type Options = {
-  defaultPage?: number;
+  defaultPage?:   number;
   defaultSearch?: string;
-  debounceMs?: number;
+  debounceMs?:    number;
 };
 
 export function usePagination(options: Options = {}) {
-  /* ✅ FIX — options destructure सही */
   const {
-    defaultPage = 1,
-    defaultSearch = "",
-    debounceMs = 400,
+    defaultPage   = 1,
+    defaultSearch = '',
+    debounceMs    = 400,
   } = options;
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  /* ── Read from URL ──────────────────────────── */
-  const page = Number(searchParams.get("page")) || defaultPage;
-  const urlSearch = searchParams.get("search") ?? defaultSearch;
+  const page      = Number(searchParams.get('page')) || defaultPage;
+  const urlSearch = searchParams.get('search') ?? defaultSearch;
 
-  /* ── Local input state ─────────────────────── */
   const [searchInput, setSearchInput] = useState(urlSearch);
+  const [search,      setSearch]      = useState(urlSearch);
 
-  /* ── Debounced search ─────────────────────── */
-  const [search, setSearch] = useState(urlSearch);
-
+  // FIX F6: searchParams added to deps
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -34,52 +34,44 @@ export function usePagination(options: Options = {}) {
       const params = new URLSearchParams(searchParams);
 
       if (searchInput.trim()) {
-        params.set("search", searchInput.trim());
+        params.set('search', searchInput.trim());
       } else {
-        params.delete("search");
+        params.delete('search');
       }
 
-      params.delete("page");
+      params.delete('page');
       setSearchParams(params);
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [searchInput, debounceMs]);
+  }, [searchInput, debounceMs, searchParams]); // FIX F6: searchParams in deps
 
-  /* ── Page change ───────────────────────────── */
+  useEffect(() => {
+    if (urlSearch === '' && searchInput !== '') setSearchInput('');
+  }, [urlSearch]);
+
   const setPage = (newPage: number) => {
     const params = new URLSearchParams(searchParams);
-
     if (newPage > 1) {
-      params.set("page", String(newPage));
+      params.set('page', String(newPage));
     } else {
-      params.delete("page");
+      params.delete('page');
     }
-
     setSearchParams(params);
   };
 
-  /* ── Clear search ─────────────────────────── */
   const clearSearch = () => {
-    setSearchInput("");
-    setSearch("");
-
+    setSearchInput('');
+    setSearch('');
     const params = new URLSearchParams(searchParams);
-    params.delete("search");
-    params.delete("page");
-
+    params.delete('search');
+    params.delete('page');
     setSearchParams(params);
   };
 
   return {
-    page,
-    setPage,
-    search,
-    searchInput,
-    setSearchInput,
-    clearSearch,
-
-    /* backward compatibility */
+    page, setPage,
+    search, searchInput, setSearchInput, clearSearch,
     setSearch: setSearchInput,
   };
 }
