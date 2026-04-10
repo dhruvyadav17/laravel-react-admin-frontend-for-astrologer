@@ -1,59 +1,59 @@
 // PATH: src/user/pages/PrivacyPage.tsx
-// NEW: Privacy Policy — static
+// Privacy Policy — static
 
 import UserPage from "../components/ui/UserPage";
 
 const SECTIONS = [
   {
     title: "Information We Collect",
-    content: `Hum sirf woh information collect karte hain jo aapko better service dene ke liye zaroori hai:
-• Account information: naam, email address, password (encrypted)
-• Profile information: date of birth (optional, kundli ke liye)
+    content: `We only collect information necessary to provide and improve our services:
+• Account information: name, email address, password (encrypted)
+• Profile information: date of birth (optional, for kundli/horoscope)
 • Usage data: app usage patterns, consultation history
-• Payment information: payment processor ke through handle hoti hai — hum card details store nahi karte`,
+• Payment information: handled securely by payment processors — we do not store card details`,
   },
   {
     title: "How We Use Your Information",
-    content: `Aapki information ka use sirf in kaamom ke liye hota hai:
-• Account manage karna aur consultation provide karna
-• Platform ki security maintain karna
-• Service improvements aur personalization
-• Support provide karna jab aap contact karein
-• Hum aapka data kabhi bhi advertisers ko nahi bechte`,
+    content: `Your information is used only for the following purposes:
+• To manage your account and provide consultations
+• To maintain platform security
+• To improve and personalize services
+• To provide support when you contact us
+• We never sell your data to advertisers`,
   },
   {
     title: "Data Security",
-    content: `Aapki privacy hamare liye important hai:
-• Sabhi data SSL/TLS encryption ke saath transmit hota hai
-• Passwords bcrypt hash ke saath store hote hain
-• Consultations end-to-end encrypted hain
-• Regular security audits kiye jaate hain
-• Unauthorized access ke case mein aapko immediately notify kiya jaayega`,
+    content: `Your privacy and security are important to us:
+• All data is transmitted using SSL/TLS encryption
+• Passwords are stored using secure bcrypt hashing
+• Consultations are end-to-end encrypted
+• Regular security audits are conducted
+• You will be notified immediately in case of unauthorized access`,
   },
   {
-    title: "Third Party Sharing",
-    content: `Hum aapka personal data kisi third party ko nahi bechte. Limited sharing sirf:
-• Payment processors (Razorpay/PayU) — sirf payment complete karne ke liye
-• Legal requirements — agar court order ya law enforcement request ho
-• Aapki consent se — agar aap explicitly allow karein`,
+    title: "Third-Party Sharing",
+    content: `We do not sell your personal data to any third party. Limited sharing occurs only in the following cases:
+• Payment processors (e.g., Razorpay/PayU) — to process payments securely
+• Legal requirements — if required by law or court order
+• With your consent — if you explicitly allow it`,
   },
   {
     title: "Your Rights",
-    content: `Aapke paas yeh rights hain:
-• Apna data access karne ka right
-• Galat information correct karne ka right
-• Account delete karne ka right (data erasure)
-• Data export karne ka right
-• Marketing emails se opt-out karne ka right
-In rights ke liye support@astro.in pe contact karein.`,
+    content: `You have the following rights:
+• Right to access your data
+• Right to correct inaccurate information
+• Right to delete your account (data erasure)
+• Right to export your data
+• Right to opt out of marketing emails
+To exercise these rights, contact us at support@astro.in`,
   },
   {
     title: "Cookies",
-    content: `Hum essential cookies use karte hain:
-• Session cookies: login session maintain karne ke liye
-• Preference cookies: aapki settings yaad rakhne ke liye
-• Analytics cookies: platform improve karne ke liye (anonymized data)
-Browser settings mein cookies disable kar sakte hain — kuch features kaam nahi karenge.`,
+    content: `We use essential cookies for the following purposes:
+• Session cookies: to maintain your login session
+• Preference cookies: to remember your settings
+• Analytics cookies: to improve the platform (using anonymized data)
+You can disable cookies in your browser settings, but some features may not function properly.`,
   },
 ];
 
@@ -62,6 +62,8 @@ export default function PrivacyPage() {
     <UserPage title="🔒 Privacy Policy">
       <div className="row justify-content-center">
         <div className="col-lg-8">
+
+          {/* Header */}
           <div className="app-card mb-4">
             <p className="text-muted small mb-0">
               <strong>Last updated:</strong> January 2025 &nbsp;|&nbsp;
@@ -69,28 +71,38 @@ export default function PrivacyPage() {
             </p>
           </div>
 
+          {/* Intro */}
           <p className="text-muted mb-4">
-            Astro ("hum", "hamara") aapki privacy ki respect karta hai. Yeh policy explain karti hai
-            ki hum kya data collect karte hain, kaise use karte hain, aur aapke rights kya hain.
+            Astro ("we", "our", "us") respects your privacy. This policy explains
+            what data we collect, how we use it, and your rights regarding your information.
           </p>
 
+          {/* Sections */}
           {SECTIONS.map((s) => (
             <div key={s.title} className="app-card mb-3">
               <h6 className="fw-bold text-danger mb-2">{s.title}</h6>
-              <div className="text-muted small" style={{ lineHeight: 1.8, whiteSpace: "pre-line" }}>
+              <div
+                className="text-muted small"
+                style={{ lineHeight: 1.8, whiteSpace: "pre-line" }}
+              >
                 {s.content}
               </div>
             </div>
           ))}
 
+          {/* Contact */}
           <div className="app-card text-center">
             <p className="text-muted small mb-2">
-              Privacy se related koi sawaal hai? Humse baat karein.
+              Have questions about privacy? Contact us.
             </p>
-            <a href="mailto:privacy@astro.in" className="btn btn-sm btn-outline-app">
+            <a
+              href="mailto:privacy@astro.in"
+              className="btn btn-sm btn-outline-app"
+            >
               privacy@astro.in
             </a>
           </div>
+
         </div>
       </div>
     </UserPage>

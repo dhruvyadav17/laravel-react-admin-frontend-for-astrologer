@@ -1,42 +1,78 @@
-// PATH: src/user/pages/FaqPage.tsx
-// NEW: FAQ page — accordion, static
-
 import { useState } from "react";
-import { Link }     from "react-router-dom";
-import UserPage     from "../components/ui/UserPage";
+import { Link } from "react-router-dom";
+import UserPage from "../components/ui/UserPage";
 
 const FAQS = [
   {
     category: "Getting Started",
     items: [
-      { q: "Astro kya hai?", a: "Astro ek online platform hai jahan aap verified Vedic astrologers se chat, call ya video call ke zariye baat kar sakte hain. 24/7 available, genuine experts ke saath." },
-      { q: "Account kaise banayein?", a: "Homepage pe 'Register' button click karein. Apna naam, email aur password daalein. Account turant banta hai — koi OTP ya wait nahi." },
-      { q: "Kya yeh platform free hai?", a: "Registration aur astrologers browse karna bilkul free hai. Consultation ke liye astrologer ka price per minute lagta hai jo unke profile pe clearly mention hota hai." },
+      {
+        q: "What is Astro?",
+        a: "Astro is an online platform where you can connect with verified Vedic astrologers through chat, call, or video call. Available 24/7 with genuine experts.",
+      },
+      {
+        q: "How can I create an account?",
+        a: "Click on the 'Register' button on the homepage. Enter your name, email, and password. Your account will be created instantly — no OTP or waiting required.",
+      },
+      {
+        q: "Is this platform free?",
+        a: "Registration and browsing astrologers are completely free. For consultations, charges are based on the astrologer’s per-minute rate, which is clearly mentioned on their profile.",
+      },
     ],
   },
   {
     category: "Consultation Process",
     items: [
-      { q: "Astrologer se kaise baat karein?", a: "Astrologers page pe jayen, apni pasand ka astrologer chunein, unka profile dekhen aur 'Talk Now' (agar online ho) ya 'View Profile' click karein." },
-      { q: "Kaun se modes available hain?", a: "Astrologer ke setup ke hisaab se Chat, Voice Call, ya Video Call available hote hain. Har astrologer ke card pe yeh clearly dikhta hai." },
-      { q: "Consultation kitni der ki honi chahiye?", a: "Yeh aap pe depend karta hai. 5-10 minute mein ek specific sawaal ka jawab mil sakta hai. Deep kundli reading ke liye 30-60 minute better hai. Price per minute hota hai, aap decide karein." },
-      { q: "Agar astrologer offline ho toh?", a: "Aap unka profile dekh sakte hain, review padh sakte hain, aur jab woh online ho tab baat kar sakte hain. Filter mein 'Online Only' select karke sirf available astrologers dekh sakte hain." },
+      {
+        q: "How can I talk to an astrologer?",
+        a: "Go to the Astrologers page, choose your preferred astrologer, view their profile, and click 'Talk Now' (if online) or 'View Profile'.",
+      },
+      {
+        q: "What communication modes are available?",
+        a: "Depending on the astrologer’s setup, Chat, Voice Call, or Video Call options are available. These are clearly displayed on each astrologer’s card.",
+      },
+      {
+        q: "How long should a consultation be?",
+        a: "It depends on your needs. A specific question can often be answered within 5–10 minutes. For detailed kundli readings, 30–60 minutes is recommended. Pricing is per minute, so you can decide accordingly.",
+      },
+      {
+        q: "What if the astrologer is offline?",
+        a: "You can view their profile, read reviews, and connect when they come online. You can also use the 'Online Only' filter to see currently available astrologers.",
+      },
     ],
   },
   {
     category: "Privacy & Safety",
     items: [
-      { q: "Kya meri baat-chit private rahti hai?", a: "Haan, bilkul. Aapki consultation 100% private hoti hai. Hamara platform end-to-end encrypted hai. Koi bhi third party aapki conversations access nahi kar sakta." },
-      { q: "Kya mera personal data safe hai?", a: "Haan. Hum sirf zaroori information store karte hain — naam, email, aur consultation history (sirf aapke liye visible). Koi bhi third party ko data nahi becha jaata." },
-      { q: "Astrologers verified hain?", a: "Haan — sabhi astrologers ko platform pe aane se pehle ID verification aur experience verification se guzarna padta hai. Unki ratings real users ke reviews pe based hain." },
+      {
+        q: "Are my conversations private?",
+        a: "Yes, absolutely. Your consultations are 100% private. Our platform is end-to-end encrypted, and no third party can access your conversations.",
+      },
+      {
+        q: "Is my personal data safe?",
+        a: "Yes. We only store essential information such as your name, email, and consultation history (visible only to you). Your data is never sold to third parties.",
+      },
+      {
+        q: "Are astrologers verified?",
+        a: "Yes. All astrologers go through ID and experience verification before joining the platform. Their ratings are based on real user reviews.",
+      },
     ],
   },
   {
     category: "Technical",
     items: [
-      { q: "App mobile pe kaam karti hai?", a: "Haan, hamari website mobile-friendly hai. Sabhi features phone browser pe bhi perfectly kaam karte hain." },
-      { q: "Internet connection kaisa chahiye?", a: "Chat ke liye normal 2G/3G enough hai. Voice call ke liye 4G ya WiFi better hai. Video call ke liye stable broadband ya 4G recommended hai." },
-      { q: "Password bhul gaye toh?", a: "Login page pe 'Forgot Password' click karein, apna email daalein — reset link aayega. 5 minute mein naya password set kar sakte hain." },
+      {
+        q: "Does the app work on mobile?",
+        a: "Yes, our website is fully mobile-friendly. All features work smoothly on mobile browsers.",
+      },
+      {
+        q: "What kind of internet connection is required?",
+        a: "For chat, a normal 2G/3G connection is sufficient. For voice calls, 4G or Wi-Fi is recommended. For video calls, a stable broadband or 4G connection is required.",
+      },
+      {
+        q: "What if I forget my password?",
+        a: "Click on 'Forgot Password' on the login page, enter your email, and you will receive a reset link. You can set a new password within minutes.",
+      },
     ],
   },
 ];
@@ -46,35 +82,54 @@ export default function FaqPage() {
 
   return (
     <UserPage title="❓ Frequently Asked Questions">
-
       <div className="row justify-content-center">
         <div className="col-lg-8">
 
+          {/* Top Text */}
           <p className="text-muted text-center mb-5">
-            Koi sawaal hai? Hamare common questions dekhen.
-            Nahi mila jawab toh{" "}
-            <Link to="/contact" className="text-decoration-none">humse contact karein</Link>.
+            Have a question? Check out our common FAQs.
+            If you can’t find your answer,{" "}
+            <Link to="/contact" className="text-decoration-none">
+              contact us
+            </Link>.
           </p>
 
           {FAQS.map((section) => (
             <div key={section.category} className="mb-4">
-              <h5 className="fw-bold mb-3 text-danger">{section.category}</h5>
+              <h5 className="fw-bold mb-3 text-danger">
+                {section.category}
+              </h5>
+
               <div className="d-flex flex-column gap-2">
                 {section.items.map((item, idx) => {
-                  const id  = `${section.category}-${idx}`;
+                  const id = `${section.category}-${idx}`;
                   const open = openItem === id;
+
                   return (
-                    <div key={id} className={`app-card p-0 overflow-hidden ${open ? "border-danger border" : ""}`}>
+                    <div
+                      key={id}
+                      className={`app-card p-0 overflow-hidden ${
+                        open ? "border-danger border" : ""
+                      }`}
+                    >
                       <button
                         className="w-100 text-start p-3 border-0 bg-transparent fw-semibold d-flex justify-content-between align-items-center"
                         onClick={() => setOpenItem(open ? null : id)}
                       >
                         <span style={{ fontSize: 14 }}>{item.q}</span>
-                        <i className={`fas fa-chevron-${open ? "up" : "down"} text-muted ms-3 flex-shrink-0`}
-                          style={{ fontSize: 12 }} />
+                        <i
+                          className={`fas fa-chevron-${
+                            open ? "up" : "down"
+                          } text-muted ms-3 flex-shrink-0`}
+                          style={{ fontSize: 12 }}
+                        />
                       </button>
+
                       {open && (
-                        <div className="px-3 pb-3 text-muted small border-top" style={{ lineHeight: 1.7 }}>
+                        <div
+                          className="px-3 pb-3 text-muted small border-top"
+                          style={{ lineHeight: 1.7 }}
+                        >
                           {item.a}
                         </div>
                       )}
@@ -85,10 +140,12 @@ export default function FaqPage() {
             </div>
           ))}
 
+          {/* Bottom Section */}
           <div className="trust-card text-center mt-4">
-            <p className="mb-2 fw-semibold">Abhi bhi sawaal hai?</p>
+            <p className="mb-2 fw-semibold">Still have questions?</p>
             <Link to="/contact" className="btn btn-primary-app btn-sm">
-              <i className="fas fa-envelope me-1" />Contact Support
+              <i className="fas fa-envelope me-1" />
+              Contact Support
             </Link>
           </div>
 
