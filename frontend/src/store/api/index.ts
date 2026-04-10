@@ -1,9 +1,10 @@
 // PATH: src/store/api/index.ts
-// ADD: consultation.api export
+// Central export for all API hooks
 
-export { baseApi }                  from "./baseApi";
-export * from "./admin.api";
-// export * from "./auth.api";
-export * from "./astrologer.api";
-export * from "./consultation.api"; // NEW
-export { useGetTodayPanchangQuery } from "./user.api";
+export { baseApi }                    from './baseApi';
+export * from './admin.api';
+export * from './astrologer.api';
+export * from './consultation.api';
+export * from './notification.api';
+export * from './wallet.api';
+export { useGetTodayPanchangQuery }   from './user.api';

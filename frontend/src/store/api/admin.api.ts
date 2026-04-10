@@ -153,6 +153,18 @@ export const adminApi = baseApi.injectEndpoints({
 
     /* ═══════ DASHBOARD ═══════ */
 
+
+    getActivityLogs: builder.query<
+      { data: any[]; pagination: any },
+      { page?: number; search?: string; action?: string } | void
+    >({
+      query: (params) => ({ url: '/admin/activity', params: params ?? {} }),
+      transformResponse: (res: any) => ({
+        data:       res.data       ?? [],
+        pagination: res.meta?.pagination ?? null,
+      }),
+    }),
+
     getDashboardStats: builder.query<DashboardStats, void>({
       query: () => '/admin/dashboard/stats',
       transformResponse: (res: any): DashboardStats => res.data ?? {},
@@ -170,3 +182,5 @@ export const {
   useGetPermissionsQuery, useCreatePermissionMutation, useUpdatePermissionMutation,
   useDeletePermissionMutation, useGetSidebarQuery, useGetDashboardStatsQuery,
 } = adminApi;
+
+// ── Activity Logs ──────────────────────────────────────────

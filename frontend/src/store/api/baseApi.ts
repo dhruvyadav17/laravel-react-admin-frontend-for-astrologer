@@ -21,6 +21,8 @@ export const baseApi = createApi({
     'MySchedule',
     'Consultation',
     'ChatMessage',
+    'Notification',
+    'Wallet',
   ],
 
   endpoints: () => ({}),

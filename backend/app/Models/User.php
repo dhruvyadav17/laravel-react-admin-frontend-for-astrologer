@@ -1,4 +1,5 @@
 <?php
+// PATH: app/Models/User.php
 
 namespace App\Models;
 
@@ -12,29 +13,18 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens,
-        HasFactory,
-        Notifiable,
-        SoftDeletes,
-        HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles;
 
-    protected $guarded = [];
-
+    protected $guarded    = [];
     protected $guard_name = 'api';
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-    /* ==========================================================
-     | ROLE HELPERS
-     ========================================================== */
 
+    /* ── Role helpers ───────────────────────────── */
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super-admin');
@@ -42,12 +32,15 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isAdmin(): bool
     {
-        return $this->isSuperAdmin()
-            || $this->hasAnyRole(
-                config('roles.admin_roles', [])
-            );
+        return $this->isSuperAdmin() || $this->hasAnyRole(config('roles.admin_roles', []));
     }
 
+    public function isAstrologer(): bool
+    {
+        return $this->hasRole('astrologer');
+    }
+
+    /* ── Relations ──────────────────────────────── */
     public function astrologer()
     {
         return $this->hasOne(Astrologer::class);
@@ -55,11 +48,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function consultations()
     {
-        return $this->hasMany(\App\Models\Consultation::class);
+        return $this->hasMany(Consultation::class);
     }
 
-    public function isAstrologer(): bool
+    public function wallet()
     {
-        return $this->hasRole('astrologer');
+        return $this->hasOne(Wallet::class);
     }
 }

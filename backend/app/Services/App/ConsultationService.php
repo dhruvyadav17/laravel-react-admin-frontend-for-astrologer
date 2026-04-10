@@ -1,136 +1,163 @@
 <?php
 // PATH: app/Services/App/ConsultationService.php
-// Handles: book, accept, reject, start, end, message
+// IMPROVED: Notifications auto-fire on state transitions
+// IMPROVED: WalletService deducts on end()
+// IMPROVED: PHP Enums for all status values
 
 namespace App\Services\App;
 
+use App\Enums\ConsultationStatus;
 use App\Models\Astrologer;
 use App\Models\ChatMessage;
 use App\Models\Consultation;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Notifications\ConsultationAccepted;
+use App\Notifications\ConsultationCompleted;
+use App\Notifications\ConsultationRejected;
+use App\Notifications\NewConsultationRequest;
 use Illuminate\Validation\ValidationException;
 
 class ConsultationService
 {
-    /* ── User: Book a consultation ──────────────── */
+    public function __construct(protected WalletService $walletService) {}
+
+    /* ── Book ───────────────────────────────────── */
     public function book(User $user, Astrologer $astrologer, array $data): Consultation
     {
-        // Can't book yourself
         if ($astrologer->user_id === $user->id) {
             throw ValidationException::withMessages([
                 'astrologer' => ['Aap apne aap ko book nahi kar sakte.'],
             ]);
         }
-
-        // Astrologer must be verified
         if (!$astrologer->is_verified) {
             throw ValidationException::withMessages([
                 'astrologer' => ['Yeh astrologer abhi verified nahi hai.'],
             ]);
         }
-
-        // Astrologer must be online and available
         if (!$astrologer->is_online || !$astrologer->is_available) {
             throw ValidationException::withMessages([
-                'astrologer' => ['Astrologer abhi online nahi hai. Baad mein try karein.'],
+                'astrologer' => ['Astrologer abhi online nahi hai.'],
             ]);
         }
 
-        // Check no active/pending consultation already exists with this astrologer
         $existing = Consultation::where('user_id', $user->id)
             ->where('astrologer_id', $astrologer->id)
-            ->whereIn('status', ['pending', 'accepted', 'in_progress'])
-            ->first();
+            ->whereIn('status', [
+                ConsultationStatus::Pending->value,
+                ConsultationStatus::Accepted->value,
+                ConsultationStatus::InProgress->value,
+            ])->first();
 
         if ($existing) {
             throw ValidationException::withMessages([
-                'consultation' => ['Aapki is astrologer ke saath pehle se ek active request hai.'],
+                'consultation' => ['Pehle se ek active request hai.'],
             ]);
         }
 
-        return Consultation::create([
-            'user_id'        => $user->id,
-            'astrologer_id'  => $astrologer->id,
-            'type'           => $data['type'] ?? 'chat',
-            'status'         => 'pending',
-            'rate_per_minute'=> $astrologer->price_per_minute,
-            'user_note'      => $data['user_note'] ?? null,
+        $consultation = Consultation::create([
+            'user_id'         => $user->id,
+            'astrologer_id'   => $astrologer->id,
+            'type'            => $data['type'] ?? 'chat',
+            'status'          => ConsultationStatus::Pending->value,
+            'rate_per_minute' => $astrologer->price_per_minute,
+            'user_note'       => $data['user_note'] ?? null,
         ]);
+
+        // Notify astrologer — new request
+        $astrologer->user->notify(new NewConsultationRequest($consultation->load(['user', 'astrologer'])));
+
+        return $consultation;
     }
 
-    /* ── Astrologer: Accept ─────────────────────── */
+    /* ── Accept ─────────────────────────────────── */
     public function accept(Consultation $consultation): Consultation
     {
-        $this->assertStatus($consultation, 'pending');
-        $consultation->update(['status' => 'accepted']);
-        return $consultation->fresh(['user', 'astrologer']);
+        $this->assertStatus($consultation, ConsultationStatus::Pending);
+        $consultation->update(['status' => ConsultationStatus::Accepted->value]);
+        $updated = $consultation->fresh(['user', 'astrologer']);
+
+        // Notify user
+        $updated->user->notify(new ConsultationAccepted($updated));
+
+        return $updated;
     }
 
-    /* ── Astrologer: Reject ─────────────────────── */
+    /* ── Reject ─────────────────────────────────── */
     public function reject(Consultation $consultation, string $reason = ''): Consultation
     {
-        $this->assertStatus($consultation, 'pending');
+        $this->assertStatus($consultation, ConsultationStatus::Pending);
         $consultation->update([
-            'status'           => 'rejected',
+            'status'           => ConsultationStatus::Rejected->value,
             'rejection_reason' => $reason ?: 'Astrologer is not available right now.',
         ]);
-        return $consultation->fresh(['user', 'astrologer']);
+        $updated = $consultation->fresh(['user', 'astrologer']);
+
+        // Notify user
+        $updated->user->notify(new ConsultationRejected($updated));
+
+        return $updated;
     }
 
-    /* ── Astrologer/User: Start session ─────────── */
+    /* ── Start ──────────────────────────────────── */
     public function start(Consultation $consultation): Consultation
     {
-        $this->assertStatus($consultation, 'accepted');
+        $this->assertStatus($consultation, ConsultationStatus::Accepted);
         $consultation->update([
-            'status'     => 'in_progress',
+            'status'     => ConsultationStatus::InProgress->value,
             'started_at' => now(),
         ]);
         return $consultation->fresh(['user', 'astrologer']);
     }
 
-    /* ── End consultation & calculate bill ──────── */
+    /* ── End + billing ──────────────────────────── */
     public function end(Consultation $consultation): Consultation
     {
-        $this->assertStatus($consultation, 'in_progress');
+        $this->assertStatus($consultation, ConsultationStatus::InProgress);
 
         $endedAt  = now();
         $duration = (int) $consultation->started_at->diffInMinutes($endedAt);
         $total    = round($consultation->rate_per_minute * max($duration, 1), 2);
 
         $consultation->update([
-            'status'           => 'completed',
+            'status'           => ConsultationStatus::Completed->value,
             'ended_at'         => $endedAt,
             'duration_minutes' => max($duration, 1),
             'total_amount'     => $total,
         ]);
 
-        // Update astrologer total_consultations
         $consultation->astrologer->increment('total_consultations');
 
-        return $consultation->fresh(['user', 'astrologer']);
+        $updated = $consultation->fresh(['user', 'astrologer']);
+
+        // Wallet deduction + astrologer earning
+        $this->walletService->deductForConsultation($updated);
+
+        // Notify user
+        $updated->user->notify(new ConsultationCompleted($updated));
+
+        return $updated;
     }
 
-    /* ── User: Cancel pending request ──────────── */
+    /* ── Cancel ─────────────────────────────────── */
     public function cancel(Consultation $consultation, User $user): Consultation
     {
         if ($consultation->user_id !== $user->id) {
             throw ValidationException::withMessages(['consultation' => ['Unauthorized.']]);
         }
-        $this->assertStatus($consultation, 'pending');
-        $consultation->update(['status' => 'cancelled']);
+        $this->assertStatus($consultation, ConsultationStatus::Pending);
+        $consultation->update(['status' => ConsultationStatus::Cancelled->value]);
         return $consultation->fresh(['user', 'astrologer']);
     }
 
-    /* ── Send chat message ──────────────────────── */
+    /* ── Send message ───────────────────────────── */
     public function sendMessage(Consultation $consultation, User $sender, string $message): ChatMessage
     {
-        if (!in_array($consultation->status, ['accepted', 'in_progress'])) {
+        $status = ConsultationStatus::from($consultation->status);
+        if (!$status->allowsChat()) {
             throw ValidationException::withMessages([
                 'message' => ['Is consultation mein message nahi bhej sakte.'],
             ]);
         }
-
         return ChatMessage::create([
             'consultation_id' => $consultation->id,
             'sender_id'       => $sender->id,
@@ -139,7 +166,7 @@ class ConsultationService
     }
 
     /* ── Get messages ───────────────────────────── */
-    public function messages(Consultation $consultation): \Illuminate\Database\Eloquent\Collection
+    public function messages(Consultation $consultation)
     {
         return $consultation->messages()
             ->with('sender:id,name,profile_image')
@@ -147,7 +174,7 @@ class ConsultationService
             ->get();
     }
 
-    /* ── Mark messages as read ──────────────────── */
+    /* ── Mark read ──────────────────────────────── */
     public function markRead(Consultation $consultation, User $reader): void
     {
         $consultation->messages()
@@ -156,32 +183,29 @@ class ConsultationService
             ->update(['is_read' => true, 'read_at' => now()]);
     }
 
-    /* ── Paginated list for user ────────────────── */
+    /* ── Lists ──────────────────────────────────── */
     public function userList(User $user, ?string $status = null)
     {
-        return Consultation::with(['astrologer'])
+        return Consultation::with(['astrologer.user'])
             ->where('user_id', $user->id)
             ->when($status, fn($q) => $q->where('status', $status))
-            ->latest()
-            ->paginate(10);
+            ->latest()->paginate(10);
     }
 
-    /* ── Paginated list for astrologer ─────────── */
     public function astrologerList(Astrologer $astrologer, ?string $status = null)
     {
         return Consultation::with(['user'])
             ->where('astrologer_id', $astrologer->id)
             ->when($status, fn($q) => $q->where('status', $status))
-            ->latest()
-            ->paginate(10);
+            ->latest()->paginate(10);
     }
 
     /* ── Assert status ──────────────────────────── */
-    private function assertStatus(Consultation $c, string $expected): void
+    private function assertStatus(Consultation $c, ConsultationStatus $expected): void
     {
-        if ($c->status !== $expected) {
+        if ($c->status !== $expected->value) {
             throw ValidationException::withMessages([
-                'status' => ["Expected status '{$expected}', got '{$c->status}'."],
+                'status' => ["Expected '{$expected->label()}', got '{$c->status}'."],
             ]);
         }
     }

@@ -1,8 +1,6 @@
 <?php
 // PATH: app/Features/User/Controllers/UserController.php
-// FIX B5: Wrong UserRequest namespace
-//   BEFORE: use App\Http\Requests\UserRequest → file exist nahi → 500 error
-//   AFTER:  use App\Features\User\Requests\UserRequest → correct path
+// FIX: Correct ApiResponse trait usage
 
 namespace App\Features\User\Controllers;
 
@@ -11,7 +9,6 @@ use App\Features\User\Resources\UserResource;
 use App\Features\User\Requests\UserRequest;
 use App\Models\User;
 use App\Features\User\Services\UserService;
-use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -34,21 +31,18 @@ class UserController extends Controller
     public function store(UserRequest $request): JsonResponse
     {
         $user = $this->service->create($request->validated());
-
         return $this->success('User created successfully', new UserResource($user), [], 201);
     }
 
     public function update(UserRequest $request, User $user): JsonResponse
     {
         $updated = $this->service->update($user, $request->validated());
-
         return $this->success('User updated successfully', new UserResource($updated));
     }
 
     public function destroy(User $user): JsonResponse
     {
         $this->service->delete($user);
-
         return $this->success('User archived successfully');
     }
 
@@ -56,7 +50,6 @@ class UserController extends Controller
     {
         $user = User::withTrashed()->findOrFail($id);
         $this->service->restore($user);
-
         return $this->success('User restored successfully');
     }
 
@@ -87,15 +80,10 @@ class UserController extends Controller
         ]);
 
         $permissions = $data['permissions'] ?? [];
-
         $this->service->assignPermissions($user, $permissions);
-
         $user->load('permissions');
 
-        Log::info('Assigned permissions to user', [
-            'user_id'     => $user->id,
-            'permissions' => $permissions,
-        ]);
+        Log::info('Assigned permissions to user', ['user_id' => $user->id, 'permissions' => $permissions]);
 
         return $this->success('Permissions assigned successfully', [
             'assigned' => $user->permissions->pluck('name')->values(),

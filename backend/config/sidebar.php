@@ -1,72 +1,44 @@
 <?php
+// PATH: config/sidebar.php
+// UPDATED: Activity Log link added
 
 return [
-
     [
         'label' => 'Main',
-        'icon'  => 'fas fa-tachometer-alt',
+        'icon'  => 'fas fa-home',
         'children' => [
-            [
-                'label' => 'Dashboard',
-                'route' => '/admin/dashboard',
-            ],
+            ['label' => 'Dashboard',   'route' => '/admin/dashboard', 'permission' => 'dashboard-view'],
         ],
     ],
-
     [
-        'label' => 'User Management',
-        'icon'  => 'fas fa-users',
+        'label' => 'Management',
+        'icon'  => 'fas fa-cogs',
         'children' => [
-            [
-                'label' => 'Users',
-                'permission' => 'user-view',
-                'route' => '/admin/users',
-            ],
-            [
-                'label' => 'Roles',
-                'permission' => 'role-manage',
-                'route' => '/admin/roles',
-            ],
-            [
-                'label' => 'Permissions',
-                'permission' => 'permission-manage',
-                'route' => '/admin/permissions',
-            ],
+            ['label' => 'Users',       'route' => '/admin/users',       'permission' => 'user-view'],
+            ['label' => 'Astrologers', 'route' => '/admin/astrologers', 'permission' => 'astrologer-view'],
         ],
     ],
-
+    [
+        'label' => 'Access Control',
+        'icon'  => 'fas fa-shield-alt',
+        'children' => [
+            ['label' => 'Roles',       'route' => '/admin/roles',       'permission' => 'role-manage'],
+            ['label' => 'Permissions', 'route' => '/admin/permissions', 'permission' => 'permission-manage'],
+        ],
+    ],
+    [
+        'label' => 'Reports',
+        'icon'  => 'fas fa-chart-bar',
+        'children' => [
+            ['label' => 'Activity Log','route' => '/admin/activity',    'permission' => 'dashboard-view'],
+        ],
+    ],
     [
         'label' => 'Account',
-        'icon'  => 'fas fa-user',
+        'icon'  => 'fas fa-user-circle',
         'children' => [
-            [
-                'label' => 'Profile',
-                'route' => '/admin/profile',
-            ],
-            [
-                'label' => 'Logout',
-                'action' => 'logout',
-            ],
+            ['label' => 'My Profile',  'route' => '/admin/profile'],
+            ['label' => 'Logout',      'action' => 'logout'],
         ],
     ],
-
-    [
-        'label' => 'Astrology',
-        'icon'  => 'fas fa-star-and-crescent',
-        'children' => [
-            [
-                'label' => 'Astrologers',
-                'route' => '/admin/astrologers',
-            ],
-            [
-                'label' => 'Consultations',
-                'route' => '/admin/consultations',
-            ],
-            [
-                'label' => 'Transactions',
-                'route' => '/admin/transactions',
-            ],
-        ],
-    ],
-
 ];

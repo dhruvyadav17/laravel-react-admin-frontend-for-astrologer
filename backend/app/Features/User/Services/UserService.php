@@ -24,9 +24,12 @@ class UserService
         $query = UserQuery::search($query, $request->search);
         $query = UserQuery::latest($query);
 
-        $users = $query->paginate($request->per_page ?? 10);
+        $paginator = $query->paginate($request->per_page ?? 10);
 
-        return Pagination::response($users);
+        return [
+            'data' => $paginator->items(),
+            'meta' => ['pagination' => \App\Support\Pagination::meta($paginator)],
+        ];
     }
 
     /* ── Create base ────────────────────────────── */

@@ -1,70 +1,95 @@
 <?php
+// PATH: app/Features/Astrologer/Controllers/UserAstrologerController.php
+// IMPROVED: submitReview() — enforce completed consultation check
+// IMPROVED: Pagination::meta() properly used
 
 namespace App\Features\Astrologer\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\ReviewRequest;
+use App\Features\Astrologer\Queries\AstrologerQuery;
 use App\Features\Astrologer\Resources\AstrologerResource;
-use App\Http\Resources\ReviewResource;
 use App\Features\Astrologer\Services\AstrologerService;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ReviewResource;
+use App\Models\Astrologer;
+use App\Models\Consultation;
 use App\Services\App\ReviewService;
 use App\Support\Pagination;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserAstrologerController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
-        protected AstrologerService $service,
-        protected ReviewService     $reviewService,   // FIX: inject kiya
+        protected AstrologerService $astrologerService,
+        protected ReviewService     $reviewService,
     ) {}
 
-    /* ── Public listing ─────────────────────────────── */
-    public function index(Request $request)
+    /* ── GET /astrologers ───────────────────────── */
+    public function index(Request $request): JsonResponse
     {
-        $astrologers = $this->service->publicList($request->all());
+        $filters   = $request->only([
+            'online', 'expertise', 'language', 'min_price', 'max_price',
+            'min_rating', 'consultation_type', 'sort', 'search', 'page',
+        ]);
+        $paginator = $this->astrologerService->publicList($filters);
 
         return $this->success(
             'Astrologers fetched',
-            AstrologerResource::collection($astrologers),
-            ['pagination' => Pagination::meta($astrologers)]  // consistent format
+            AstrologerResource::collection($paginator),
+            ['pagination' => Pagination::meta($paginator)]
         );
     }
 
-    /* ── Public single ──────────────────────────────── */
-    public function show(int $id)
+    /* ── GET /astrologers/{id} ──────────────────── */
+    public function show(int $id): JsonResponse
     {
-        $astrologer = $this->service->findPublic($id);
-        return $this->success('Astrologer detail', new AstrologerResource($astrologer));
+        $astrologer = $this->astrologerService->findPublic($id);
+        return $this->success('Astrologer fetched', new AstrologerResource($astrologer));
     }
 
-    /* ── Public reviews (GET) ───────────────────────── */
-    // FIX BUG-1: Pehle always [] return karta tha — ab real data fetch karta hai
-    public function reviews(int $id)
+    /* ── GET /astrologers/{id}/reviews ─────────── */
+    public function reviews(Request $request, int $id): JsonResponse
     {
-        $reviews = $this->reviewService->forAstrologer($id);
+        $astrologer = Astrologer::findOrFail($id);
+        $page       = (int) $request->query('page', 1);
+        $paginator  = $this->reviewService->forAstrologer($astrologer, $page);
 
         return $this->success(
             'Reviews fetched',
-            ReviewResource::collection($reviews),
-            ['pagination' => Pagination::meta($reviews)]
+            ReviewResource::collection($paginator),
+            ['pagination' => Pagination::meta($paginator)]
         );
     }
 
-    /* ── Submit review (POST, auth + role:user) ─────── */
-    // FIX BUG-1: Pehle nothing saved — ab ReviewService::submit() call karta hai
-    public function submitReview(ReviewRequest $request, int $id)
+    /* ── POST /astrologers/{id}/reviews ─────────── */
+    public function submitReview(Request $request, int $id): JsonResponse
     {
-        $review = $this->reviewService->submit(
-            userId:       $request->user()->id,
-            astrologerId: $id,
-            data:         $request->validated(),
-        );
+        $data = $request->validate([
+            'rating'  => ['required', 'integer', 'between:1,5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-        return $this->success(
-            'Review submitted successfully',
-            new ReviewResource($review->load('user')),
-            [],
-            201
-        );
+        $astrologer = Astrologer::findOrFail($id);
+        $user       = $request->user();
+
+        // ENFORCE: Only completed consultations allow reviews
+        $hasCompleted = Consultation::where('user_id',       $user->id)
+            ->where('astrologer_id', $astrologer->id)
+            ->where('status',        'completed')
+            ->exists();
+
+        if (!$hasCompleted) {
+            return $this->error(
+                'Sirf completed consultation ke baad hi review de sakte hain.',
+                422
+            );
+        }
+
+        $review = $this->reviewService->submit($user, $astrologer, $data);
+
+        return $this->success('Review submitted successfully', new ReviewResource($review), [], 201);
     }
 }

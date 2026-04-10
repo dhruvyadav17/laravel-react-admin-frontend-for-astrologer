@@ -1,6 +1,6 @@
 <?php
 // PATH: app/Services/App/ScheduleService.php
-// NEW FILE — Astrologer weekly schedule sync
+// Astrologer weekly schedule sync + fetch
 
 namespace App\Services\App;
 
@@ -10,12 +10,21 @@ use Illuminate\Support\Collection;
 
 class ScheduleService
 {
-    // Replace strategy: delete all → recreate
+    /* ── Get schedules for astrologer ───────────── */
+    public function forAstrologer(Astrologer $astrologer): Collection
+    {
+        return $astrologer->schedules()
+            ->orderBy('day_of_week')
+            ->get();
+    }
+
+    /* ── Replace all schedules ──────────────────── */
     public function sync(Astrologer $astrologer, array $schedules): Collection
     {
+        // Delete all → recreate (replace strategy)
         $astrologer->schedules()->delete();
 
-        return collect($schedules)->map(fn($s) => AstrologerSchedule::create([
+        return collect($schedules)->map(fn ($s) => AstrologerSchedule::create([
             'astrologer_id' => $astrologer->id,
             'day_of_week'   => $s['day_of_week'],
             'start_time'    => $s['start_time'],

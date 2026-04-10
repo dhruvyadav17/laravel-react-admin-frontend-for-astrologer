@@ -28,6 +28,8 @@ backend/.phpunit.result.cache
 # React (frontend)
 # =========================
 project-bkp/
+IMPROVEMENT_ROADMAP.md
+project-bkp/*
 frontend/node_modules/
 frontend/dist/
 frontend/build/

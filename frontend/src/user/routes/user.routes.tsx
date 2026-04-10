@@ -1,68 +1,82 @@
 // PATH: src/user/routes/user.routes.tsx
-// ADD: HoroscopePage, AboutPage, FaqPage, ContactPage, PrivacyPage, TermsPage, FavoritesPage
+// IMPROVED: Lazy loading for all user pages
+// IMPROVED: Wallet page added
 
-import { Navigate, Link }         from "react-router-dom";
-import UserLayout                 from "../layouts/UserLayout";
-import UserGuard                  from "../../routes/guards/UserGuard";
-import WelcomePage                from "../../features/user/home/WelcomePage";
-import HomePage                   from "../../features/user/home/HomePage";
-import AstrologersPage            from "../../features/user/astrologers/AstrologersPage";
-import AstrologerDetailPage       from "../../features/user/astrologers/AstrologerDetailPage";
-import ProfilePage                from "../../features/user/profile/ProfilePage";
-import PanchangPage               from "../pages/PanchangPage";
-import HoroscopePage              from "../pages/HoroscopePage";
-import AboutPage                  from "../pages/AboutPage";
-import FaqPage                    from "../pages/FaqPage";
-import ContactPage                from "../pages/ContactPage";
-import PrivacyPage                from "../pages/PrivacyPage";
-import TermsPage                  from "../pages/TermsPage";
-import FavoritesPage              from "../pages/FavoritesPage";
-import MyConsultationsPage         from "../pages/MyConsultationsPage";
-import ConsultationPage            from "../pages/ConsultationPage";
+import { lazy, Suspense } from 'react';
+import { Navigate, Link } from 'react-router-dom';
+import UserLayout          from '../layouts/UserLayout';
+import UserGuard           from '../../routes/guards/UserGuard';
+
+const WelcomePage          = lazy(() => import('../../features/user/home/WelcomePage'));
+const HomePage             = lazy(() => import('../../features/user/home/HomePage'));
+const AstrologersPage      = lazy(() => import('../../features/user/astrologers/AstrologersPage'));
+const AstrologerDetailPage = lazy(() => import('../../features/user/astrologers/AstrologerDetailPage'));
+const ProfilePage          = lazy(() => import('../../features/user/profile/ProfilePage'));
+const WalletPage           = lazy(() => import('../../features/user/wallet/WalletPage'));
+const PanchangPage         = lazy(() => import('../pages/PanchangPage'));
+const HoroscopePage        = lazy(() => import('../pages/HoroscopePage'));
+const AboutPage            = lazy(() => import('../pages/AboutPage'));
+const FaqPage              = lazy(() => import('../pages/FaqPage'));
+const ContactPage          = lazy(() => import('../pages/ContactPage'));
+const PrivacyPage          = lazy(() => import('../pages/PrivacyPage'));
+const TermsPage            = lazy(() => import('../pages/TermsPage'));
+const FavoritesPage        = lazy(() => import('../pages/FavoritesPage'));
+const MyConsultationsPage  = lazy(() => import('../pages/MyConsultationsPage'));
+const ConsultationPage     = lazy(() => import('../pages/ConsultationPage'));
+
+function L({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border text-primary" />
+      </div>
+    }>
+      {children}
+    </Suspense>
+  );
+}
 
 export const userRoutes = {
-  path:    "/",
+  path:    '/',
   element: <UserLayout />,
   children: [
-    { index: true,              element: <WelcomePage />          },
-    { path: "home",             element: <HomePage />             },
-    { path: "astrologers",      element: <AstrologersPage />      },
-    { path: "astrologers/:id",  element: <AstrologerDetailPage /> },
-    { path: "panchang",         element: <PanchangPage />         },
-    { path: "horoscope",        element: <HoroscopePage />        },
-    { path: "about",            element: <AboutPage />            },
-    { path: "faq",              element: <FaqPage />              },
-    { path: "contact",          element: <ContactPage />          },
-    { path: "privacy",          element: <PrivacyPage />          },
-    { path: "terms",            element: <TermsPage />            },
+    { index: true,             element: <L><WelcomePage /></L>          },
+    { path: 'home',            element: <L><HomePage /></L>             },
+    { path: 'astrologers',     element: <L><AstrologersPage /></L>      },
+    { path: 'astrologers/:id', element: <L><AstrologerDetailPage /></L> },
+    { path: 'panchang',        element: <L><PanchangPage /></L>         },
+    { path: 'horoscope',       element: <L><HoroscopePage /></L>        },
+    { path: 'about',           element: <L><AboutPage /></L>            },
+    { path: 'faq',             element: <L><FaqPage /></L>              },
+    { path: 'contact',         element: <L><ContactPage /></L>          },
+    { path: 'privacy',         element: <L><PrivacyPage /></L>          },
+    { path: 'terms',           element: <L><TermsPage /></L>            },
     {
-      path:    "favorites",
-      element: <UserGuard />,
-      children: [{ index: true, element: <FavoritesPage /> }],
-    },
-    {
-      path:    "consultations",
-      element: <UserGuard />,
-      children: [
-        { index: true,    element: <MyConsultationsPage /> },
-        { path: ":id",    element: <ConsultationPage />    },
-      ],
-    },
-    {
-      path:    "profile",
-      element: <UserGuard />,
-      children: [{ index: true, element: <ProfilePage /> }],
-    },
-    {
-      path: "unauthorized",
+      path: 'unauthorized',
       element: (
         <div className="container py-5 text-center">
           <i className="fas fa-ban text-danger fa-4x d-block mb-3" />
           <h2>403 — Unauthorized</h2>
-          <p className="text-muted">You don't have permission to view this page.</p>
+          <p className="text-muted">You don&apos;t have permission to view this page.</p>
           <Link to="/" className="btn btn-primary mt-2">Go Home</Link>
         </div>
       ),
+    },
+    // Protected routes
+    {
+      element: <UserGuard />,
+      children: [
+        { path: 'favorites',      element: <L><FavoritesPage /></L>        },
+        { path: 'wallet',         element: <L><WalletPage /></L>           },
+        { path: 'profile',        element: <L><ProfilePage /></L>          },
+        {
+          path: 'consultations',
+          children: [
+            { index: true, element: <L><MyConsultationsPage /></L> },
+            { path: ':id', element: <L><ConsultationPage /></L>    },
+          ],
+        },
+      ],
     },
   ],
 };

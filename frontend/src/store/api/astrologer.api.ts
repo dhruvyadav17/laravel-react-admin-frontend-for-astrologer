@@ -189,6 +189,13 @@ export const astrologerApi = baseApi.injectEndpoints({
       providesTags: ["MySchedule"],
     }),
 
+
+    myEarnings: build.query<{ summary: any; data: any[] }, void>({
+      query: () => '/astrologer/me/earnings',
+      transformResponse: (res: any) => res.data ?? { summary: {}, data: [] },
+      providesTags: ['MyAstrologerProfile'],
+    }),
+
     saveSchedule: build.mutation<
       AstrologerSchedule[],
       Omit<AstrologerSchedule, "id">[]
@@ -220,4 +227,5 @@ export const {
   useMyStatsQuery,
   useMyScheduleQuery,
   useSaveScheduleMutation,
+  useMyEarningsQuery,
 } = astrologerApi;

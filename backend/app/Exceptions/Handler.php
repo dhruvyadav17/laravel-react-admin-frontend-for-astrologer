@@ -1,4 +1,5 @@
 <?php
+// PATH: app/Exceptions/Handler.php
 
 namespace App\Exceptions;
 
@@ -16,30 +17,26 @@ class Handler extends ExceptionHandler
     {
         if ($request->expectsJson()) {
 
-            /* ================= VALIDATION ERRORS ================= */
+            // Validation errors
             if ($e instanceof ValidationException) {
-                return $this->error(
-                    'Validation failed',
-                    $e->errors(),
-                    422
-                );
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors'  => $e->errors(),
+                ], 422);
             }
 
-            /* ================= HTTP EXCEPTIONS ================= */
+            // HTTP errors (403, 404, etc.)
             if ($e instanceof HttpException) {
                 return $this->error(
                     $e->getMessage() ?: 'Request error',
-                    null,
                     $e->getStatusCode()
                 );
             }
 
-            /* ================= FALLBACK ================= */
+            // Fallback
             return $this->error(
-                config('app.debug')
-                    ? $e->getMessage()
-                    : 'Server error',
-                null,
+                config('app.debug') ? $e->getMessage() : 'Server error',
                 500
             );
         }
