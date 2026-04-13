@@ -1,8 +1,7 @@
 <?php
-// PATH: app/Features/Astrologer/Requests/AstrologerRequest.php
 // FIX B6: Broken validation rule remove kiya
-//   'is_verified' => 'prohibited_if:role,astrologer' — 'role' field exist nahi karta
-//   Rule silently do nothing karta tha → security gap
+//   'is_verified' => 'prohibited_if:role,astrologer' -- 'role' field does not exist in request
+//   Rule silently did nothing → security gap, now explicitly excluded
 //   Fix: Service layer whitelist (AstrologerService::selfUpdate) handles this
 
 namespace App\Features\Astrologer\Requests;

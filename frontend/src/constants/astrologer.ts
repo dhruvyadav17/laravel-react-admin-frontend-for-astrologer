@@ -1,10 +1,6 @@
-// PATH: src/constants/astrologer.ts
-// NEW FILE — Shared constants (duplicate arrays hata diye)
+// NEW FILE -- Shared constants (duplicate arrays hata diye)
 // PROBLEM: EXPERTISE_OPTIONS, LANGUAGE_OPTIONS, SKILL_LIST teen files mein copy-pasted the:
-//   - src/user/features/astrologers/AstrologersPage.tsx
-//   - src/astrologer/features/profile/ProfilePage.tsx
-//   - (partially) src/user/features/astrologers/AstrologerDetailPage.tsx
-// SOLUTION: Ek jagah define karo, sab import karein
+// SOLUTION: Ek jagah define do, sab import karein
 
 export const EXPERTISE_OPTIONS = [
   "Vedic Astrology",
@@ -49,7 +45,7 @@ export const SORT_OPTIONS = [
 ] as const;
 
 export const CONSULTATION_TYPE_OPTIONS = [
-  { label: "All — Chat, Call & Video", value: "all"   },
+  { label: "All -- Chat, Call & Video", value: "all"   },
   { label: "Chat Only",                value: "chat"  },
   { label: "Call Only",                value: "call"  },
   { label: "Video Only",               value: "video" },

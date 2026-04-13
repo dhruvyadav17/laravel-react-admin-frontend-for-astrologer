@@ -1,17 +1,13 @@
-// PATH: src/astrologer/layouts/AstrologerLayout.tsx
-// IMPROVED: NotificationBell add kiya in navbar
-// IMPROVED: Dark mode toggle
-// IMPROVED: Online/Offline toggle button in sidebar (quick toggle)
-
 import { NavLink, Link, Outlet }       from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import 'admin-lte/dist/css/adminlte.min.css';
+// adminlte CSS loaded dynamically to avoid polluting user portal styles
 import { useAuth }                     from '../../auth/hooks/useAuth';
 import { useLogout }                   from '../../auth/hooks/useLogout';
 import { useTheme }                    from '../../hooks/useTheme';
 import { useMyAstrologerProfileQuery,
          useToggleAvailabilityMutation } from '../../store/api/astrologer.api';
 import Avatar                          from '../../components/ui/Avatar';
+import { useHeartbeat }                from '../../hooks/useHeartbeat';
 import NotificationBell                from '../../components/ui/NotificationBell';
 import { toast }                       from 'react-toastify';
 
@@ -31,9 +27,21 @@ export default function AstrologerLayout() {
   const { data: profile }      = useMyAstrologerProfileQuery();
   const [toggleAvail, { isLoading: toggling }] = useToggleAvailabilityMutation();
   const sidebarRef             = useRef<HTMLElement | null>(null);
+  useHeartbeat(); // online status heartbeat
   const [collapsed, setCollapsed] = useState(false);
 
-  useEffect(() => { import('admin-lte/dist/js/adminlte.min.js'); }, []);
+  // Load AdminLTE CSS + JS only when astrologer layout mounts
+  useEffect(() => {
+    // Inject CSS dynamically so it doesn't pollute user portal
+    const link = document.createElement('link');
+    link.id   = 'adminlte-css';
+    link.rel  = 'stylesheet';
+    link.href = '/node_modules/admin-lte/dist/css/adminlte.min.css';
+    if (!document.getElementById('adminlte-css')) {
+      document.head.appendChild(link);
+    }
+    import('admin-lte/dist/js/adminlte.min.js');
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('sidebar-collapse', collapsed);
@@ -55,7 +63,7 @@ export default function AstrologerLayout() {
   return (
     <div className="app-wrapper layout-fixed">
 
-      {/* ── Navbar ───────────────────────────────── */}
+      {/* -- Navbar --------------------------------- */}
       <nav className="app-header navbar navbar-expand bg-body border-bottom">
         <ul className="navbar-nav align-items-center">
           <li className="nav-item">
@@ -95,7 +103,7 @@ export default function AstrologerLayout() {
             <ul className="dropdown-menu dropdown-menu-end shadow-sm">
               <li>
                 <Link className="dropdown-item" to="/astrologer/profile">
-                  <i className="fas fa-user me-2 text-muted" />Profile
+                  <i className="fas fa-user me-2 t-muted" />Profile
                 </Link>
               </li>
               <li><hr className="dropdown-divider" /></li>
@@ -110,7 +118,7 @@ export default function AstrologerLayout() {
         </ul>
       </nav>
 
-      {/* ── Sidebar ──────────────────────────────── */}
+      {/* -- Sidebar -------------------------------- */}
       <aside className="app-sidebar shadow" ref={sidebarRef}>
         <div className="sidebar-brand">
           <Link to="/astrologer/dashboard" className="brand-link">
@@ -137,7 +145,7 @@ export default function AstrologerLayout() {
               >
                 {toggling
                   ? <span className="spinner-border spinner-border-sm" style={{ width: 8, height: 8 }} />
-                  : profile?.is_online ? '● Online' : '○ Offline'
+                  : profile?.is_online ? '* Online' : 'o Offline'
                 }
               </button>
             </div>
@@ -168,7 +176,7 @@ export default function AstrologerLayout() {
         </div>
       </aside>
 
-      {/* ── Main ─────────────────────────────────── */}
+      {/* -- Main ----------------------------------- */}
       <main className="app-main">
         <div className="app-content">
           <div className="container-fluid py-3">

@@ -1,8 +1,7 @@
 <?php
-// PATH: app/Http/Controllers/Api/NotificationController.php
-// GET  /api/v1/notifications         — list
-// PATCH /api/v1/notifications/read   — mark all read
-// PATCH /api/v1/notifications/{id}   — mark one read
+// GET  /api/v1/notifications         -- list
+// PATCH /api/v1/notifications/read   -- mark all read
+// PATCH /api/v1/notifications/{id}   -- mark one read
 
 namespace App\Http\Controllers\Api;
 
@@ -13,7 +12,7 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    /* ── GET: List notifications ────────────────── */
+    /* -- GET: List notifications ------------------ */
     public function index(Request $request): JsonResponse
     {
         $notifications = $request->user()
@@ -34,7 +33,7 @@ class NotificationController extends Controller
         ]);
     }
 
-    /* ── PATCH: Mark all as read ────────────────── */
+    /* -- PATCH: Mark all as read ------------------ */
     public function markAllRead(Request $request): JsonResponse
     {
         $request->user()->unreadNotifications->markAsRead();
@@ -42,7 +41,7 @@ class NotificationController extends Controller
         return $this->success('All notifications marked as read');
     }
 
-    /* ── PATCH: Mark one as read ────────────────── */
+    /* -- PATCH: Mark one as read ------------------ */
     public function markRead(Request $request, string $id): JsonResponse
     {
         $notification = $request->user()->notifications()->findOrFail($id);

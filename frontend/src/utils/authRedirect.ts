@@ -1,7 +1,5 @@
-// PATH: src/utils/authRedirect.ts  UPDATE
-// CHANGE: resolveLoginRedirect mein astrologer role check add kiya
-// REASON: Astrologer login karta tha toh / (home) pe redirect hota tha — wrong.
-//         Ab astrologer → /astrologer/dashboard, admin → /admin/dashboard, user → /
+// REASON: Astrologer login karta tha toh / (home) pe redirect hota tha -- wrong.
+//         Ab astrologer -> /astrologer/dashboard, admin -> /admin/dashboard, user -> /
 
 export const FRONTEND_ROLES = ['user', 'astrologer'];
 
@@ -25,7 +23,7 @@ export function resolveLoginRedirect(user: any, loginFrom: 'admin' | 'user'): st
     return loginFrom === 'admin' ? '/admin/dashboard' : '/admin/dashboard';
   }
 
-  // ASTROLOGER — NEW: redirect to astrologer portal
+  // ASTROLOGER -- NEW: redirect to astrologer portal
   if (roles.includes('astrologer')) {
     return '/astrologer/dashboard';
   }

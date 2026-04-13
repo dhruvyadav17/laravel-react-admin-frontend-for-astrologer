@@ -1,9 +1,9 @@
 <?php
-// PATH: app/Notifications/ConsultationRejected.php
 namespace App\Notifications;
 
 use App\Models\Consultation;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class ConsultationRejected extends Notification
@@ -12,16 +12,35 @@ class ConsultationRejected extends Notification
 
     public function __construct(public Consultation $consultation) {}
 
-    public function via($notifiable): array { return ['database']; }
+    public function via($notifiable): array
+    {
+        $channels = ['database'];
+        if ($notifiable->hasVerifiedEmail()) $channels[] = 'mail';
+        return $channels;
+    }
+
+    public function toMail($notifiable): MailMessage
+    {
+        $url = config('app.frontend_url', 'http://localhost:5173') . '/astrologers';
+
+        return (new MailMessage)
+            ->subject('Consultation Request Update')
+            ->greeting("Hi, {$notifiable->name}")
+            ->line('Unfortunately, your consultation request was declined.')
+            ->line('Reason: ' . ($this->consultation->rejection_reason ?? 'Astrologer not available'))
+            ->action('Find Another Astrologer', $url)
+            ->line('Don\'t worry -- many other expert astrologers are available.')
+            ->salutation('Team AstroPortal');
+    }
 
     public function toArray($notifiable): array
     {
         return [
             'type'            => 'consultation_rejected',
-            'title'           => 'Consultation Rejected',
-            'message'         => "Your consultation request was declined. Reason: {$this->consultation->rejection_reason}",
+            'title'           => 'Consultation Declined',
+            'message'         => "Your request was declined. Reason: {$this->consultation->rejection_reason}",
             'consultation_id' => $this->consultation->id,
-            'url'             => "/astrologers",
+            'url'             => '/astrologers',
             'icon'            => 'fa-times-circle',
             'color'           => 'danger',
         ];

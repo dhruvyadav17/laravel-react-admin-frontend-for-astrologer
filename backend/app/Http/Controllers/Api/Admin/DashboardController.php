@@ -1,8 +1,26 @@
 <?php
-// PATH: app/Http/Controllers/Api/Admin/DashboardController.php
-// IMPROVED: Revenue data real (from wallet_transactions + astrologer_earnings)
-// IMPROVED: revenue_today, revenue_30d, revenue_chart (last 30 days daily)
-// IMPROVED: type_breakdown (chat/call/video %)
+/**
+ * Admin DashboardController -- platform-level analytics.
+ *
+ * ENDPOINT: GET /admin/dashboard/stats
+ *
+ * Returns:
+ *   total_users, total_astrologers, online_now (is_online = true),
+ *   today_revenue, monthly_revenue, all_time_revenue, consultations_today,
+ *   revenue_chart (last 30 days, day-by-day), consultation_types breakdown.
+ *
+ * TO ADD A NEW METRIC:
+ * 1. Add the DB query in stats() method.
+ * 2. Return it in the response array.
+ * 3. Add a <StatCard> or chart in the frontend DashboardPage.tsx.
+ *
+ * PERFORMANCE NOTE
+ * -----------------
+ * For large datasets, cache the stats response for 5 minutes using
+ * Cache::remember('admin:stats', 300, fn() => [...]).
+ */
+
+//   Also invalidated via WalletTransaction observer (see AppServiceProvider)
 
 namespace App\Http\Controllers\Api\Admin;
 
@@ -18,29 +36,23 @@ class DashboardController extends Controller
 {
     public function stats()
     {
-        $data = Cache::remember('dashboard_stats', 60, function () {
+        // 30s cache, also invalidated by WalletTransaction observer
+        $data = Cache::remember('dashboard_stats', 30, function () {
 
-            // Revenue (from wallet transactions — debit = user paid)
-            $revenueTotal   = WalletTransaction::where('type', 'debit')->sum('amount');
-            $revenueToday   = WalletTransaction::where('type', 'debit')
+            $revenueTotal = (float) WalletTransaction::where('type', 'debit')->sum('amount');
+            $revenueToday = (float) WalletTransaction::where('type', 'debit')
                 ->whereDate('created_at', today())->sum('amount');
-            $revenue30d     = WalletTransaction::where('type', 'debit')
+            $revenue30d   = (float) WalletTransaction::where('type', 'debit')
                 ->where('created_at', '>=', now()->subDays(30))->sum('amount');
 
-            // Daily revenue chart — last 30 days
+            // Daily revenue chart (last 30 days)
             $revenueChart = WalletTransaction::where('type', 'debit')
                 ->where('created_at', '>=', now()->subDays(29))
-                ->select(
-                    DB::raw('DATE(created_at) as date'),
-                    DB::raw('SUM(amount) as revenue')
-                )
+                ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(amount) as revenue'))
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get()
-                ->map(fn ($r) => [
-                    'date'    => $r->date,
-                    'revenue' => (float) $r->revenue,
-                ]);
+                ->map(fn ($r) => ['date' => $r->date, 'revenue' => (float) $r->revenue]);
 
             // Consultation type breakdown
             $typeBreakdown = Consultation::where('status', 'completed')
@@ -48,24 +60,17 @@ class DashboardController extends Controller
                 ->groupBy('type')
                 ->pluck('count', 'type');
 
-            // Today's consultations
-            $consultationsToday = Consultation::whereDate('created_at', today())->count();
-
             return [
                 'total_users'         => User::whereNull('deleted_at')->count(),
                 'total_astrologers'   => Astrologer::where('is_verified', true)->whereNull('deleted_at')->count(),
                 'online_astrologers'  => Astrologer::where('is_online', true)->where('is_available', true)->whereNull('deleted_at')->count(),
                 'total_consultations' => (int) Astrologer::whereNull('deleted_at')->sum('total_consultations'),
-
-                // Revenue
-                'revenue'             => (float) $revenueTotal,
-                'revenue_today'       => (float) $revenueToday,
-                'revenue_30d'         => (float) $revenue30d,
+                'revenue'             => $revenueTotal,
+                'revenue_today'       => $revenueToday,
+                'revenue_30d'         => $revenue30d,
                 'revenue_chart'       => $revenueChart,
-
-                // Breakdowns
                 'type_breakdown'      => $typeBreakdown,
-                'consultations_today' => $consultationsToday,
+                'consultations_today' => Consultation::whereDate('created_at', today())->count(),
             ];
         });
 

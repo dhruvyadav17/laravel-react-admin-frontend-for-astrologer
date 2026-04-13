@@ -1,6 +1,4 @@
 <?php
-// PATH: app/Features/User/Controllers/UserController.php
-// FIX: Correct ApiResponse trait usage
 
 namespace App\Features\User\Controllers;
 
@@ -19,6 +17,7 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $request->validate(['per_page' => ['nullable', 'integer', 'min:5', 'max:100']]);
         $result = $this->service->paginate($request);
 
         return $this->success(

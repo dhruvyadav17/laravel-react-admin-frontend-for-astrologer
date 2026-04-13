@@ -1,33 +1,29 @@
-// PATH: src/astrologer/features/reviews/MyReviewsPage.tsx
-// REFACTOR: Stars() function hata diya → StarRating component use kiya
-//           Avatar pattern hata diya  → Avatar component use kiya
-//           PageLoader inline hata diya → States.tsx se import kiya
-
-import Avatar                          from "../../../components/ui/Avatar";
-import StarRating                      from "../../../components/ui/StarRating";
-import { PageLoader }                  from "../../../components/ui/States";
+import Avatar      from '../../../components/ui/Avatar';
+import StarRating  from '../../../components/ui/StarRating';
+import { PageLoader } from '../../../components/ui/States';
 import {
   useMyAstrologerProfileQuery,
   useGetAstrologerReviewsQuery,
-} from "../../../store/api/astrologer.api";
-import type { Review }                 from "../../../types/models";
+} from '../../../store/api/astrologer.api';
+import type { Review } from '../../../types/models';
 
 function ReviewCard({ review }: { review: Review }) {
+  const date = new Date(review.created_at).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
   return (
-    <div className="border rounded p-3 mb-3">
+    <div className="app-card mb-3" style={{ transition: 'none' }}>
       <div className="d-flex align-items-center gap-3 mb-2">
-        {/* BEFORE: 10-line image/initials block | AFTER: 1 line */}
         <Avatar name={review.user.name} src={review.user.profile_image} size={40} color="secondary" />
         <div className="flex-grow-1">
-          <div className="fw-semibold">{review.user.name}</div>
-          <div className="text-muted" style={{ fontSize: 12 }}>{review.created_at}</div>
+          <div className="fw-semibold t-main">{review.user.name}</div>
+          <div className="t-muted" style={{ fontSize: 12 }}>{date}</div>
         </div>
-        {/* BEFORE: Stars() local function | AFTER: shared component */}
         <StarRating rating={review.rating} size={15} />
       </div>
       {review.comment && (
-        <p className="mb-0 text-muted" style={{ fontSize: 14, lineHeight: 1.6 }}>
-          {review.comment}
+        <p className="mb-0 t-muted" style={{ fontSize: 14, lineHeight: 1.6 }}>
+          "{review.comment}"
         </p>
       )}
     </div>
@@ -41,71 +37,72 @@ export default function MyReviewsPage() {
     { skip: !profile?.id }
   );
 
-  const reviews        = data?.data ?? [];
-  const positiveCount  = reviews.filter((r) => r.rating >= 4).length;
+  const reviews         = data?.data ?? [];
+  const positiveCount   = reviews.filter(r => r.rating >= 4).length;
   const positivePercent = reviews.length > 0
     ? Math.round((positiveCount / reviews.length) * 100)
     : 0;
 
+  const stats = [
+    {
+      icon:  'fa-star',
+      color: 'warning',
+      value: profile ? profile.rating.toFixed(1) : '--',
+      label: 'Average Rating',
+    },
+    {
+      icon:  'fa-comments',
+      color: 'primary',
+      value: profile?.total_reviews ?? 0,
+      label: 'Total Reviews',
+    },
+    {
+      icon:  'fa-thumbs-up',
+      color: 'success',
+      value: `${positivePercent}%`,
+      label: 'Positive Reviews (4★+)',
+    },
+  ];
+
   return (
     <>
-
-
-        {/* Summary stats */}
-        {profile && (
-          <div className="row g-3 mb-4">
-            <div className="col-md-4">
-              <div className="card text-center py-4">
-                <div className="mb-2">
-                  <StarRating rating={profile.rating} size={24} />
+      {/* Stats */}
+      {profile && (
+        <div className="row g-3 mb-4">
+          {stats.map(({ icon, color, value, label }) => (
+            <div key={label} className="col-md-4">
+              <div className="app-card text-center py-3" style={{ transition: 'none' }}>
+                <div style={{ fontSize: 28, color: color === "warning" ? "#ca8a04" : color === "primary" ? "var(--primary)" : "#16a34a" }}>
+                  <i className={`fas ${icon}`} />
                 </div>
-                <div className="fw-bold" style={{ fontSize: 32 }}>{profile.rating.toFixed(1)}</div>
-                <div className="text-muted small">Average Rating</div>
+                <div className="fw-bold t-main" style={{ fontSize: 28 }}>{value}</div>
+                <div className="t-muted small">{label}</div>
               </div>
             </div>
-            <div className="col-md-4">
-              <div className="card text-center py-4">
-                <div className="text-primary mb-2" style={{ fontSize: 32 }}>
-                  <i className="fas fa-comments" />
-                </div>
-                <div className="fw-bold" style={{ fontSize: 32 }}>{profile.total_reviews}</div>
-                <div className="text-muted small">Total Reviews</div>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="card text-center py-4">
-                <div className="text-success mb-2" style={{ fontSize: 32 }}>
-                  <i className="fas fa-thumbs-up" />
-                </div>
-                <div className="fw-bold" style={{ fontSize: 32 }}>{positivePercent}%</div>
-                <div className="text-muted small">Positive (4★ or above)</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reviews list */}
-        <div className="card">
-          <div className="card-header">
-            <h5 className="card-title mb-0">
-              <i className="fas fa-star me-2 text-warning" />Client Reviews
-            </h5>
-          </div>
-          <div className="card-body">
-            {/* BEFORE: inline spinner div | AFTER: 1 line */}
-            {isLoading ? (
-              <PageLoader />
-            ) : reviews.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                <i className="fas fa-star fa-3x d-block mb-3 opacity-25" />
-                <p className="mb-0">No reviews yet. Keep serving clients!</p>
-              </div>
-            ) : (
-              reviews.map((review: Review) => <ReviewCard key={review.id} review={review} />)
-            )}
-          </div>
+          ))}
         </div>
+      )}
 
+      {/* Reviews list */}
+      <div className="app-card" style={{ transition: 'none' }}>
+        <h5 className="fw-bold t-main mb-4">
+          <i className="fas fa-star me-2 text-warning" />Client Reviews
+        </h5>
+
+        {isLoading ? (
+          <PageLoader />
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-5">
+            <i className="fas fa-star fa-2x d-block mb-3" style={{ opacity: 0.2, color: 'var(--txt-m)' }} />
+            <p className="t-muted mb-1">No client reviews yet.</p>
+            <p className="t-muted" style={{ fontSize: 13 }}>
+              Keep providing great consultations -- your first review is just a session away!
+            </p>
+          </div>
+        ) : (
+          reviews.map((review: Review) => <ReviewCard key={review.id} review={review} />)
+        )}
+      </div>
     </>
   );
 }

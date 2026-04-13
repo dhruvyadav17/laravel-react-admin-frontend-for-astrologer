@@ -1,38 +1,37 @@
-// PATH: src/astrologer/routes/astrologer.routes.tsx
-// IMPROVED: Lazy loading for all astrologer pages
+import { lazy, Suspense }   from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth }           from '../../auth/hooks/useAuth';
+import AstrologerLayout      from '../layouts/AstrologerLayout';
+import { ErrorBoundary }     from '../../components/feedback/ErrorBoundary';
 
-import { lazy, Suspense }    from 'react';
-import { Navigate, Outlet }  from 'react-router-dom';
-import { useAuth }            from '../../auth/hooks/useAuth';
-import AstrologerLayout       from '../layouts/AstrologerLayout';
-
-const DashboardPage     = lazy(() => import('../../features/astrologer/dashboard/DashboardPage'));
-const ProfilePage       = lazy(() => import('../../features/astrologer/profile/ProfilePage'));
-const SchedulePage      = lazy(() => import('../../features/astrologer/schedule/SchedulePage'));
-const MyReviewsPage     = lazy(() => import('../../features/astrologer/reviews/MyReviewsPage'));
-const EarningsPage      = lazy(() => import('../../features/astrologer/earnings/EarningsPage'));
-const ConsultationsPage = lazy(() => import('../../features/astrologer/consultations/ConsultationsPage'));
+const DashboardPage      = lazy(() => import('../../features/astrologer/dashboard/DashboardPage'));
+const ProfilePage        = lazy(() => import('../../features/astrologer/profile/ProfilePage'));
+const SchedulePage       = lazy(() => import('../../features/astrologer/schedule/SchedulePage'));
+const MyReviewsPage      = lazy(() => import('../../features/astrologer/reviews/MyReviewsPage'));
+const EarningsPage       = lazy(() => import('../../features/astrologer/earnings/EarningsPage'));
+const ConsultationsPage  = lazy(() => import('../../features/astrologer/consultations/ConsultationsPage'));
 const AstrologerChatPage = lazy(() => import('../../features/astrologer/consultations/ChatPage'));
+const AstrologerCallPage = lazy(() => import('../../features/astrologer/consultations/AstrologerCallPage'));
 
-function L({ children }: { children: React.ReactNode }) {
+function Loader() {
   return (
-    <Suspense fallback={
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-        <div className="spinner-border text-primary" />
-      </div>
-    }>
-      {children}
-    </Suspense>
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
+      <div className="spinner-border text-primary" />
+    </div>
+  );
+}
+
+function P({ children, name }: { children: React.ReactNode; name: string }) {
+  return (
+    <ErrorBoundary section={name}>
+      <Suspense fallback={<Loader />}>{children}</Suspense>
+    </ErrorBoundary>
   );
 }
 
 function AstrologerGuard() {
   const { isAuth, hasRole, loading } = useAuth();
-  if (loading) return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100">
-      <div className="spinner-border text-primary" role="status" />
-    </div>
-  );
+  if (loading) return <div className="d-flex justify-content-center align-items-center min-vh-100"><div className="spinner-border text-primary" /></div>;
   if (!isAuth)                return <Navigate to="/login"        replace />;
   if (!hasRole('astrologer')) return <Navigate to="/unauthorized" replace />;
   return <Outlet />;
@@ -41,19 +40,18 @@ function AstrologerGuard() {
 export const astrologerRoutes = {
   path:    'astrologer',
   element: <AstrologerGuard />,
-  children: [
-    {
-      element: <AstrologerLayout />,
-      children: [
-        { index: true,              element: <Navigate to="dashboard" replace />          },
-        { path: 'dashboard',        element: <L><DashboardPage /></L>                     },
-        { path: 'profile',          element: <L><ProfilePage /></L>                       },
-        { path: 'schedule',         element: <L><SchedulePage /></L>                      },
-        { path: 'reviews',          element: <L><MyReviewsPage /></L>                     },
-        { path: 'earnings',         element: <L><EarningsPage /></L>                      },
-        { path: 'consultations',    element: <L><ConsultationsPage /></L>                 },
-        { path: 'consultations/:id',element: <L><AstrologerChatPage /></L>                },
-      ],
-    },
-  ],
+  children: [{
+    element: <AstrologerLayout />,
+    children: [
+      { index: true,               element: <Navigate to="dashboard" replace />                               },
+      { path: 'dashboard',         element: <P name="Dashboard"><DashboardPage /></P>                         },
+      { path: 'profile',           element: <P name="Profile"><ProfilePage /></P>                             },
+      { path: 'schedule',          element: <P name="Schedule"><SchedulePage /></P>                           },
+      { path: 'reviews',           element: <P name="Reviews"><MyReviewsPage /></P>                           },
+      { path: 'earnings',          element: <P name="Earnings"><EarningsPage /></P>                           },
+      { path: 'consultations',     element: <P name="Consultations"><ConsultationsPage /></P>                 },
+      { path: 'consultations/:id',      element: <P name="Consultation Chat"><AstrologerChatPage /></P>            },
+      { path: 'consultations/:id/call', element: <P name="Call"><AstrologerCallPage /></P>                    },
+    ],
+  }],
 };

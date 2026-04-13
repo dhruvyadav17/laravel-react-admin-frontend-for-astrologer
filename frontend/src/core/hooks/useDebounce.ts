@@ -1,8 +1,7 @@
-// PATH: src/hooks/useDebounce.ts
 // NEW FEATURE: Debounce hook
 // PROBLEM: Search input pe har keystroke mein API call hoti thi
-//          User "Vedic Astrology" type kare → 14 API calls
-// SOLUTION: useDebounce — value ko delay karta hai jab tak user type karna band na kare
+//          User "Vedic Astrology" type kare -> 14 API calls
+// SOLUTION: useDebounce -- value ko delay karta hai jab tak user type karna band na kare
 // USAGE: const debouncedSearch = useDebounce(search, 400);
 //        useGetAstrologersQuery({ search: debouncedSearch })
 

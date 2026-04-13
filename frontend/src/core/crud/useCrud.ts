@@ -20,7 +20,7 @@ export function useCrud<T>({
 }: UseCrudOptions<T>) {
   const [loading, setLoading] = useState(false);
 
-  /* ───────────────── COMMON RUNNER (DRY) ───────────────── */
+  /* ----------------- COMMON RUNNER (DRY) ----------------- */
   const run = async (
     fn: () => Promise<any>,
     message: string,
@@ -41,7 +41,7 @@ export function useCrud<T>({
     }
   };
 
-  /* ───────────────── CREATE ───────────────── */
+  /* ----------------- CREATE ----------------- */
   const createItem = async (values: T) => {
     if (!create) return;
     return run(
@@ -50,7 +50,7 @@ export function useCrud<T>({
     );
   };
 
-  /* ───────────────── UPDATE ───────────────── */
+  /* ----------------- UPDATE ----------------- */
   const updateItem = async (id: number, values: T) => {
     if (!update) return;
     return run(
@@ -59,7 +59,7 @@ export function useCrud<T>({
     );
   };
 
-  /* ───────────────── DELETE ───────────────── */
+  /* ----------------- DELETE ----------------- */
   const deleteItem = async (id: number) => {
     if (!remove) return;
     return run(
@@ -69,7 +69,7 @@ export function useCrud<T>({
     );
   };
 
-  /* ───────────────── SUBMIT HANDLER ───────────────── */
+  /* ----------------- SUBMIT HANDLER ----------------- */
   const handleSubmit = async (editing: any, values: T) => {
     if (editing?.id) {
       return updateItem(editing.id, values);
@@ -77,7 +77,7 @@ export function useCrud<T>({
     return createItem(values);
   };
 
-  /* ───────────────── RETURN ───────────────── */
+  /* ----------------- RETURN ----------------- */
   return {
     loading,
     create: createItem,

@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Models/User.php
 
 namespace App\Models;
 
@@ -24,7 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    /* ── Role helpers ───────────────────────────── */
+    /* -- Role helpers ----------------------------- */
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super-admin');
@@ -40,7 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasRole('astrologer');
     }
 
-    /* ── Relations ──────────────────────────────── */
+    /* -- Relations -------------------------------- */
     public function astrologer()
     {
         return $this->hasOne(Astrologer::class);

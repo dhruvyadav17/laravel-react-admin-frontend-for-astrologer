@@ -10,7 +10,6 @@ import {
 } from "../../store/api";
 
 /* ================= TYPES ================= */
-
 type Mode =
   | "user-role"
   | "user-permission"
@@ -30,7 +29,6 @@ type Role = { name: string };
 type Permission = { name: string };
 
 /* ================= HOOK ================= */
-
 export function useAssignLogic(mode: Mode, entity: Entity) {
   const isUserRole = mode === "user-role";
   const isUserPermission = mode === "user-permission";
@@ -39,7 +37,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   const [selected, setSelected] = useState<string[]>([]);
 
   /* ================= FETCH ALL ================= */
-
   const { data: roles = [] } = useGetRolesQuery(undefined, {
     skip: !isUserRole,
     refetchOnMountOrArgChange: true,
@@ -51,7 +48,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   });
 
   /* ================= FETCH ASSIGNED ================= */
-
   const { data: userPermData } =
     useGetUserPermissionsQuery(entity.id, {
       skip: !isUserPermission,
@@ -63,13 +59,11 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
     });
 
   /* ================= MUTATIONS ================= */
-
   const [assignUserRoles] = useAssignUserRolesMutation();
   const [assignUserPermissions] = useAssignUserPermissionsMutation();
   const [assignRolePermissions] = useAssignRolePermissionsMutation();
 
   /* ================= INIT SELECTED ================= */
-
   useEffect(() => {
     if (isUserRole) {
       setSelected(entity.roles ?? []);
@@ -87,7 +81,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   }, [mode, entity.id, entity.roles, userPermData, rolePermData]);
 
   /* ================= ITEMS ================= */
-
   const items: AssignItem[] = useMemo(() => {
     const selectedSet = new Set(selected);
 
@@ -105,7 +98,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   }, [isUserRole, roles, permissions, selected]);
 
   /* ================= TOGGLE ================= */
-
   const toggle = (value: string) => {
     setSelected((prev) =>
       prev.includes(value)
@@ -115,7 +107,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   };
 
   /* ================= SUBMIT ================= */
-
   const submit = async () => {
     if (isUserRole) {
       return assignUserRoles({
@@ -140,7 +131,6 @@ export function useAssignLogic(mode: Mode, entity: Entity) {
   };
 
   /* ================= TITLE ================= */
-
   const title = isUserRole
     ? "Assign Roles"
     : "Assign Permissions";

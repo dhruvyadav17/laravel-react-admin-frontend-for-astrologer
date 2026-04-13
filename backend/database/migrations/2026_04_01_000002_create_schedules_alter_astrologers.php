@@ -1,6 +1,4 @@
 <?php
-// PATH: database/migrations/2026_04_01_000002_create_schedules_alter_astrologers.php
-// FIX: Duplicate index error — SHOW INDEX se check karta hai pehle
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,7 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // ── 1. SCHEDULES TABLE ──────────────────────────────────
+        // -- 1. SCHEDULES TABLE ----------------------------------
         Schema::create('astrologer_schedules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('astrologer_id')
@@ -25,7 +23,7 @@ return new class extends Migration
             $table->index(['astrologer_id', 'day_of_week', 'is_active']);
         });
 
-        // ── 2. ADD COLUMNS TO ASTROLOGERS (if not exist) ────────
+        // -- 2. ADD COLUMNS TO ASTROLOGERS (if not exist) --------
         Schema::table('astrologers', function (Blueprint $table) {
             if (!Schema::hasColumn('astrologers', 'is_available')) {
                 $table->boolean('is_available')->default(true)->after('is_online');
@@ -44,7 +42,7 @@ return new class extends Migration
             }
         });
 
-        // ── 3. ADD INDEXES (only if not exist) ───────────────────
+        // -- 3. ADD INDEXES (only if not exist) -------------------
         $this->addIndexSafe('astrologers',
             ['is_online', 'is_verified', 'is_available'],
             'astrologers_is_online_is_verified_is_available_index'

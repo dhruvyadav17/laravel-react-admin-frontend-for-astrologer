@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Traits/ApiResponse.php
 // Standard API response methods used by all controllers
 
 namespace App\Traits;

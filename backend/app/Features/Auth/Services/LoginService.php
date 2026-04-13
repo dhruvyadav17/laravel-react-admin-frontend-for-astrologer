@@ -1,9 +1,7 @@
 <?php
-// PATH: app/Features/Auth/Services/LoginService.php
-// FIX B3: Login response mein refresh_token nahi tha
+// FIX B3: refresh_token was missing from login response
 //   Frontend baseQueryWithReauth: localStorage.getItem('refresh_token') → always null
-//   Token refresh kabhi kaam nahi karta tha → user 401 pe force logout hota tha
-// FIX: RefreshToken create karke response mein return karo
+//   Token refresh never worked → users were force-logged out on 401
 
 namespace App\Features\Auth\Services;
 
@@ -39,10 +37,10 @@ class LoginService
         $abilities = $user->getAllPermissions()->pluck('name')->all();
         $token     = $user->createToken('api', $abilities)->plainTextToken;
 
-        // FIX B3: Refresh token create + return karo
+        // FIX B3: Create and return refresh token
         $refreshToken = null;
         if (config('features.refresh_token')) {
-            // Purane active tokens revoke karo (security)
+            // Revoke old active tokens (security)
             RefreshToken::where('user_id', $user->id)
                 ->whereNull('revoked_at')
                 ->update(['revoked_at' => now()]);

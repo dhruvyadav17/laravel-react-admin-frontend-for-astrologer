@@ -1,4 +1,3 @@
-// PATH: src/user/features/home/WelcomePage.tsx
 // IMPROVE: Register link add kiya, better visual
 
 import { Link } from "react-router-dom";
@@ -15,14 +14,14 @@ export default function WelcomePage() {
           <div style={{ fontSize: 64 }}>🔱</div>
           <h1 className="fw-bold text-white mb-1" style={{ fontSize: 32 }}>Astro</h1>
           <p className="text-white opacity-75 small">
-            Certified astrologers · Instant consultation · 24/7
+            Certified astrologers . Instant consultation . 24/7
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-4 p-4 shadow mb-3">
+        <div className="rounded-4 p-4 mb-3" style={{ background: "var(--surf)", border: "1px solid var(--bdr)", boxShadow: "var(--shadow-lg)" }}>
           <h5 className="fw-bold text-center mb-1">Get Started</h5>
-          <p className="text-muted text-center small mb-4">
+          <p className="t-muted text-center small mb-4">
             Talk to verified astrologers on love, career &amp; life
           </p>
 
@@ -40,8 +39,8 @@ export default function WelcomePage() {
           </div>
 
           <div className="text-center mt-3">
-            <Link to="/home" className="text-muted small text-decoration-none">
-              Browse as guest →
+            <Link to="/home" className="t-muted small text-decoration-none">
+              Browse as guest
             </Link>
           </div>
         </div>

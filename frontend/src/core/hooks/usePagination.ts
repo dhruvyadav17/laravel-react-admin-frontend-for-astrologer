@@ -1,5 +1,3 @@
-// PATH: src/core/hooks/usePagination.ts
-// FIX F6: searchParams useEffect dependency missing → stale closure
 //   searchParams was used inside effect but not in deps array
 
 import { useSearchParams }     from 'react-router-dom';

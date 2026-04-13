@@ -1,4 +1,3 @@
-// PATH: src/user/components/Footer.tsx
 // FIX: Sare # links real routes se replace kiye
 
 import { useState } from "react";
@@ -70,7 +69,7 @@ export default function Footer() {
 
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <p className="m-0 small opacity-75">
-            © {new Date().getFullYear()} Astro. All rights reserved.
+            (c) {new Date().getFullYear()} Astro. All rights reserved.
           </p>
           <div className="d-flex gap-3 small opacity-75">
             <Link to="/privacy" className="text-white">Privacy</Link>

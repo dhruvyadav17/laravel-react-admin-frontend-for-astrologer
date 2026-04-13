@@ -1,19 +1,14 @@
-// PATH: src/store/authSlice.ts
-// FIX: setToken action add kiya
-//   baseQueryWithReauth refresh ke baad sirf localStorage update karta tha
-//   Redux state stale rehti thi → nayi requests wrong token bhejti thin
-// FIX: safeParse helper — malformed localStorage JSON crash nahi karta
-
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { loginService, profileService }                  from '../services/authService';
-import type { User }                                     from '../types/models';
-import { emitLogoutEvent }                               from '../utils/authEvents';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { loginService, profileService } from '../services/authService';
+import type { User } from '../types/models';
+import { emitLogoutEvent } from '../utils/authEvents';
 
 export type AuthState = {
-  user:        User | null;
+  user: User | null;
   permissions: string[];
-  token:       string | null;
-  loading:     boolean;
+  token: string | null;
+  loading: boolean;
 };
 
 function safeParse<T>(key: string, fallback: T): T {
@@ -27,10 +22,10 @@ function safeParse<T>(key: string, fallback: T): T {
 }
 
 const initialState: AuthState = {
-  user:        safeParse<User | null>('user', null),
+  user: safeParse<User | null>('user', null),
   permissions: safeParse<string[]>('permissions', []).filter((p): p is string => typeof p === 'string'),
-  token:       localStorage.getItem('token'),
-  loading:     false,
+  token: localStorage.getItem('token'),
+  loading: false,
 };
 
 export const loginThunk = createAsyncThunk<
@@ -39,7 +34,7 @@ export const loginThunk = createAsyncThunk<
   { rejectValue: string }
 >('auth/login', async (data, { rejectWithValue }) => {
   try {
-    const res     = await loginService(data.email, data.password);
+    const res = await loginService(data.email, data.password);
     const payload = res?.data?.data;
     if (!payload?.token) return rejectWithValue('Invalid login response');
     return payload;
@@ -54,7 +49,7 @@ export const fetchProfileThunk = createAsyncThunk<
   { rejectValue: string }
 >('auth/profile', async (_, { rejectWithValue }) => {
   try {
-    const res     = await profileService();
+    const res = await profileService();
     const payload = res?.data?.data;
     if (!payload?.user) return rejectWithValue('Invalid profile response');
     return payload;
@@ -75,47 +70,48 @@ export const logoutThunk = createAsyncThunk('auth/logout', async () => {
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-
   reducers: {
     setPermissions(state, action: PayloadAction<string[]>) {
       state.permissions = action.payload;
       localStorage.setItem('permissions', JSON.stringify(action.payload));
     },
-
-    // FIX: Called by baseQueryWithReauth after token refresh
     setToken(state, action: PayloadAction<string>) {
       state.token = action.payload;
       localStorage.setItem('token', action.payload);
     },
   },
-
   extraReducers: (builder) => {
     builder
-      .addCase(loginThunk.pending,   (state) => { state.loading = true; })
-      .addCase(loginThunk.rejected,  (state) => { state.loading = false; })
+      .addCase(loginThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(loginThunk.rejected, (state) => {
+        state.loading = false;
+      })
       .addCase(loginThunk.fulfilled, (state, action) => {
         state.loading = false;
-        const token   = action.payload?.token ?? null;
-        state.token   = token;
+        const token = action.payload?.token ?? null;
+        state.token = token;
         if (token) localStorage.setItem('token', token);
         if (action.payload?.refresh_token) {
           localStorage.setItem('refresh_token', action.payload.refresh_token);
         }
       })
-
       .addCase(fetchProfileThunk.fulfilled, (state, action) => {
-        state.user        = action.payload?.user        ?? null;
+        state.user = action.payload?.user ?? null;
         state.permissions = action.payload?.permissions ?? [];
-        localStorage.setItem('user',        JSON.stringify(state.user));
+        localStorage.setItem('user', JSON.stringify(state.user));
         localStorage.setItem('permissions', JSON.stringify(state.permissions));
       })
       .addCase(fetchProfileThunk.rejected, (state) => {
-        state.user = null; state.permissions = [];
+        state.user = null;
+        state.permissions = [];
       })
-
       .addCase(logoutThunk.fulfilled, (state) => {
-        state.user = null; state.permissions = [];
-        state.token = null; state.loading = false;
+        state.user = null;
+        state.permissions = [];
+        state.token = null;
+        state.loading = false;
       });
   },
 });

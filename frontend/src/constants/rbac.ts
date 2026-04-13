@@ -1,4 +1,3 @@
-// PATH: src/constants/rbac.ts  UPDATE
 // CHANGES: PERMISSIONS.ASTROLOGER group add kiya, ROLES constant add kiya
 // REASON: Frontend mein permission strings hardcoded the. Backend config/permissions.php se sync chahiye.
 
@@ -26,7 +25,6 @@ export const PERMISSIONS = {
   DASHBOARD:  { VIEW:   'dashboard-view' },
 } as const;
 
-// NEW: Role constants to avoid magic strings
 export const ROLES = {
   SUPER_ADMIN: 'super-admin',
   ADMIN:       'admin',

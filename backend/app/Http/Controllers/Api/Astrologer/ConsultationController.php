@@ -1,6 +1,4 @@
 <?php
-// PATH: app/Http/Controllers/Api/Astrologer/ConsultationController.php
-// Astrologer side: pending requests, accept, reject, start, end, messages
 
 namespace App\Http\Controllers\Api\Astrologer;
 
@@ -15,82 +13,103 @@ class ConsultationController extends Controller
 {
     public function __construct(protected ConsultationService $service) {}
 
-    /* ── GET /astrologer/consultations ──────────── */
     public function index(Request $request)
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
         $list       = $this->service->astrologerList($astrologer, $request->status);
-
-        return $this->success(
-            'Consultations fetched',
+        return $this->success('Consultations fetched',
             ConsultationResource::collection($list),
-            ['pagination' => Pagination::meta($list)]
-        );
+            ['pagination' => Pagination::meta($list)]);
     }
 
-    /* ── GET /astrologer/consultations/{id} ─────── */
     public function show(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
-        return $this->success('Consultation fetched',
+        $this->authorizeAstrologer($request, $consultation);
+        return $this->success('Fetched',
             new ConsultationResource($consultation->load(['user', 'astrologer'])));
     }
 
-    /* ── PATCH /astrologer/consultations/{id}/accept */
     public function accept(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
-        $updated = $this->service->accept($consultation);
-        return $this->success('Consultation accepted', new ConsultationResource($updated));
+        $this->authorizeAstrologer($request, $consultation);
+        return $this->success('Accepted', new ConsultationResource($this->service->accept($consultation)));
     }
 
-    /* ── PATCH /astrologer/consultations/{id}/reject */
     public function reject(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
-        $data    = $request->validate(['reason' => 'nullable|string|max:300']);
-        $updated = $this->service->reject($consultation, $data['reason'] ?? '');
-        return $this->success('Consultation rejected', new ConsultationResource($updated));
+        $this->authorizeAstrologer($request, $consultation);
+        $data = $request->validate(['reason' => 'nullable|string|max:300']);
+        return $this->success('Rejected',
+            new ConsultationResource($this->service->reject($consultation, $data['reason'] ?? '')));
     }
 
-    /* ── PATCH /astrologer/consultations/{id}/start */
     public function start(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
-        $updated = $this->service->start($consultation);
-        return $this->success('Consultation started', new ConsultationResource($updated));
+        $this->authorizeAstrologer($request, $consultation);
+        return $this->success('Started', new ConsultationResource($this->service->start($consultation)));
     }
 
-    /* ── PATCH /astrologer/consultations/{id}/end */
     public function end(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
+        $this->authorizeAstrologer($request, $consultation);
         $updated = $this->service->end($consultation);
         return $this->success(
-            "Consultation ended. Duration: {$updated->duration_minutes} min. Total: ₹{$updated->total_amount}",
+            "Ended. {$updated->duration_minutes} min. ₹{$updated->total_amount}",
             new ConsultationResource($updated)
         );
     }
 
-    /* ── GET /astrologer/consultations/{id}/messages */
     public function messages(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
+        $this->authorizeAstrologer($request, $consultation);
         $this->service->markRead($consultation, $request->user());
         return $this->success('Messages fetched', $this->service->messages($consultation));
     }
 
-    /* ── POST /astrologer/consultations/{id}/messages */
     public function sendMessage(Request $request, Consultation $consultation)
     {
-        $this->authorize($request, $consultation);
+        $this->authorizeAstrologer($request, $consultation);
         $data = $request->validate(['message' => 'required|string|max:2000']);
         $msg  = $this->service->sendMessage($consultation, $request->user(), $data['message']);
-        return $this->success('Message sent', $msg->load('sender:id,name,profile_image'), [], 201);
+        return $this->success('Sent', $msg->load('sender:id,name,profile_image'), [], 201);
     }
 
-    /* ── Verify astrologer owns this consultation ── */
-    private function authorize(Request $request, Consultation $c): void
+    /* -- POST /astrologer/consultations/{id}/signal -- */
+    public function sendSignal(Request $request, Consultation $consultation)
+    {
+        $this->authorizeAstrologer($request, $consultation);
+        $data = $request->validate([
+            'signal_type' => ['required', 'in:offer,answer,ice-candidate,hang-up'],
+            'signal_data' => ['required'],  // Any JSON value -- don't restrict to array type
+        ]);
+        $signal = $this->service->sendSignal(
+            $consultation, $request->user(),
+            $data['signal_type'], $data['signal_data']
+        );
+        return $this->success('Signal sent', ['id' => $signal->id]);
+    }
+
+    /* -- GET /astrologer/consultations/{id}/signals -- */
+    public function getSignals(Request $request, Consultation $consultation)
+    {
+        $this->authorizeAstrologer($request, $consultation);
+        $signals = $this->service->getSignals(
+            $consultation, $request->user(),
+            $request->has('after') ? (int) $request->query('after') : null
+        );
+        return $this->success('Signals fetched', $signals);
+    }
+
+    /* -- PATCH /astrologer/consultations/{id}/call-status -- */
+    public function updateCallStatus(Request $request, Consultation $consultation)
+    {
+        $this->authorizeAstrologer($request, $consultation);
+        $data    = $request->validate(['call_status' => ['required', 'in:idle,ringing,active,ended']]);
+        $updated = $this->service->updateCallStatus($consultation, $data['call_status']);
+        return $this->success('Updated', ['call_status' => $updated->call_status]);
+    }
+
+    private function authorizeAstrologer(Request $request, Consultation $c): void
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
         if ($c->astrologer_id !== $astrologer->id) abort(403, 'Unauthorized');

@@ -1,12 +1,20 @@
-// PATH: src/user/features/home/HomePage.tsx
-// FIX: /consult → /astrologers (route nahi tha)
-// ADD: PageLoader shared component
-// ADD: Favorites count in hero
-// IMPROVE: Trust stats more specific
-
+/**
+ * HomePage -- authenticated user landing page.
+ *
+ * Sections:
+ *   1. Hero CTA -- links to /astrologers
+ *   2. Service cards -- Panchang, Astrologers, Horoscope, About
+ *   3. Top 3 astrologers (sorted by rating, first 3 from API)
+ *   4. "Why Choose Astro?" trust section
+ *   5. FAQ + Contact support links
+ *
+ * TO ADD A PROMOTIONAL BANNER: insert it between sections 1 and 2.
+ * TO CHANGE TOP ASTROLOGERS COUNT: update the ?per_page= query param
+ * in the useGetAstrologersQuery call below.
+ */
 import { Link }                    from "react-router-dom";
 import { useGetAstrologersQuery }  from "../../../store/api/astrologer.api";
-import { PageLoader }              from "../../../components/ui/States";
+import { PageLoader, AstrologerCardSkeleton } from "../../../components/ui/States";
 import UserPage                    from "../../../user/components/ui/UserPage";
 import AstrologerCard              from "../../../user/components/AstrologerCard";
 
@@ -14,12 +22,12 @@ const SERVICES = [
   { title: "Panchang",    icon: "📅", path: "/panchang",    desc: "Daily muhurat"      },
   { title: "Astrologers", icon: "🔮", path: "/astrologers", desc: "Talk to expert"     },
   { title: "Horoscope",   icon: "🌙", path: "/horoscope",   desc: "12 rashis"          },
-  { title: "About Us",    icon: "ℹ️",  path: "/about",       desc: "Our mission"        },
+  { title: "About Us",    icon: "i️",  path: "/about",       desc: "Our mission"        },
 ];
 
 const TRUST = [
   { icon: "🔒", title: "Trusted Experts",      desc: "Verified astrologers with real experience" },
-  { icon: "⚡", title: "Instant Consultation",  desc: "Talk anytime, anywhere — 24/7 available"  },
+  { icon: "⚡", title: "Instant Consultation",  desc: "Talk anytime, anywhere -- 24/7 available"  },
   { icon: "💬", title: "Accurate Guidance",     desc: "Personalized insights for your life"       },
 ];
 
@@ -33,7 +41,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="hero-new text-center mb-5">
         <h1 className="fw-bold display-5 mb-2">🔱 Astro</h1>
-        <p className="text-muted mb-4">
+        <p className="t-muted mb-4">
           Talk to expert astrologers &amp; get guidance on love, career &amp; life
         </p>
         <div className="d-flex justify-content-center gap-3 flex-wrap">
@@ -45,9 +53,9 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="d-flex justify-content-center gap-4 mt-4 flex-wrap">
-          <span className="text-muted small">⭐ 500+ verified astrologers</span>
-          <span className="text-muted small">👥 50,000+ happy users</span>
-          <span className="text-muted small">🌟 4.8 avg rating</span>
+          <span className="t-muted small">⭐ 500+ verified astrologers</span>
+          <span className="t-muted small">👥 50,000+ happy users</span>
+          <span className="t-muted small">🌟 4.8 avg rating</span>
         </div>
       </section>
 
@@ -58,8 +66,8 @@ export default function HomePage() {
             <Link to={item.path} className="text-decoration-none">
               <div className="service-card-new text-center h-100">
                 <div className="service-icon">{item.icon}</div>
-                <h6 className="fw-semibold mt-2 mb-0 text-dark">{item.title}</h6>
-                <p className="text-muted small mb-0" style={{ fontSize: 11 }}>{item.desc}</p>
+                <h6 className="fw-semibold mt-2 mb-0 t-main">{item.title}</h6>
+                <p className="t-muted small mb-0" style={{ fontSize: 11 }}>{item.desc}</p>
               </div>
             </Link>
           </div>
@@ -70,11 +78,17 @@ export default function HomePage() {
       <section className="mb-5">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold m-0">⭐ Top Astrologers</h5>
-          <Link to="/astrologers" className="small text-decoration-none">View All →</Link>
+          <Link to="/astrologers" className="small text-decoration-none">View All</Link>
         </div>
 
         {isLoading ? (
-          <PageLoader color="danger" />
+          <div className="row g-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="col-md-4">
+              <AstrologerCardSkeleton />
+            </div>
+          ))}
+        </div>
         ) : (
           <div className="row g-4">
             {astrologers.map((astro) => (
@@ -95,7 +109,7 @@ export default function HomePage() {
               <div key={title} className="col-md-4 text-center">
                 <div style={{ fontSize: 32 }} className="mb-2">{icon}</div>
                 <h6 className="text-danger fw-bold">{title}</h6>
-                <p className="text-muted small mb-0">{desc}</p>
+                <p className="t-muted small mb-0">{desc}</p>
               </div>
             ))}
           </div>
@@ -110,7 +124,7 @@ export default function HomePage() {
               <span style={{ fontSize: 36 }}>❓</span>
               <div>
                 <h6 className="fw-bold mb-1">Have questions?</h6>
-                <p className="text-muted small mb-2">Read our FAQ for common queries</p>
+                <p className="t-muted small mb-2">Read our FAQ for common queries</p>
                 <Link to="/faq" className="btn btn-sm btn-outline-app">View FAQ</Link>
               </div>
             </div>
@@ -120,7 +134,7 @@ export default function HomePage() {
               <span style={{ fontSize: 36 }}>📬</span>
               <div>
                 <h6 className="fw-bold mb-1">Need help?</h6>
-                <p className="text-muted small mb-2">Our support team is always here</p>
+                <p className="t-muted small mb-2">Our support team is always here</p>
                 <Link to="/contact" className="btn btn-sm btn-outline-app">Contact Us</Link>
               </div>
             </div>

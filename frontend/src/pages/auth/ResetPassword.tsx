@@ -1,9 +1,5 @@
-// PATH: src/pages/auth/ResetPassword.tsx
-// FIX BUG-22: password mismatch pe `throw new Error()` tha execute() se PEHLE
-//              → error toast nahi dikhta tha, user ko pata nahi chalta tha
-//              Fix: inline validation state use karo — toast nahi, field error dikhao
-// IMPROVEMENT: show/hide password toggle add kiya
-// IMPROVEMENT: password minimum length client-side feedback
+//              -> error toast nahi dikhta tha, user ko pata nahi chalta tha
+//              Fix: inline validation state use do -- toast nahi, field error dikhao
 
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useState }                           from "react";
@@ -29,7 +25,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setMatchError(null);
 
-    // FIX BUG-22: validate inline — don't throw before execute
+    // FIX BUG-22: validate inline -- don't throw before execute
     if (password.length < 6) {
       setMatchError("Password must be at least 6 characters");
       return;
@@ -61,13 +57,13 @@ export default function ResetPassword() {
     }
   };
 
-  /* ── Invalid link ─────────────────────────────── */
+  /* -- Invalid link ------------------------------- */
   if (!token || !email) {
     return (
       <div className="container mt-5 text-center" style={{ maxWidth: 420 }}>
         <i className="fas fa-times-circle text-danger fa-3x mb-3 d-block" />
         <h5>Invalid Reset Link</h5>
-        <p className="text-muted">This link is invalid or has expired.</p>
+        <p className="t-muted">This link is invalid or has expired.</p>
         <Link to="/forgot-password" className="btn btn-outline-primary">
           Request a new link
         </Link>
@@ -78,7 +74,7 @@ export default function ResetPassword() {
   return (
     <div className="container mt-5" style={{ maxWidth: 420 }}>
       <h4 className="mb-1 fw-bold">Reset Password</h4>
-      <p className="text-muted small mb-4">Enter your new password below.</p>
+      <p className="t-muted small mb-4">Enter your new password below.</p>
 
       <form onSubmit={submit}>
 
@@ -144,7 +140,7 @@ export default function ResetPassword() {
         </button>
 
         <div className="text-center mt-3">
-          <Link to="/login" className="small text-muted">
+          <Link to="/login" className="small t-muted">
             Back to Login
           </Link>
         </div>

@@ -1,8 +1,6 @@
-// PATH: src/features/admin/astrologers/AstrologersPage.tsx
-// FIX F10: useCrud update signature mismatch
 //   RTK adminUpdateAstrologer expects { id, data: {...} }
-//   useCrud calls update({ id, ...values }) — wrong shape
-// FIX: Direct RTK mutations pass karo AdminCrudPage ko
+//   useCrud calls update({ id, ...values }) -- wrong shape
+// FIX: Direct RTK mutations pass do AdminCrudPage ko
 
 import { useState }  from 'react';
 import {
@@ -85,7 +83,7 @@ export default function AstrologersPage() {
           </div>
         </div>
       </td>
-      <td className="small">{a.expertise || '—'}</td>
+      <td className="small">{a.expertise || '--'}</td>
       <td className="small">{a.experience} yrs</td>
       <td className="small">₹{a.price_per_minute}/min</td>
       <td><StarRating rating={a.rating ?? 0} size={12} /></td>

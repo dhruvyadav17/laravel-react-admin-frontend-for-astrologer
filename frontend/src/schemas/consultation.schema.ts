@@ -1,4 +1,3 @@
-// PATH: src/schemas/consultation.schema.ts
 import { z } from 'zod';
 
 export const bookingSchema = z.object({

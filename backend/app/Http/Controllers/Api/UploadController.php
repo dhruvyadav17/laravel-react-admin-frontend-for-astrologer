@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Http/Controllers/Api/UploadController.php
 // NEW FEATURE: Image upload endpoint
 // POST /api/v1/upload/image → returns public URL
 // Used by: astrologer profile image, admin profile image

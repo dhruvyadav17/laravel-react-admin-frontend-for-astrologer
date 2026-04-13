@@ -14,7 +14,6 @@ export default function AdminLayout() {
   const sidebarRef = useRef<HTMLElement | null>(null);
 
   /* ================= SIDEBAR CLASS ================= */
-
   useEffect(() => {
     document.body.classList.toggle(
       "sidebar-collapse",
@@ -34,7 +33,6 @@ export default function AdminLayout() {
   }, [collapsed]);
 
   /* ================= MOBILE OUTSIDE CLICK ================= */
-
   useEffect(() => {
     const isMobile =
       window.innerWidth < 992;

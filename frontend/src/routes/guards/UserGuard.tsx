@@ -1,6 +1,4 @@
-// PATH: src/routes/guards/UserGuard.tsx
-// FIX F3: Astrologer user-only routes access kar sakta tha
-//   isAdmin check tha lekin isAstrologer nahi tha
+//   isAdmin check existed but isAstrologer check was missing
 //   Astrologer /profile, /consultations, /favorites open ho jaate the
 
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
@@ -18,7 +16,7 @@ export default function UserGuard() {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // FIX F3: Astrologer → astrologer portal
+  // FIX F3: Astrologer -> astrologer portal
   if (isAstrologer) {
     return <Navigate to="/astrologer/dashboard" replace />;
   }

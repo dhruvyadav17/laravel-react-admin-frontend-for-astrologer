@@ -1,7 +1,4 @@
-// PATH: src/admin/layouts/AdminSidebar.tsx
-// FIX BUG-17: Brand link mein <a href="/admin/dashboard"> tha — full page reload
 //              <Link to="/admin/dashboard"> se replace kiya
-// IMPROVEMENT: User info strip add kiya sidebar mein — name + role dikh sake
 
 import { useEffect, useRef }  from "react";
 import { Link }               from "react-router-dom";
@@ -31,7 +28,7 @@ export default function AdminSidebar() {
   return (
     <div className="sidebar" ref={sidebarRef}>
 
-      {/* FIX BUG-17: <a href> → <Link to> */}
+      {/* FIX BUG-17: <a href> -> <Link to> */}
       <Link to="/admin/dashboard" className="brand-link brand-link-custom">
         <i className="fas fa-star text-warning me-2" />
         <span className="brand-text fw-bold">AstroPanel</span>

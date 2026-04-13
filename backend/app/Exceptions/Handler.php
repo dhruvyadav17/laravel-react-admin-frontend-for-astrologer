@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Exceptions/Handler.php
 
 namespace App\Exceptions;
 

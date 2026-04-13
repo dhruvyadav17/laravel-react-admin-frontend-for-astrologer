@@ -5,17 +5,13 @@ type Option = {
 
 type Props = {
   label?: string;
-
   value: string | number;
   onChange: (value: string) => void;
-
-  options: Option[];
+  options: ReadonlyArray<Option>;
   placeholder?: string;
-
   error?: string;
   disabled?: boolean;
   required?: boolean;
-
   className?: string;
 };
 
@@ -23,36 +19,30 @@ export default function FormSelect({
   label,
   value,
   onChange,
-
   options,
-  placeholder = "Select option",
-
+  placeholder = 'Select option',
   error,
   disabled = false,
   required = false,
-
-  className = "",
+  className = '',
 }: Props) {
   return (
     <div className={`mb-2 ${className}`}>
       {label && (
         <label className="form-label">
           {label}
-          {required && (
-            <span className="text-danger ms-1">*</span>
-          )}
+          {required && <span className="text-danger ms-1">*</span>}
         </label>
       )}
 
       <select
-        className={`form-select ${error ? "is-invalid" : ""}`}
+        className={`form-select ${error ? 'is-invalid' : ''}`}
         value={value}
         disabled={disabled}
         required={required}
         onChange={(e) => onChange(e.target.value)}
       >
         <option value="">{placeholder}</option>
-
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -60,11 +50,7 @@ export default function FormSelect({
         ))}
       </select>
 
-      {error && (
-        <div className="invalid-feedback">
-          {error}
-        </div>
-      )}
+      {error && <div className="invalid-feedback">{error}</div>}
     </div>
   );
 }

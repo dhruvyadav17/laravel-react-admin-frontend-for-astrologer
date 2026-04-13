@@ -1,7 +1,6 @@
 <?php
-// PATH: app/Services/App/ReviewService.php
-// FIX B7: submit() signature mismatch — controllers User/Astrologer objects pass karte hain
-// FIX B8: recalculate() mein is_approved filter add kiya — disapproved reviews rating mein nahi jaate
+// FIX B7: submit() signature mismatch -- controllers User/Astrologer objects pass karte hain
+// FIX B8: Added is_approved filter in recalculate() -- unapproved reviews no longer affect rating
 
 namespace App\Services\App;
 

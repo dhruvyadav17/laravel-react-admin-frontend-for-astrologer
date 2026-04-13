@@ -1,8 +1,16 @@
-// PATH: src/store/api/astrologer.api.ts
-// NEW: getAstrologerSchedule — public schedule endpoint add kiya
-//      (astrologer ki weekly availability public users ko dikhane ke liye)
-// CHANGE: getAstrologers mein debounce ke liye search param add kiya
-
+/**
+ * Astrologer API -- RTK Query endpoints
+ *
+ * Covers public browsing (no auth), user-facing review submission,
+ * and astrologer-only profile/schedule/earnings endpoints.
+ *
+ * TO ADD A FILTER PARAM: extend AstrologerFilters in types/models.ts,
+ * then include it in the getAstrologers query object and add the backend
+ * filter logic in UserAstrologerController@index.
+ *
+ * TO ADD A NEW ASTROLOGER STAT: add the field to AstrologerProfileController
+ * @stats() in the backend and extend the return type here.
+ */
 import { baseApi } from "./baseApi";
 import type {
   Astrologer,
@@ -14,7 +22,7 @@ import type {
 
 export const astrologerApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /* ── Public listing ─────────────────────────── */
+    /* -- Public listing --------------------------- */
     getAstrologers: build.query<
       PaginatedResponse<Astrologer>,
       AstrologerFilters
@@ -36,14 +44,14 @@ export const astrologerApi = baseApi.injectEndpoints({
           : [{ type: "Astrologer", id: "LIST" }],
     }),
 
-    /* ── Public single ──────────────────────────── */
+    /* -- Public single ---------------------------- */
     getAstrologer: build.query<Astrologer, number>({
       query: (id) => `/astrologers/${id}`,
       transformResponse: (res: any) => res.data,
       providesTags: (_r, _e, id) => [{ type: "Astrologer", id }],
     }),
 
-    /* ── Public reviews ─────────────────────────── */
+    /* -- Public reviews --------------------------- */
     getAstrologerReviews: build.query<
       { data: Review[]; pagination?: any },
       { id: number; page?: number }
@@ -58,7 +66,7 @@ export const astrologerApi = baseApi.injectEndpoints({
       }),
     }),
 
-    /* ── Submit review ──────────────────────────── */
+    /* -- Submit review ---------------------------- */
     submitReview: build.mutation<
       void,
       { astrologerId: number; rating: number; comment?: string }
@@ -74,7 +82,7 @@ export const astrologerApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /* ── Admin list ─────────────────────────────── */
+    /* -- Admin list ------------------------------- */
     adminGetAstrologers: build.query<
       PaginatedResponse<Astrologer>,
       { search?: string; is_verified?: boolean; page?: number }
@@ -87,7 +95,7 @@ export const astrologerApi = baseApi.injectEndpoints({
       providesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
-    /* ── Admin create ───────────────────────────── */
+    /* -- Admin create ----------------------------- */
     adminCreateAstrologer: build.mutation<
       { astrologer: Astrologer; email: string; password: string },
       Partial<Astrologer>
@@ -97,12 +105,12 @@ export const astrologerApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
-    /* ── Admin update ───────────────────────────── */
+    /* -- Admin update ----------------------------- */
     adminUpdateAstrologer: build.mutation<
       Astrologer,
-      { id: number; data: Partial<Astrologer> }
+      { id: number } & Partial<Astrologer>
     >({
-      query: ({ id, data }) => ({
+      query: ({ id, ...data }) => ({
         url: `/admin/astrologers/${id}`,
         method: "PUT",
         body: data,
@@ -114,13 +122,13 @@ export const astrologerApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /* ── Admin delete ───────────────────────────── */
+    /* -- Admin delete ----------------------------- */
     adminDeleteAstrologer: build.mutation<void, number>({
       query: (id) => ({ url: `/admin/astrologers/${id}`, method: "DELETE" }),
       invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
-    /* ── Admin restore ──────────────────────────── */
+    /* -- Admin restore ---------------------------- */
     adminRestoreAstrologer: build.mutation<Astrologer, number>({
       query: (id) => ({
         url: `/admin/astrologers/${id}/restore`,
@@ -130,7 +138,7 @@ export const astrologerApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Astrologer", id: "ADMIN-LIST" }],
     }),
 
-    /* ── Admin verify ───────────────────────────── */
+    /* -- Admin verify ----------------------------- */
     adminVerifyAstrologer: build.mutation<Astrologer, number>({
       query: (id) => ({
         url: `/admin/astrologers/${id}/verify`,
@@ -143,7 +151,7 @@ export const astrologerApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /* ── Astrologer portal ──────────────────────── */
+    /* -- Astrologer portal ------------------------ */
     myAstrologerProfile: build.query<Astrologer, void>({
       query: () => "/astrologer/me",
       transformResponse: (res: any) => res.data,
@@ -190,6 +198,12 @@ export const astrologerApi = baseApi.injectEndpoints({
     }),
 
 
+
+    sendHeartbeat: build.mutation<{ is_online: boolean; is_available: boolean }, void>({
+      query: () => ({ url: '/astrologer/me/heartbeat', method: 'POST' }),
+      transformResponse: (res: any) => res.data,
+    }),
+
     myEarnings: build.query<{ summary: any; data: any[] }, void>({
       query: () => '/astrologer/me/earnings',
       transformResponse: (res: any) => res.data ?? { summary: {}, data: [] },
@@ -228,4 +242,5 @@ export const {
   useMyScheduleQuery,
   useSaveScheduleMutation,
   useMyEarningsQuery,
+  useSendHeartbeatMutation,
 } = astrologerApi;

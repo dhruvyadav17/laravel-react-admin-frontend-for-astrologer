@@ -1,5 +1,4 @@
-// PATH: src/features/admin/activity/ActivityPage.tsx
-// audit_logs table already exists in DB — yeh uska UI hai
+// audit_logs table already exists in DB -- this is its UI
 // Shows: user, action, IP, timestamp, subject type
 
 import { useState }           from 'react';
@@ -90,7 +89,7 @@ export default function ActivityPage() {
         ) : (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+              <thead style={{ background: "var(--surf2, #f6f7fb)" }}>
                 <tr>
                   <th>User</th>
                   <th>Action</th>
@@ -119,7 +118,7 @@ export default function ActivityPage() {
                       )}
                     </td>
                     <td>
-                      <code className="small">{log.ip_address ?? '—'}</code>
+                      <code className="small">{log.ip_address ?? '--'}</code>
                     </td>
                     <td className="small text-muted">
                       {log.created_at}

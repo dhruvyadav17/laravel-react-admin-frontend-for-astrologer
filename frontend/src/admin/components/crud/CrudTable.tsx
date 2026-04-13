@@ -1,7 +1,5 @@
-// PATH: src/admin/components/crud/CrudTable.tsx
-// FIX F8: CrudTable sirf display karta hai — action building AdminCrudPage mein hai
-//   BEFORE: buildRowActions() yahan tha lekin props nahi milte the → koi button nahi
-//   AFTER:  renderRow(item) se actions already embedded hain — CrudTable bas render karta hai
+//   BEFORE: buildRowActions() yahan tha lekin props nahi milte the -> koi button nahi
+//   AFTER:  renderRow(item) se actions already embedded hain -- CrudTable bas render karta hai
 
 import AdminTablePage from '../page/AdminTablePage';
 import { useAuth }    from '../../../auth/hooks/useAuth';

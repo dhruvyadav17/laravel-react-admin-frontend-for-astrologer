@@ -1,10 +1,8 @@
-import { ReactNode } from "react";
-
-/* ===================== CARD ===================== */
+import type { ReactNode } from 'react';
 
 export function Card({
   children,
-  className = "",
+  className = '',
 }: {
   children: ReactNode;
   className?: string;
@@ -12,12 +10,10 @@ export function Card({
   return <div className={`card ${className}`}>{children}</div>;
 }
 
-/* ===================== CARD HEADER ===================== */
-
 export function CardHeader({
   title,
   action,
-  className = "",
+  className = '',
 }: {
   title?: ReactNode;
   action?: ReactNode;
@@ -26,23 +22,19 @@ export function CardHeader({
   if (!title && !action) return null;
 
   return (
-    <div
-      className={`card-header d-flex align-items-center justify-content-between ${className}`}
-    >
+    <div className={`card-header d-flex align-items-center justify-content-between ${className}`}>
       {title && <h5 className="mb-0">{title}</h5>}
       {action}
     </div>
   );
 }
 
-/* ===================== CARD BODY ===================== */
-
 export function CardBody({
   children,
-  className = "",
+  className = '',
   loading = false,
   empty = false,
-  emptyText = "No data available",
+  emptyText = 'No data available',
 }: {
   children: ReactNode;
   className?: string;
@@ -52,7 +44,7 @@ export function CardBody({
 }) {
   if (loading) {
     return (
-      <div className="card-body text-center py-5 text-muted">
+      <div className="card-body text-center py-5 t-muted">
         <div className="spinner-border mb-2" />
         <div>Loading...</div>
       </div>
@@ -60,11 +52,7 @@ export function CardBody({
   }
 
   if (empty) {
-    return (
-      <div className="card-body text-center py-5 text-muted">
-        {emptyText}
-      </div>
-    );
+    return <div className="card-body text-center py-5 t-muted">{emptyText}</div>;
   }
 
   return <div className={`card-body ${className}`}>{children}</div>;

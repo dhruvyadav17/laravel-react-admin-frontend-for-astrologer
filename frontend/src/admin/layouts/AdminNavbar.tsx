@@ -1,8 +1,3 @@
-// PATH: src/admin/layouts/AdminNavbar.tsx
-// IMPROVED: NotificationBell add kiya — real-time notifications
-// IMPROVED: Dark mode toggle button
-// IMPROVED: Activity Log link in dropdown
-
 import { NavLink }          from 'react-router-dom';
 import { useAuth }          from '../../auth/hooks/useAuth';
 import { useTheme }         from '../../hooks/useTheme';
@@ -18,7 +13,7 @@ export default function AdminNavbar({ onToggle }: Props) {
 
   return (
     <>
-      {/* ── LEFT ─────────────────────────────────── */}
+      {/* -- LEFT ----------------------------------- */}
       <ul className="navbar-nav align-items-center">
         <li className="nav-item">
           <button
@@ -36,7 +31,7 @@ export default function AdminNavbar({ onToggle }: Props) {
         </li>
       </ul>
 
-      {/* ── RIGHT ────────────────────────────────── */}
+      {/* -- RIGHT ---------------------------------- */}
       <ul className="navbar-nav ms-auto align-items-center gap-1">
 
         {/* Dark mode toggle */}

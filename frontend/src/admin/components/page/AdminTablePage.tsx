@@ -1,5 +1,4 @@
-// PATH: src/admin/components/page/AdminTablePage.tsx
-// FIX: onAction optional kiya — CrudTable undefined pass karta hai jab create permission nahi
+// FIX: onAction optional kiya -- CrudTable undefined pass karta hai jab create permission nahi
 
 import type { ReactNode } from 'react';
 
@@ -68,7 +67,7 @@ export default function AdminTablePage({
         {!loading && !error && !empty && (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">{columns}</thead>
+              <thead style={{ background: "var(--surf2, #f6f7fb)" }}>{columns}</thead>
               <tbody>{children}</tbody>
             </table>
           </div>

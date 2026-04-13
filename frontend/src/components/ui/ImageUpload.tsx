@@ -1,4 +1,3 @@
-// PATH: src/components/ui/ImageUpload.tsx
 // NEW FEATURE: Reusable image upload component
 // Usage:
 //   <ImageUpload
@@ -43,7 +42,7 @@ export default function ImageUpload({
   const initials = name.slice(0, 2).toUpperCase() || "?";
   const avatarUrl = preview || currentUrl;
 
-  /* ── File validation ─────────────────────────── */
+  /* -- File validation --------------------------- */
   const validateFile = (file: File): string | null => {
     if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
       return "Only JPG, PNG, or WebP images allowed";
@@ -54,7 +53,7 @@ export default function ImageUpload({
     return null;
   };
 
-  /* ── Upload handler ──────────────────────────── */
+  /* -- Upload handler ---------------------------- */
   const handleFile = useCallback(async (file: File) => {
     const err = validateFile(file);
     if (err) { setError(err); return; }
@@ -90,7 +89,7 @@ export default function ImageUpload({
     }
   }, [onUpload]);
 
-  /* ── Drag & drop ─────────────────────────────── */
+  /* -- Drag & drop ------------------------------- */
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
@@ -182,8 +181,8 @@ export default function ImageUpload({
 
       {/* Upload hint */}
       {!disabled && (
-        <small className="text-muted text-center" style={{ fontSize: 11 }}>
-          {uploading ? "Uploading..." : "Click or drag to upload · Max 2MB · JPG/PNG/WebP"}
+        <small className="t-muted text-center" style={{ fontSize: 11 }}>
+          {uploading ? "Uploading..." : "Click or drag to upload . Max 2MB . JPG/PNG/WebP"}
         </small>
       )}
 

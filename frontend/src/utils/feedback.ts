@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 /* ===================================================== */
 /* ================= TOAST HELPERS ===================== */
 /* ===================================================== */
-
 export function showSuccess(
   message: string,
   variant: "success" | "danger" = "success"
@@ -27,7 +26,6 @@ export function showError(error: any) {
 /* ===================================================== */
 /* ================= EXECUTE WRAPPER =================== */
 /* ===================================================== */
-
 type ExecuteOptions = {
   defaultMessage?: string;
   variant?: "success" | "danger";
@@ -67,7 +65,6 @@ export async function execute<T>(
 /* ===================================================== */
 /* ================= MODAL TITLE HELPER ================= */
 /* ===================================================== */
-
 export function getModalTitle(
   entity: string,
   hasId?: boolean

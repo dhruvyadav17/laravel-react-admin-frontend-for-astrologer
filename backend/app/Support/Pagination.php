@@ -1,8 +1,5 @@
 <?php
-// PATH: app/Support/Pagination.php
-// FIX: Pagination::meta() method add kiya — AdminAstrologerController + ConsultationControllers
-//      dono jagah call hota tha lekin method exist nahi tha → Fatal 500 error
-// FIX: fromPaginator() alias add kiya backward compat ke liye
+//      called in multiple places but method did not exist → Fatal 500 error
 
 namespace App\Support;
 
@@ -39,7 +36,7 @@ class Pagination
     }
 
     /**
-     * Alias for meta() — backward compat.
+     * Alias for meta() -- backward compat.
      */
     public static function fromPaginator(LengthAwarePaginator $paginator): array
     {

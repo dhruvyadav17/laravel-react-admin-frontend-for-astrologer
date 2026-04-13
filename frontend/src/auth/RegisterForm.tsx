@@ -1,125 +1,167 @@
-// PATH: src/auth/RegisterForm.tsx
-// IMPROVE: Better UI, inline field errors, password show/hide, link to login
+import { useState }              from 'react';
+import { Link, useNavigate }     from 'react-router-dom';
+import { useForm }               from 'react-hook-form';
+import { zodResolver }           from '@hookform/resolvers/zod';
+import { z }                     from 'zod';
+import { registerService }       from '../services/authService';
 
-import { useState }          from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { registerService }   from "../services/authService";
+// Strong password schema -- matches backend RegisterRequest
+const registerSchema = z.object({
+  name:                  z.string().min(2, 'Name must be at least 2 characters'),
+  email:                 z.string().email('Enter a valid email address'),
+  password:              z.string()
+    .min(8, 'Minimum 8 characters')
+    .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    .regex(/[a-z]/, 'Must contain a lowercase letter')
+    .regex(/[0-9]/, 'Must contain a number')
+    .regex(/[^a-zA-Z0-9]/, 'Must contain a special character (@, #, !, etc.)'),
+  password_confirmation: z.string(),
+}).refine(d => d.password === d.password_confirmation, {
+  message: 'Passwords do not match',
+  path: ['password_confirmation'],
+});
 
-type FieldErrors = Record<string, string>;
+type RegisterData = z.infer<typeof registerSchema>;
+
+// Password strength calculator
+function getStrength(pw: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (pw.length >= 8)              score++;
+  if (/[A-Z]/.test(pw))            score++;
+  if (/[a-z]/.test(pw))            score++;
+  if (/[0-9]/.test(pw))            score++;
+  if (/[^a-zA-Z0-9]/.test(pw))    score++;
+
+  const map = [
+    { label: '', color: '' },
+    { label: 'Very Weak', color: '#ef4444' },
+    { label: 'Weak',      color: '#f97316' },
+    { label: 'Fair',      color: '#eab308' },
+    { label: 'Good',      color: '#22c55e' },
+    { label: 'Strong',    color: '#16a34a' },
+  ];
+  return { score, ...map[score] };
+}
 
 export default function RegisterForm() {
-  const navigate = useNavigate();
+  const navigate           = useNavigate();
+  const [showPw, setShowPw] = useState(false);
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
 
-  const [form, setForm] = useState({
-    name: "", email: "", password: "", password_confirmation: "",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<RegisterData>({
+    resolver: zodResolver(registerSchema),
+    mode: 'onTouched',
   });
-  const [showPw,   setShowPw]   = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [errors,   setErrors]   = useState<FieldErrors>({});
 
-  const set = (k: keyof typeof form, v: string) => {
-    setForm((p) => ({ ...p, [k]: v }));
-    if (errors[k]) setErrors((p) => ({ ...p, [k]: "" }));
-  };
+  const pwValue  = watch('password', '');
+  const strength = getStrength(pwValue);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    // Client-side check
-    if (form.password !== form.password_confirmation) {
-      setErrors({ password_confirmation: "Passwords do not match" });
-      return;
-    }
-
+  const onSubmit = async (data: RegisterData) => {
+    setServerErrors({});
     try {
-      setLoading(true);
-      await registerService(form);
-      navigate("/verify-email", { replace: true });
+      await registerService(data);
+      navigate('/login?registered=1');
     } catch (err: any) {
-      // 422 field errors from Laravel
-      const errs = err?.response?.data?.errors;
-      if (errs) {
-        const flat: FieldErrors = {};
-        Object.entries(errs).forEach(([k, v]) => {
-          flat[k] = Array.isArray(v) ? v[0] : String(v);
-        });
-        setErrors(flat);
-      } else {
-        setErrors({ email: err?.response?.data?.message ?? "Registration failed" });
+      const apiErrors = err?.response?.data?.errors ?? {};
+      const mapped: Record<string, string> = {};
+      Object.entries(apiErrors).forEach(([k, v]) => {
+        mapped[k] = Array.isArray(v) ? v[0] : String(v);
+      });
+      if (Object.keys(mapped).length === 0) {
+        mapped.general = err?.response?.data?.message ?? 'Registration failed. Try again.';
       }
-    } finally {
-      setLoading(false);
+      setServerErrors(mapped);
     }
   };
 
-  const field = (label: string, key: keyof typeof form, type = "text", extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
+  const field = (name: keyof RegisterData, label: string, type = 'text', placeholder = '') => (
     <div className="mb-3">
       <label className="form-label fw-semibold small">{label}</label>
       <input
-        {...extra}
-        className={`form-control ${errors[key] ? "is-invalid" : ""}`}
-        type={key.includes("password") ? (showPw ? "text" : "password") : type}
-        value={form[key]}
-        onChange={(e) => set(key, e.target.value)}
-        required
+        {...register(name)}
+        type={name.includes('password') ? (showPw ? 'text' : 'password') : type}
+        className={`form-control ${errors[name] || serverErrors[name] ? 'is-invalid' : ''}`}
+        placeholder={placeholder}
+        autoComplete={name === 'email' ? 'email' : name.includes('password') ? 'new-password' : 'name'}
       />
-      {errors[key] && <div className="invalid-feedback">{errors[key]}</div>}
+      {(errors[name] || serverErrors[name]) && (
+        <div className="invalid-feedback">
+          {errors[name]?.message ?? serverErrors[name]}
+        </div>
+      )}
     </div>
   );
 
   return (
-    <form onSubmit={submit}>
-      {field("Full Name",        "name",                  "text",  { placeholder: "Rahul Sharma",    autoComplete: "name"     })}
-      {field("Email Address",    "email",                 "email", { placeholder: "rahul@email.com", autoComplete: "email"    })}
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      {serverErrors.general && (
+        <div className="d-flex align-items-start gap-2 px-3 py-2 rounded-3 small mb-3" style={{ background: "rgba(239,68,68,.10)", border: "1px solid rgba(239,68,68,.3)", color: "#dc2626" }}>
+          <i className="fas fa-exclamation-circle me-2" />{serverErrors.general}
+        </div>
+      )}
 
-      <div className="mb-3">
-        <div className="d-flex justify-content-between align-items-center mb-1">
+      {field('name',  'Full Name',  'text',  'Your full name')}
+      {field('email', 'Email',      'email', 'you@email.com')}
+
+      {/* Password with show/hide + strength */}
+      <div className="mb-1">
+        <div className="d-flex justify-content-between mb-1">
           <label className="form-label fw-semibold small mb-0">Password</label>
-          <button type="button" className="btn btn-link btn-sm p-0 text-muted"
-            onClick={() => setShowPw((v) => !v)}>
-            <i className={`fas fa-eye${showPw ? "-slash" : ""} me-1`} style={{ fontSize: 12 }} />
-            {showPw ? "Hide" : "Show"}
+          <button type="button" className="btn btn-link btn-sm p-0 t-muted"
+            onClick={() => setShowPw(v => !v)}>
+            <i className={`fas fa-eye${showPw ? '-slash' : ''} me-1`} style={{ fontSize: 11 }} />
+            {showPw ? 'Hide' : 'Show'}
           </button>
         </div>
         <input
-          className={`form-control ${errors.password ? "is-invalid" : ""}`}
-          type={showPw ? "text" : "password"}
-          placeholder="Min 6 characters"
-          value={form.password}
-          onChange={(e) => set("password", e.target.value)}
+          {...register('password')}
+          type={showPw ? 'text' : 'password'}
+          className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+          placeholder="Min 8 chars, uppercase, number, symbol"
           autoComplete="new-password"
-          minLength={6}
-          required
         />
-        {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+        {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
       </div>
 
-      <div className="mb-4">
-        <label className="form-label fw-semibold small">Confirm Password</label>
-        <input
-          className={`form-control ${errors.password_confirmation ? "is-invalid" : ""}`}
-          type={showPw ? "text" : "password"}
-          placeholder="Repeat password"
-          value={form.password_confirmation}
-          onChange={(e) => set("password_confirmation", e.target.value)}
-          required
-        />
-        {errors.password_confirmation && (
-          <div className="invalid-feedback">{errors.password_confirmation}</div>
-        )}
-      </div>
+      {/* Strength bar */}
+      {pwValue && (
+        <div className="mb-3 mt-1">
+          <div className="d-flex gap-1 mb-1">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} style={{
+                flex: 1, height: 4, borderRadius: 2,
+                background: i <= strength.score ? strength.color : 'var(--bs-border-color)',
+                transition: 'background .2s',
+              }} />
+            ))}
+          </div>
+          {strength.label && (
+            <span style={{ fontSize: 11, color: strength.color }}>{strength.label}</span>
+          )}
+        </div>
+      )}
 
-      <button className="btn btn-primary w-100 py-2 fw-semibold" disabled={loading}>
-        {loading
+      {field('password_confirmation', 'Confirm Password', 'password', 'Repeat your password')}
+
+      <button
+        className="btn btn-primary w-100 py-2 fw-semibold mt-1"
+        disabled={isSubmitting || !isValid}
+      >
+        {isSubmitting
           ? <><span className="spinner-border spinner-border-sm me-2" />Creating account...</>
-          : "Create Free Account"}
+          : 'Create Account'}
       </button>
 
-      <p className="text-center text-muted small mt-3 mb-0">
-        Already have an account?{" "}
-        <Link to="/login" className="text-decoration-none fw-semibold">Sign In</Link>
+      <p className="text-center t-muted small mt-3 mb-0">
+        Already have an account?{' '}
+        <Link to="/login" className="text-decoration-none fw-semibold">Sign in</Link>
       </p>
     </form>
   );
 }
+

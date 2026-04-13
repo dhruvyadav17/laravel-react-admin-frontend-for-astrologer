@@ -1,6 +1,3 @@
-// PATH: src/user/pages/AboutPage.tsx
-// NEW: About Us — static page
-
 import { Link }  from "react-router-dom";
 import UserPage  from "../components/ui/UserPage";
 
@@ -30,9 +27,9 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="hero-new text-center mb-5">
         <h2 className="fw-bold mb-3">🔱 Bringing Ancient Wisdom to Modern Life</h2>
-        <p className="text-muted mb-4" style={{ maxWidth: 600, margin: "0 auto 24px" }}>
+        <p className="t-muted mb-4" style={{ maxWidth: 600, margin: "0 auto 24px" }}>
           Astro is India's trusted platform connecting seekers with verified Vedic astrologers.
-          We believe everyone deserves clear guidance — rooted in tradition, delivered with care.
+          We believe everyone deserves clear guidance -- rooted in tradition, delivered with care.
         </p>
         <Link to="/astrologers" className="btn btn-primary-app px-4">
           <i className="fas fa-star me-2" />Meet Our Astrologers
@@ -45,7 +42,7 @@ export default function AboutPage() {
           <div key={s.label} className="col-6 col-md-3">
             <div className="app-card text-center">
               <div className="fw-bold text-danger" style={{ fontSize: 28 }}>{s.value}</div>
-              <div className="text-muted small">{s.label}</div>
+              <div className="t-muted small">{s.label}</div>
             </div>
           </div>
         ))}
@@ -65,7 +62,7 @@ export default function AboutPage() {
                 </div>
                 <i className={`fas ${step.icon} text-danger fa-2x mb-2`} />
                 <h6 className="fw-bold">{step.title}</h6>
-                <p className="text-muted small mb-0">{step.desc}</p>
+                <p className="t-muted small mb-0">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -77,22 +74,22 @@ export default function AboutPage() {
         <div className="row align-items-center">
           <div className="col-md-6">
             <h4 className="fw-bold mb-3">Our Mission</h4>
-            <p className="text-muted mb-3">
+            <p className="t-muted mb-3">
               We started Astro with a simple belief: everyone deserves access to authentic astrological
-              guidance — not just the privileged few. Our platform brings together India's most trusted
+              guidance -- not just the privileged few. Our platform brings together India's most trusted
               astrologers and makes their wisdom accessible, affordable, and instant.
             </p>
-            <p className="text-muted mb-3">
+            <p className="t-muted mb-3">
               Every astrologer on our platform is personally verified, background-checked, and rated
-              by real users. No fake profiles, no paid promotions — just genuine expertise.
+              by real users. No fake profiles, no paid promotions -- just genuine expertise.
             </p>
             <Link to="/astrologers" className="btn btn-outline-app btn-sm">
-              Browse Astrologers →
+              Browse Astrologers
             </Link>
           </div>
           <div className="col-md-6 text-center mt-3 mt-md-0">
             <div style={{ fontSize: 80 }}>🔱</div>
-            <p className="text-muted small">Founded in 2024 · India</p>
+            <p className="t-muted small">Founded in 2024 . India</p>
           </div>
         </div>
       </div>
@@ -110,8 +107,8 @@ export default function AboutPage() {
                   {t.name[0]}
                 </div>
                 <h6 className="fw-bold mb-0">{t.name}</h6>
-                <p className="text-muted small mb-1">{t.role}</p>
-                <span className="badge bg-light text-dark border" style={{ fontSize: 10 }}>
+                <p className="t-muted small mb-1">{t.role}</p>
+                <span className="badge badge-lang" style={{ fontSize: 10 }}>
                   {t.expertise}
                 </span>
               </div>
@@ -123,7 +120,7 @@ export default function AboutPage() {
       {/* CTA */}
       <div className="trust-card text-center">
         <h5 className="fw-bold mb-2">Ready to get started?</h5>
-        <p className="text-muted mb-3">Talk to a verified astrologer today.</p>
+        <p className="t-muted mb-3">Talk to a verified astrologer today.</p>
         <Link to="/astrologers" className="btn btn-primary-app px-4 me-2">
           <i className="fas fa-star me-1" />Find Astrologer
         </Link>

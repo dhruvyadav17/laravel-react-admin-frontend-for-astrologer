@@ -18,7 +18,6 @@ export default function AdminLogoutButton({
   };
 
   /* ================= SIDEBAR STYLE ================= */
-
   if (variant === "sidebar") {
     return (
       <a
@@ -36,7 +35,6 @@ export default function AdminLogoutButton({
   }
 
   /* ================= DROPDOWN STYLE ================= */
-
   return (
     <button
       className={`dropdown-item text-danger ${className}`}

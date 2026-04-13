@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Queries/UserQuery.php
 
 namespace App\Queries;
 

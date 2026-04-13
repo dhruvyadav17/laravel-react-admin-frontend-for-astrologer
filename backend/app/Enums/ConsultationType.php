@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Enums/ConsultationType.php
 
 namespace App\Enums;
 
@@ -8,7 +7,7 @@ enum ConsultationType: string
     case Chat  = 'chat';
     case Call  = 'call';
     case Video = 'video';
-    case All   = 'all';   // Astrologer setting — sab accept karta hai
+    case All   = 'all';   // Astrologer accepts all consultation types
 
     public function icon(): string
     {

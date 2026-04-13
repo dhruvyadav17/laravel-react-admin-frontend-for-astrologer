@@ -1,194 +1,381 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+/**
+ * ConsultationPage -- real-time consultation view for the user.
+ *
+ * Handles all consultation states:
+ *   pending     -> spinner, cancel button
+ *   accepted    -> spinner, waiting for astrologer to start
+ *   in_progress -> live chat (text) OR join-call button (call/video)
+ *                 + live billing timer + balance warning
+ *   completed   -> message history, total cost, rate-astrologer link
+ *   rejected    -> reason shown, find-another link
+ *   cancelled   -> redirected to /consultations
+ *
+ * POLLING STRATEGY
+ * -----------------
+ * Consultation: every 6 s while pending/accepted, stops on terminal status.
+ * Messages:     every 4 s while in_progress (chat type only).
+ * Wallet:       every 30 s while in_progress (for balance warning).
+ *
+ * STATUS CHANGE NOTIFICATIONS
+ * ----------------------------
+ * Toast fires when status changes from pending -> accepted / in_progress / rejected.
+ */
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, Link }              from 'react-router-dom';
 import {
   useGetConsultationQuery,
   useGetMessagesQuery,
   useSendMessageMutation,
   useCancelConsultationMutation,
-} from "../../store/api/consultation.api";
-import { useAuth } from "../../auth/hooks/useAuth";
-import Avatar from "../../components/ui/Avatar";
-import { PageLoader } from "../../components/ui/States";
-import { toast } from "react-toastify";
+} from '../../store/api/consultation.api';
+import { useGetWalletQuery } from '../../store/api/wallet.api';
+import { useAuth }           from '../../auth/hooks/useAuth';
+import Avatar                from '../../components/ui/Avatar';
+import { PageLoader }        from '../../components/ui/States';
+import { toast }             from 'react-toastify';
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Waiting for astrologer to accept...",
-  accepted: "Astrologer has accepted — session will start shortly",
-  in_progress: "Session in progress",
-  completed: "Consultation completed",
-  rejected: "Request rejected by astrologer",
-  cancelled: "Consultation cancelled",
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  pending:     { label: 'Waiting for astrologer to accept...',     color: 'warning',   icon: 'fa-clock'        },
+  accepted:    { label: 'Accepted! Session will start shortly.', color: 'info',      icon: 'fa-check-circle' },
+  in_progress: { label: 'Session in progress',                    color: 'success',   icon: 'fa-circle'       },
+  completed:   { label: 'Session completed',                      color: 'secondary', icon: 'fa-check'        },
+  rejected:    { label: 'Request rejected by astrologer',         color: 'danger',    icon: 'fa-times-circle' },
+  cancelled:   { label: 'Consultation cancelled',                 color: 'secondary', icon: 'fa-ban'          },
 };
 
+/* -- Live timer ----------------------------------- */
+function SessionTimer({ startedAt, ratePerMinute }: { startedAt: string; ratePerMinute: number }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = new Date(startedAt).getTime();
+    const tick  = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const cost = ((elapsed / 60) * ratePerMinute).toFixed(2);
+  return (
+    <div className="d-flex align-items-center gap-3 px-3 py-2 rounded-3"
+      style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)' }}>
+      <div className="d-flex align-items-center gap-2">
+        <span className="badge bg-danger" style={{ fontSize: 9, padding: '3px 6px', animation: 'pulse 1s infinite' }}>* LIVE</span>
+        <span className="fw-bold font-monospace" style={{ fontSize: 18 }}>
+          {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+        </span>
+      </div>
+      <div className="t-muted small"><span className="fw-semibold text-success">₹{cost}</span> charged</div>
+    </div>
+  );
+}
+
+/* -- Balance warning ------------------------------ */
+function BalanceWarning({ balance, ratePerMinute }: { balance: number; ratePerMinute: number }) {
+  if (ratePerMinute <= 0) return null;
+  const minsLeft = Math.floor(balance / ratePerMinute);
+  if (minsLeft > 5) return null;
+  const isUrgent = minsLeft <= 1;
+  return (
+    <div className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 small mb-3" style={{ background: isUrgent ? 'rgba(239,68,68,.10)' : 'rgba(234,179,8,.10)', border: isUrgent ? '1px solid rgba(239,68,68,.3)' : '1px solid rgba(234,179,8,.3)', color: isUrgent ? '#dc2626' : '#ca8a04' }}>
+      <i className="fas fa-exclamation-triangle flex-shrink-0" />
+      <span>
+        {isUrgent ? 'Your balance is very low -- session may end soon. ' : `~${minsLeft} minute(s) of balance remaining -- `}
+        <Link to="/wallet" className="fw-semibold text-decoration-underline" style={{color:'inherit'}}>Recharge now</Link>
+      </span>
+    </div>
+  );
+}
+
+/* -- Message bubble ------------------------------- */
+function MessageBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
+  const time = new Date(msg.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <div className={`d-flex gap-2 ${isMe ? 'justify-content-end' : 'justify-content-start'}`}>
+      {!isMe && <Avatar name={msg.sender.name} src={msg.sender.profile_image} size={28} />}
+      <div style={{ maxWidth: '72%' }}>
+        <div className={`px-3 py-2 rounded-3 ${isMe ? 'bg-danger text-white' : ''}`}
+          style={{ background: isMe ? undefined : 'var(--surf3)', border: isMe ? undefined : '1px solid var(--bdr)', wordBreak: 'break-word', lineHeight: 1.5, fontSize: 14 }}>
+          {msg.message}
+        </div>
+        <div className={`d-flex align-items-center gap-1 mt-1 ${isMe ? 'justify-content-end' : ''}`}
+          style={{ fontSize: 11, color: 'var(--txt-l)' }}>
+          {time}
+          {isMe && <i className={`fas ${msg.is_read ? 'fa-check-double text-primary' : 'fa-check'}`} style={{ fontSize: 10 }} />}
+        </div>
+      </div>
+      {isMe && <Avatar name={msg.sender.name} src={msg.sender.profile_image} size={28} />}
+    </div>
+  );
+}
+
+/* -- Status Alert --------------------------------- */
+function StatusAlert({ status }: { status: string }) {
+  const cfg: Record<string, { bg: string; border: string; color: string; icon: string; label: string }> = {
+    pending:     { bg: 'rgba(234,179,8,.08)',   border: 'rgba(234,179,8,.3)',   color: '#ca8a04', icon: 'fa-clock',        label: 'Waiting for astrologer to accept...'      },
+    accepted:    { bg: 'rgba(59,130,246,.08)',  border: 'rgba(59,130,246,.3)',  color: '#2563eb', icon: 'fa-check-circle', label: 'Accepted! Session will start shortly.'   },
+    in_progress: { bg: 'rgba(34,197,94,.10)',   border: 'rgba(34,197,94,.35)',  color: '#16a34a', icon: 'fa-circle',       label: 'Session in progress'                    },
+    completed:   { bg: 'rgba(100,116,139,.08)', border: 'rgba(100,116,139,.3)', color: '#475569', icon: 'fa-check',        label: 'Session completed'                       },
+    rejected:    { bg: 'rgba(239,68,68,.08)',   border: 'rgba(239,68,68,.3)',   color: '#dc2626', icon: 'fa-times-circle', label: 'Request rejected by astrologer'         },
+    cancelled:   { bg: 'rgba(100,116,139,.08)', border: 'rgba(100,116,139,.3)', color: '#475569', icon: 'fa-ban',          label: 'Consultation cancelled'                 },
+  };
+  const s = cfg[status] ?? cfg.pending;
+  return (
+    <div className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 mb-3 small"
+      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+      <i className={`fas ${s.icon} flex-shrink-0`} />
+      <span>{s.label}</span>
+    </div>
+  );
+}
+
+/* -- Main ----------------------------------------- */
 export default function ConsultationPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const consultId = parseInt(id ?? "0", 10);
+  const { id }    = useParams<{ id: string }>();
+  const navigate  = useNavigate();
+  const { user }  = useAuth();
+  const consultId = parseInt(id ?? '0', 10);
 
-  const [message, setMessage] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [message, setMessage]   = useState('');
+  const [status,  setStatus]    = useState('pending'); // local copy avoids self-ref in RTK
+  const bottomRef   = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { data: consult, isLoading: loadingConsult } = useGetConsultationQuery(consultId, {
-    skip: !consultId,
-    pollingInterval: 10000,
+  // -- Consultation query -------------------------
+  // Poll rate depends on current known status (stored in local state)
+  const consultPoll = ['completed','rejected','cancelled'].includes(status) ? 0 : 6000;
+
+  const { data: consult, isLoading } = useGetConsultationQuery(consultId, {
+    skip:            !consultId,
+    pollingInterval: consultPoll,
   });
 
-  const { data: messages = [], isLoading: loadingMsgs } = useGetMessagesQuery(consultId, {
-    skip: !consultId || !["accepted", "in_progress", "completed"].includes(consult?.status ?? ""),
-    pollingInterval: 5000,
+  // Sync local status and notify on status changes
+  useEffect(() => {
+    if (!consult?.status) return;
+    const prev = status;
+    setStatus(consult.status);
+    if (prev !== consult.status && prev !== 'pending') return; // only notify from pending
+    if (consult.status === 'accepted' && prev === 'pending') {
+      toast.success('✅ Astrologer accepted your request! Session starting soon...');
+    }
+    if (consult.status === 'in_progress' && prev === 'accepted') {
+      toast.info('🟢 Session has started!');
+    }
+    if (consult.status === 'rejected' && prev === 'pending') {
+      toast.warning('❌ Request was declined. Try another astrologer.');
+    }
+  }, [consult?.status]); // eslint-disable-line
+
+  // -- Messages query -----------------------------
+  // Only poll when session is actively in_progress (chat type)
+  // For call/video type, no chat polling needed at all
+  const messagesEnabled = ['accepted','in_progress','completed'].includes(status);
+  const messagesPoll    = status === 'in_progress' ? 4000 : 0;
+
+  const { data: messages = [] } = useGetMessagesQuery(consultId, {
+    skip:            !consultId || !messagesEnabled,
+    pollingInterval: messagesPoll,
   });
 
-  const [send, { isLoading: sending }] = useSendMessageMutation();
-  const [cancel] = useCancelConsultationMutation();
+  // -- Wallet query -------------------------------
+  const { data: wallet } = useGetWalletQuery(undefined, {
+    skip:            status !== 'in_progress',
+    pollingInterval: 30000,
+  });
+
+  const [send,   { isLoading: sending    }] = useSendMessageMutation();
+  const [cancel, { isLoading: cancelling }] = useCancelConsultationMutation();
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const handleSend = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (status === 'in_progress') textareaRef.current?.focus();
+  }, [status]);
+
+  const handleSend = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const msg = message.trim();
-    if (!msg) return;
-    setMessage("");
+    if (!msg || sending) return;
+    setMessage('');
     try {
       await send({ consultationId: consultId, message: msg }).unwrap();
     } catch {
-      toast.error("Message could not be sent. Please try again.");
+      toast.error('Failed to send message. Please try again.');
       setMessage(msg);
     }
+  }, [message, sending, send, consultId]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e as any); }
   };
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    if (!confirm('Are you sure you want to cancel this request?')) return;
     try {
       await cancel(consultId).unwrap();
-      toast.success("Consultation cancelled successfully");
-      navigate("/consultations");
+      toast.success('Consultation cancelled.');
+      navigate('/consultations');
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Cancellation failed");
+      toast.error(err?.data?.message ?? 'Cancellation failed.');
     }
   };
 
-  if (loadingConsult)
-    return (
-      <div className="container py-5">
-        <PageLoader />
-      </div>
-    );
+  if (isLoading) return <div className="container py-5"><PageLoader /></div>;
+  if (!consult) return (
+    <div className="container py-5 text-center">
+      <p className="t-muted">Consultation not found.</p>
+      <Link to="/consultations" className="btn btn-outline-secondary btn-sm">{'<- Back'}</Link>
+    </div>
+  );
 
-  if (!consult)
-    return (
-      <div className="container py-5 text-center">
-        <p className="text-muted">Consultation not found</p>
-      </div>
-    );
-
-  const canChat = ["accepted", "in_progress"].includes(consult.status);
-  const isCompleted = consult.status === "completed";
-  const isPending = consult.status === "pending";
+  const st         = STATUS_CONFIG[consult.status] ?? STATUS_CONFIG.pending;
+  const canChat    = ['accepted', 'in_progress'].includes(consult.status);
+  const isActive   = consult.status === 'in_progress';
+  const isComplete = consult.status === 'completed';
+  const isPending  = consult.status === 'pending';
+  const isAccepted = consult.status === 'accepted';
+  const isCall     = consult.type !== 'chat';
 
   return (
     <div className="container py-4" style={{ maxWidth: 720 }}>
+      <Link to="/consultations" className="btn btn-sm btn-outline-secondary mb-3">
+        <i className="fas fa-arrow-left me-1" />My Consultations
+      </Link>
+
       {/* Header */}
-      <div className="app-card mb-3">
-        <div className="d-flex align-items-center gap-3">
-          <Avatar name={consult.astrologer?.name} src={consult.astrologer?.profile_image} size={44} />
+      <div className="app-card mb-3" style={{ transition: 'none' }}>
+        <div className="d-flex align-items-center gap-3 flex-wrap">
+          <Link to={`/astrologers/${consult.astrologer?.id}`}>
+            <Avatar name={consult.astrologer?.name} src={consult.astrologer?.profile_image} size={48} />
+          </Link>
           <div className="flex-grow-1">
-            <div className="fw-bold">{consult.astrologer?.name}</div>
-            <div className="text-muted small">{consult.astrologer?.expertise}</div>
-            <div className="text-muted small">
-              ₹{consult.rate_per_minute}/min · {consult.type}
+            <div className="fw-bold t-main">{consult.astrologer?.name}</div>
+            <div className="t-muted small">{consult.astrologer?.expertise}</div>
+            <div className="small mt-1">
+              <span className="badge-lang me-1">
+                <i className={`fas fa-${consult.type === 'chat' ? 'comment' : consult.type === 'call' ? 'phone' : 'video'} me-1`} />
+                {consult.type.charAt(0).toUpperCase() + consult.type.slice(1)}
+              </span>
+              <span className="t-muted">₹{consult.rate_per_minute}/min</span>
             </div>
           </div>
-          <div className="text-end">
-            <div
-              className={`badge bg-${
-                consult.status === "in_progress"
-                  ? "success"
-                  : consult.status === "completed"
-                  ? "secondary"
-                  : consult.status === "pending"
-                  ? "warning"
-                  : "info"
-              } px-3 py-2`}
-            >
-              {consult.status.replace("_", " ").toUpperCase()}
+          {isActive && consult.started_at && (
+            <SessionTimer startedAt={consult.started_at} ratePerMinute={consult.rate_per_minute} />
+          )}
+          {isComplete && (
+            <div className="text-end small">
+              <div className="fw-bold text-success">₹{consult.total_amount}</div>
+              <div className="t-muted">{consult.duration_minutes} min</div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Status */}
-      <div
-        className={`alert ${
-          canChat ? "alert-success" : isCompleted ? "alert-secondary" : "alert-warning"
-        } py-2 small mb-3`}
-      >
-        <i className="fas fa-info-circle me-2" />
-        {STATUS_LABEL[consult.status]}
-      </div>
+      <StatusAlert status={consult.status} />
+
+      {/* Balance warning */}
+      {isActive && wallet && (
+        <BalanceWarning balance={wallet.balance} ratePerMinute={consult.rate_per_minute} />
+      )}
+
+      {/* Call/Video join button */}
+      {isCall && (canChat || isComplete) && (
+        <div className="mb-3">
+          <Link to={`/consultations/${consultId}/call`} className="btn w-100 fw-semibold"
+            style={{ background: isActive ? '#22c55e' : 'var(--surf2)', color: isActive ? '#fff' : 'var(--txt)', border: `1px solid ${isActive ? '#22c55e' : 'var(--bdr)'}`, borderRadius: 12 }}>
+            <i className={`fas fa-${consult.type === 'video' ? 'video' : 'phone'} me-2`} />
+            {isActive ? `Join ${consult.type === 'video' ? 'Video' : 'Voice'} Call` : 'View Call'}
+          </Link>
+        </div>
+      )}
 
       {/* Pending */}
       {isPending && (
-        <div className="app-card text-center py-5">
-          <div className="spinner-border text-warning mb-3" />
-          <h6 className="fw-bold">Waiting for Response</h6>
-          <p className="text-muted small mb-3">
-            The astrologer has received your request. Chat will start once it is accepted.
-          </p>
+        <div className="app-card text-center py-5" style={{ transition: 'none' }}>
+          <div className="spinner-border text-warning mb-3" style={{ width: 40, height: 40 }} />
+          <h6 className="fw-bold t-main mb-1">Request Sent!</h6>
+          <p className="t-muted small mb-3">The astrologer has been notified. Chat will begin once accepted.</p>
           {consult.user_note && (
-            <div className="alert alert-light py-2 small text-start">
-              <strong>Your note:</strong> {consult.user_note}
+            <div className="py-2 small text-start mx-auto" style={{ maxWidth: 340, background: "var(--surf2)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "8px 12px" }}>
+              <i className="fas fa-quote-left t-muted me-1" />{consult.user_note}
             </div>
           )}
-          <button className="btn btn-sm btn-outline-danger mt-2" onClick={handleCancel}>
-            Cancel Request
+          <button className="btn btn-outline-danger btn-sm mt-2" onClick={handleCancel} disabled={cancelling}>
+            {cancelling && <span className="spinner-border spinner-border-sm me-1" />}Cancel Request
           </button>
         </div>
       )}
 
-      {/* Chat */}
-      {(canChat || isCompleted) && (
-        <div className="app-card p-0 overflow-hidden">
-          <div style={{ height: 420, overflowY: "auto" }} className="p-3">
+      {/* Accepted */}
+      {isAccepted && (
+        <div className="app-card text-center py-4" style={{ transition: 'none' }}>
+          <div className="spinner-border text-info mb-3" style={{ width: 36, height: 36 }} />
+          <h6 className="fw-bold t-main mb-1">Accepted!</h6>
+          <p className="t-muted small mb-0">Waiting for the astrologer to start the session...</p>
+        </div>
+      )}
+
+      {/* Chat window -- only for chat type */}
+      {(canChat || isComplete) && !isCall && (
+        <div className="app-card overflow-hidden p-0" style={{ transition: 'none' }}>
+          <div style={{ height: 420, overflowY: 'auto', background: 'var(--surf2)' }} className="p-3">
             {messages.length === 0 ? (
-              <div className="text-center py-5 text-muted">
+              <div className="text-center py-5 t-muted">
                 <i className="fas fa-comment fa-2x d-block mb-2 opacity-25" />
-                <p className="small">Start the conversation by sending your first message</p>
+                <p className="small mb-0">{canChat ? 'Send your first message!' : 'No messages in this session'}</p>
               </div>
             ) : (
-              <div className="d-flex flex-column gap-2">
-                {messages.map((msg) => {
-                  const isMe = msg.sender.id === user?.id;
-                  return (
-                    <div key={msg.id} className={`d-flex ${isMe ? "justify-content-end" : "justify-content-start"}`}>
-                      <div className={`px-3 py-2 rounded-3 ${isMe ? "bg-danger text-white" : "bg-light"}`}>
-                        {msg.message}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="d-flex flex-column gap-3">
+                {messages.map((msg: any) => (
+                  <MessageBubble key={msg.id} msg={msg} isMe={msg.sender.id === user?.id} />
+                ))}
                 <div ref={bottomRef} />
               </div>
             )}
           </div>
-
-          {canChat && (
-            <form onSubmit={handleSend} className="border-top p-3 d-flex gap-2">
-              <textarea
-                className="form-control"
-                placeholder="Type your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <button className="btn btn-primary-app" disabled={!message.trim()}>
-                Send
-              </button>
+          {canChat ? (
+            <form onSubmit={handleSend} className="p-3 d-flex gap-2 align-items-end"
+              style={{ borderTop: '1px solid var(--bdr)', background: 'var(--surf)' }}>
+              <textarea ref={textareaRef} className="form-control form-control-sm"
+                placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                value={message} onChange={e => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown} rows={2} style={{ resize: 'none' }}
+                maxLength={2000} disabled={sending} />
+              <div className="d-flex flex-column gap-1 flex-shrink-0">
+                <button type="submit" className="btn btn-danger btn-sm"
+                  disabled={!message.trim() || sending} title="Send">
+                  {sending ? <span className="spinner-border spinner-border-sm" /> : <i className="fas fa-paper-plane" />}
+                </button>
+                <span className="t-light text-center" style={{ fontSize: 10 }}>{message.length}/2000</span>
+              </div>
             </form>
+          ) : (
+            <div className="p-3 text-center t-muted small" style={{ borderTop: '1px solid var(--bdr)', background: 'var(--surf)' }}>
+              {isComplete
+                ? <><i className="fas fa-check-circle text-success me-1" />Session ended . {consult.duration_minutes} min . ₹{consult.total_amount}
+                    <Link to={`/astrologers/${consult.astrologer?.id}`} className="ms-3 small">Rate Astrologer</Link></>
+                : 'Chat unavailable'}
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Completed -- call type */}
+      {isCall && isComplete && (
+        <div className="app-card text-center py-4" style={{ transition: 'none' }}>
+          <i className="fas fa-check-circle fa-3x text-success mb-3 d-block" />
+          <h6 className="fw-bold t-main">Session Complete</h6>
+          <p className="t-muted small">Duration: {consult.duration_minutes} min . Total: ₹{consult.total_amount}</p>
+          <Link to={`/astrologers/${consult.astrologer?.id}`} className="btn btn-sm btn-outline-primary">
+            Rate your experience
+          </Link>
         </div>
       )}
     </div>
   );
 }
+

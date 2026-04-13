@@ -1,5 +1,3 @@
-// PATH: src/components/ui/Avatar.tsx
-// NEW: Shared component — profile image ya initials
 // Replaces 8-line repeated block in 5+ files
 
 type Props = {

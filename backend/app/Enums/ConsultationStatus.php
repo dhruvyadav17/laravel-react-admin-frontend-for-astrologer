@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Enums/ConsultationStatus.php
 // Magic strings ki jagah type-safe PHP Enum
 // Usage: ConsultationStatus::Pending->value
 
@@ -14,7 +13,7 @@ enum ConsultationStatus: string
     case Rejected   = 'rejected';
     case Cancelled  = 'cancelled';
 
-    /** Terminal statuses — koi aur transition nahi hogi */
+    /** Terminal statuses -- koi aur transition nahi hogi */
     public function isTerminal(): bool
     {
         return in_array($this, [
@@ -24,7 +23,7 @@ enum ConsultationStatus: string
         ]);
     }
 
-    /** Active statuses — message bhej sakte hain */
+    /** Active statuses -- message bhej sakte hain */
     public function allowsChat(): bool
     {
         return in_array($this, [self::Accepted, self::InProgress]);

@@ -1,8 +1,35 @@
 <?php
-// PATH: app/Services/App/ConsultationService.php
-// IMPROVED: Notifications auto-fire on state transitions
-// IMPROVED: WalletService deducts on end()
-// IMPROVED: PHP Enums for all status values
+/**
+ * ConsultationService -- all consultation lifecycle business logic.
+ *
+ * This is the single source of truth for consultation state transitions.
+ * Controllers should call methods here rather than touching the model directly.
+ *
+ * STATE MACHINE
+ * --------------
+ * pending → accepted → in_progress → completed
+ *         ↘ rejected
+ * pending → cancelled (by user)
+ *
+ * BILLING
+ * --------
+ * Billing happens inside end() via WalletService::deductForConsultation().
+ * Rate × max(duration, 1) minutes = total charged.
+ * AstrologerEarning is created with 80% of gross. Platform keeps 20%.
+ *
+ * TO CHANGE PLATFORM FEE: edit the 0.20 constant in WalletService.php.
+ *
+ * WEBRTC SIGNALING
+ * -----------------
+ * SDP signals are stored as ChatMessage rows with signal_type set.
+ * sendSignal() / getSignals() handle the offer/answer/ICE exchange.
+ * See useWebRTC.ts on the frontend for the client-side counterpart.
+ *
+ * TO ADD A NEW CONSULTATION TYPE (e.g. "live_session"):
+ * 1. Add the value to the consultation_type enum in the migration.
+ * 2. Handle it in store() validation and isCallType() helper.
+ * 3. Add UI support in BookingModal and ConsultationPage.
+ */
 
 namespace App\Services\App;
 
@@ -15,29 +42,24 @@ use App\Notifications\ConsultationAccepted;
 use App\Notifications\ConsultationCompleted;
 use App\Notifications\ConsultationRejected;
 use App\Notifications\NewConsultationRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ConsultationService
 {
     public function __construct(protected WalletService $walletService) {}
 
-    /* ── Book ───────────────────────────────────── */
+    /* -- Book ------------------------------------- */
     public function book(User $user, Astrologer $astrologer, array $data): Consultation
     {
         if ($astrologer->user_id === $user->id) {
-            throw ValidationException::withMessages([
-                'astrologer' => ['Aap apne aap ko book nahi kar sakte.'],
-            ]);
+            throw ValidationException::withMessages(['astrologer' => ['You cannot book a consultation with yourself.']]);
         }
         if (!$astrologer->is_verified) {
-            throw ValidationException::withMessages([
-                'astrologer' => ['Yeh astrologer abhi verified nahi hai.'],
-            ]);
+            throw ValidationException::withMessages(['astrologer' => ['This astrologer is not yet verified.']]);
         }
         if (!$astrologer->is_online || !$astrologer->is_available) {
-            throw ValidationException::withMessages([
-                'astrologer' => ['Astrologer abhi online nahi hai.'],
-            ]);
+            throw ValidationException::withMessages(['astrologer' => ['This astrologer is currently offline.']]);
         }
 
         $existing = Consultation::where('user_id', $user->id)
@@ -49,40 +71,39 @@ class ConsultationService
             ])->first();
 
         if ($existing) {
-            throw ValidationException::withMessages([
-                'consultation' => ['Pehle se ek active request hai.'],
-            ]);
+            throw ValidationException::withMessages(['consultation' => ['You already have an active consultation with this astrologer.']]);
         }
+
+        $type = $data['type'] ?? 'chat';
 
         $consultation = Consultation::create([
             'user_id'         => $user->id,
             'astrologer_id'   => $astrologer->id,
-            'type'            => $data['type'] ?? 'chat',
+            'type'            => $type,
             'status'          => ConsultationStatus::Pending->value,
             'rate_per_minute' => $astrologer->price_per_minute,
             'user_note'       => $data['user_note'] ?? null,
+            // Pre-generate room_id for call/video types
+            'room_id'         => in_array($type, ['call', 'video']) ? 'room_' . Str::random(20) : null,
+            'call_status'     => in_array($type, ['call', 'video']) ? 'idle' : null,
         ]);
 
-        // Notify astrologer — new request
         $astrologer->user->notify(new NewConsultationRequest($consultation->load(['user', 'astrologer'])));
 
         return $consultation;
     }
 
-    /* ── Accept ─────────────────────────────────── */
+    /* -- Accept ----------------------------------- */
     public function accept(Consultation $consultation): Consultation
     {
         $this->assertStatus($consultation, ConsultationStatus::Pending);
         $consultation->update(['status' => ConsultationStatus::Accepted->value]);
         $updated = $consultation->fresh(['user', 'astrologer']);
-
-        // Notify user
         $updated->user->notify(new ConsultationAccepted($updated));
-
         return $updated;
     }
 
-    /* ── Reject ─────────────────────────────────── */
+    /* -- Reject ----------------------------------- */
     public function reject(Consultation $consultation, string $reason = ''): Consultation
     {
         $this->assertStatus($consultation, ConsultationStatus::Pending);
@@ -91,25 +112,24 @@ class ConsultationService
             'rejection_reason' => $reason ?: 'Astrologer is not available right now.',
         ]);
         $updated = $consultation->fresh(['user', 'astrologer']);
-
-        // Notify user
         $updated->user->notify(new ConsultationRejected($updated));
-
         return $updated;
     }
 
-    /* ── Start ──────────────────────────────────── */
+    /* -- Start ------------------------------------ */
     public function start(Consultation $consultation): Consultation
     {
         $this->assertStatus($consultation, ConsultationStatus::Accepted);
         $consultation->update([
-            'status'     => ConsultationStatus::InProgress->value,
-            'started_at' => now(),
+            'status'      => ConsultationStatus::InProgress->value,
+            'started_at'  => now(),
+            // For call/video: set to ringing so user knows call is starting
+            'call_status' => $consultation->isCallType() ? 'ringing' : null,
         ]);
         return $consultation->fresh(['user', 'astrologer']);
     }
 
-    /* ── End + billing ──────────────────────────── */
+    /* -- End + billing ---------------------------- */
     public function end(Consultation $consultation): Consultation
     {
         $this->assertStatus($consultation, ConsultationStatus::InProgress);
@@ -123,22 +143,19 @@ class ConsultationService
             'ended_at'         => $endedAt,
             'duration_minutes' => max($duration, 1),
             'total_amount'     => $total,
+            'call_status'      => $consultation->isCallType() ? 'ended' : null,
         ]);
 
         $consultation->astrologer->increment('total_consultations');
-
         $updated = $consultation->fresh(['user', 'astrologer']);
 
-        // Wallet deduction + astrologer earning
         $this->walletService->deductForConsultation($updated);
-
-        // Notify user
         $updated->user->notify(new ConsultationCompleted($updated));
 
         return $updated;
     }
 
-    /* ── Cancel ─────────────────────────────────── */
+    /* -- Cancel ----------------------------------- */
     public function cancel(Consultation $consultation, User $user): Consultation
     {
         if ($consultation->user_id !== $user->id) {
@@ -149,14 +166,12 @@ class ConsultationService
         return $consultation->fresh(['user', 'astrologer']);
     }
 
-    /* ── Send message ───────────────────────────── */
+    /* -- Send chat message ------------------------ */
     public function sendMessage(Consultation $consultation, User $sender, string $message): ChatMessage
     {
         $status = ConsultationStatus::from($consultation->status);
         if (!$status->allowsChat()) {
-            throw ValidationException::withMessages([
-                'message' => ['Is consultation mein message nahi bhej sakte.'],
-            ]);
+            throw ValidationException::withMessages(['message' => ['Cannot send messages for this consultation.']]);
         }
         return ChatMessage::create([
             'consultation_id' => $consultation->id,
@@ -165,25 +180,66 @@ class ConsultationService
         ]);
     }
 
-    /* ── Get messages ───────────────────────────── */
+    /* -- Send WebRTC signal ----------------------- */
+    // offer, answer, ice-candidate, hang-up travel via this
+    public function sendSignal(
+        Consultation $consultation,
+        User $sender,
+        string $signalType,
+        array $signalData
+    ): ChatMessage {
+        return ChatMessage::create([
+            'consultation_id' => $consultation->id,
+            'sender_id'       => $sender->id,
+            'message'         => '', // empty -- not a chat message
+            'signal_type'     => $signalType,
+            'signal_data'     => $signalData,
+        ]);
+    }
+
+    /* -- Get WebRTC signals (poll) ---------------- */
+    // Frontend polls this every 1s during call setup
+    // FIX: Use !is_null($afterId) instead of when($afterId) because 0 is falsy in PHP
+    public function getSignals(Consultation $consultation, User $receiver, ?int $afterId = null)
+    {
+        return $consultation->messages()
+            ->with('sender:id,name')
+            ->whereNotNull('signal_type')                   // only signal messages
+            ->where('sender_id', '!=', $receiver->id)      // from other side
+            ->when(!is_null($afterId), fn($q) => $q->where('id', '>', $afterId))
+            ->orderBy('id')
+            ->limit(20)
+            ->get();
+    }
+
+    /* -- Update call status ----------------------- */
+    public function updateCallStatus(Consultation $consultation, string $status): Consultation
+    {
+        $consultation->update(['call_status' => $status]);
+        return $consultation->fresh();
+    }
+
+    /* -- Get messages (chat only) ----------------- */
     public function messages(Consultation $consultation)
     {
         return $consultation->messages()
             ->with('sender:id,name,profile_image')
+            ->whereNull('signal_type') // exclude WebRTC signals from chat
             ->orderBy('created_at')
             ->get();
     }
 
-    /* ── Mark read ──────────────────────────────── */
+    /* -- Mark read -------------------------------- */
     public function markRead(Consultation $consultation, User $reader): void
     {
         $consultation->messages()
             ->where('sender_id', '!=', $reader->id)
             ->where('is_read', false)
+            ->whereNull('signal_type')
             ->update(['is_read' => true, 'read_at' => now()]);
     }
 
-    /* ── Lists ──────────────────────────────────── */
+    /* -- Lists ------------------------------------ */
     public function userList(User $user, ?string $status = null)
     {
         return Consultation::with(['astrologer.user'])
@@ -200,7 +256,7 @@ class ConsultationService
             ->latest()->paginate(10);
     }
 
-    /* ── Assert status ──────────────────────────── */
+    /* -- Assert status ---------------------------- */
     private function assertStatus(Consultation $c, ConsultationStatus $expected): void
     {
         if ($c->status !== $expected->value) {

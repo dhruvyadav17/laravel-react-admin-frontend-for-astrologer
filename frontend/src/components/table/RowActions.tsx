@@ -1,10 +1,10 @@
-import Button from "../ui/Button";
+import Button from '../ui/Button';
 
 export type RowAction = {
   key: string;
   label?: string;
   onClick: (row?: any) => void;
-  variant?: "primary" | "secondary" | "warning" | "danger" | "success";
+  variant?: 'primary' | 'secondary' | 'warning' | 'danger' | 'success' | 'info';
   show?: boolean;
   disabled?: boolean;
   icon?: string;
@@ -13,7 +13,7 @@ export type RowAction = {
 
 type Props = {
   actions: RowAction[];
-  row?: any; 
+  row?: any;
 };
 
 export default function RowActions({ actions, row }: Props) {
@@ -32,7 +32,7 @@ export default function RowActions({ actions, row }: Props) {
           disabled={action.disabled}
           size="sm"
           title={action.title}
-          className={index < visible.length - 1 ? "me-2" : ""}
+          className={index < visible.length - 1 ? 'me-2' : ''}
         />
       ))}
     </div>

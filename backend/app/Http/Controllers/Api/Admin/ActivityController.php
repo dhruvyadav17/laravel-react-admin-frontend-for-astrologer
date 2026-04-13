@@ -1,6 +1,5 @@
 <?php
-// PATH: app/Http/Controllers/Api/Admin/ActivityController.php
-// GET /api/v1/admin/activity — paginated audit logs with filters
+// GET /api/v1/admin/activity -- paginated audit logs with filters
 
 namespace App\Http\Controllers\Api\Admin;
 

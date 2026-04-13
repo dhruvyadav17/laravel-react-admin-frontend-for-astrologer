@@ -1,11 +1,8 @@
-// PATH: src/user/routes/user.routes.tsx
-// IMPROVED: Lazy loading for all user pages
-// IMPROVED: Wallet page added
-
 import { lazy, Suspense } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import UserLayout          from '../layouts/UserLayout';
 import UserGuard           from '../../routes/guards/UserGuard';
+import { ErrorBoundary }  from '../../components/feedback/ErrorBoundary';
 
 const WelcomePage          = lazy(() => import('../../features/user/home/WelcomePage'));
 const HomePage             = lazy(() => import('../../features/user/home/HomePage'));
@@ -23,16 +20,21 @@ const TermsPage            = lazy(() => import('../pages/TermsPage'));
 const FavoritesPage        = lazy(() => import('../pages/FavoritesPage'));
 const MyConsultationsPage  = lazy(() => import('../pages/MyConsultationsPage'));
 const ConsultationPage     = lazy(() => import('../pages/ConsultationPage'));
+const CallPage             = lazy(() => import('../pages/CallPage'));
 
-function L({ children }: { children: React.ReactNode }) {
+function Loader() {
   return (
-    <Suspense fallback={
-      <div className="d-flex justify-content-center align-items-center min-vh-100">
-        <div className="spinner-border text-primary" />
-      </div>
-    }>
-      {children}
-    </Suspense>
+    <div className="d-flex justify-content-center align-items-center min-vh-100">
+      <div className="spinner-border text-primary" role="status" />
+    </div>
+  );
+}
+
+function P({ children, name }: { children: React.ReactNode; name: string }) {
+  return (
+    <ErrorBoundary section={name}>
+      <Suspense fallback={<Loader />}>{children}</Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -40,40 +42,41 @@ export const userRoutes = {
   path:    '/',
   element: <UserLayout />,
   children: [
-    { index: true,             element: <L><WelcomePage /></L>          },
-    { path: 'home',            element: <L><HomePage /></L>             },
-    { path: 'astrologers',     element: <L><AstrologersPage /></L>      },
-    { path: 'astrologers/:id', element: <L><AstrologerDetailPage /></L> },
-    { path: 'panchang',        element: <L><PanchangPage /></L>         },
-    { path: 'horoscope',       element: <L><HoroscopePage /></L>        },
-    { path: 'about',           element: <L><AboutPage /></L>            },
-    { path: 'faq',             element: <L><FaqPage /></L>              },
-    { path: 'contact',         element: <L><ContactPage /></L>          },
-    { path: 'privacy',         element: <L><PrivacyPage /></L>          },
-    { path: 'terms',           element: <L><TermsPage /></L>            },
+    { index: true,             element: <P name="Welcome"><WelcomePage /></P>              },
+    { path: 'home',            element: <P name="Home"><HomePage /></P>                    },
+    { path: 'astrologers',     element: <P name="Astrologers"><AstrologersPage /></P>      },
+    { path: 'astrologers/:id', element: <P name="Astrologer"><AstrologerDetailPage /></P> },
+    { path: 'panchang',        element: <P name="Panchang"><PanchangPage /></P>            },
+    { path: 'horoscope',       element: <P name="Horoscope"><HoroscopePage /></P>          },
+    { path: 'about',           element: <P name="About"><AboutPage /></P>                  },
+    { path: 'faq',             element: <P name="FAQ"><FaqPage /></P>                      },
+    { path: 'contact',         element: <P name="Contact"><ContactPage /></P>              },
+    { path: 'privacy',         element: <P name="Privacy"><PrivacyPage /></P>              },
+    { path: 'terms',           element: <P name="Terms"><TermsPage /></P>                  },
     {
       path: 'unauthorized',
       element: (
         <div className="container py-5 text-center">
           <i className="fas fa-ban text-danger fa-4x d-block mb-3" />
-          <h2>403 — Unauthorized</h2>
-          <p className="text-muted">You don&apos;t have permission to view this page.</p>
+          <h2>403 -- Unauthorized</h2>
+          <p className="t-muted">You don't have permission to view this page.</p>
           <Link to="/" className="btn btn-primary mt-2">Go Home</Link>
         </div>
       ),
     },
-    // Protected routes
+    // Protected routes (login required)
     {
       element: <UserGuard />,
       children: [
-        { path: 'favorites',      element: <L><FavoritesPage /></L>        },
-        { path: 'wallet',         element: <L><WalletPage /></L>           },
-        { path: 'profile',        element: <L><ProfilePage /></L>          },
+        { path: 'favorites',   element: <P name="Favorites"><FavoritesPage /></P>       },
+        { path: 'wallet',      element: <P name="Wallet"><WalletPage /></P>              },
+        { path: 'profile',     element: <P name="Profile"><ProfilePage /></P>            },
         {
           path: 'consultations',
           children: [
-            { index: true, element: <L><MyConsultationsPage /></L> },
-            { path: ':id', element: <L><ConsultationPage /></L>    },
+            { index: true, element: <P name="Consultations"><MyConsultationsPage /></P> },
+            { path: ':id', element: <P name="Consultation"><ConsultationPage /></P>     },
+            { path: ':id/call', element: <P name="Call"><CallPage /></P>                },
           ],
         },
       ],

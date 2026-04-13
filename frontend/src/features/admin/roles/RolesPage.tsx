@@ -1,6 +1,5 @@
-// PATH: src/features/admin/roles/RolesPage.tsx
 // FIX: mutations format aligned with new AdminCrudPage API
-//   RTK fn directly pass karo
+//   RTK fn directly pass do
 
 import { memo, useState }  from 'react';
 import AdminCrudPage        from '../../../admin/components/crud/AdminCrudPage';
@@ -40,7 +39,7 @@ function RolesPage() {
         <td>
           <span className={`badge bg-${color}-subtle text-${color} border px-3 py-2`}
             style={{ fontSize: 12 }}>
-            {role.name || '—'}
+            {role.name || '--'}
           </span>
         </td>
         <td className="text-end pe-3">

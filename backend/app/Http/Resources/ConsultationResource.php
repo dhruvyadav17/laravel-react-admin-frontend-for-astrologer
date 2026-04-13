@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Http/Resources/ConsultationResource.php
 
 namespace App\Http\Resources;
 
@@ -22,6 +21,10 @@ class ConsultationResource extends JsonResource
             'ended_at'         => $this->ended_at?->toISOString(),
             'created_at'       => $this->created_at->diffForHumans(),
 
+            // WebRTC fields
+            'room_id'          => $this->room_id,
+            'call_status'      => $this->call_status,
+
             'user' => $this->whenLoaded('user', fn() => [
                 'id'            => $this->user->id,
                 'name'          => $this->user->name,
@@ -29,11 +32,11 @@ class ConsultationResource extends JsonResource
             ]),
 
             'astrologer' => $this->whenLoaded('astrologer', fn() => [
-                'id'              => $this->astrologer->id,
-                'name'            => $this->astrologer->name,
-                'profile_image'   => $this->astrologer->profile_image,
-                'price_per_minute'=> $this->astrologer->price_per_minute,
-                'expertise'       => $this->astrologer->expertise,
+                'id'               => $this->astrologer->id,
+                'name'             => $this->astrologer->name,
+                'profile_image'    => $this->astrologer->profile_image,
+                'price_per_minute' => $this->astrologer->price_per_minute,
+                'expertise'        => $this->astrologer->expertise,
             ]),
         ];
     }

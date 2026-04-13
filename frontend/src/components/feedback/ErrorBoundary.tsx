@@ -1,69 +1,87 @@
-// PATH: src/components/feedback/ErrorBoundary.tsx
-// IMPROVEMENT: Generic "app crashed" screen improve kiya
-//              Reload button + go home + error details (dev mode)
+//   Pehle: sirf ek global ErrorBoundary tha -- koi bhi crash = blank screen
+//   Ab: Har route/section ka alag boundary, fallback UI with retry
 
-import React from "react";
+import React from 'react';
 
-type Props = { children: React.ReactNode };
-type State = { hasError: boolean; error?: Error };
+interface Props {
+  children:   React.ReactNode;
+  fallback?:  React.ReactNode;
+  section?:   string;   // e.g. "Dashboard", "Users"
+}
 
-export default class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { hasError: false };
+interface State {
+  hasError: boolean;
+  error:    Error | null;
+}
+
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // TODO: Send to error monitoring (Sentry / LogRocket)
-    console.error("App crashed:", error, info);
+    // Production mein Sentry/LogRocket ko bhejdo
+    console.error(`[ErrorBoundary: ${this.props.section ?? 'unknown'}]`, error, info);
   }
 
-  reload = () => window.location.reload();
-  goHome = () => { window.location.href = "/"; };
+  retry = () => this.setState({ hasError: false, error: null });
 
   render() {
     if (!this.state.hasError) return this.props.children;
 
-    const isDev = import.meta.env.DEV;
+    if (this.props.fallback) return this.props.fallback;
 
     return (
-      <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
-        <div className="text-center px-4" style={{ maxWidth: 520 }}>
-
-          <div style={{ fontSize: 64, marginBottom: 8 }}>⚠️</div>
-
-          <h3 className="fw-bold mb-2">Something went wrong</h3>
-          <p className="text-muted mb-4">
-            An unexpected error occurred. Please try reloading the page.
-            If the problem persists, contact support.
+      <div className="d-flex align-items-center justify-content-center py-5">
+        <div className="text-center" style={{ maxWidth: 380 }}>
+          <div className="mb-3" style={{ fontSize: 40 }}>⚠️</div>
+          <h5 className="fw-semibold mb-2">
+            {this.props.section
+              ? `${this.props.section} failed to load`
+              : 'Something went wrong'}
+          </h5>
+          <p className="t-muted small mb-4">
+            {import.meta.env.DEV
+              ? this.state.error?.message
+              : 'An unexpected error occurred. Please try again.'}
           </p>
-
-          <div className="d-flex gap-2 justify-content-center mb-4">
-            <button className="btn btn-primary" onClick={this.reload}>
-              <i className="fas fa-redo me-2" />Reload Page
+          <div className="d-flex gap-2 justify-content-center">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={this.retry}
+            >
+              <i className="fas fa-redo me-1" />Try Again
             </button>
-            <button className="btn btn-outline-secondary" onClick={this.goHome}>
-              <i className="fas fa-home me-2" />Go Home
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => window.location.reload()}
+            >
+              Reload Page
             </button>
           </div>
-
-          {/* Dev mode error details */}
-          {isDev && this.state.error && (
-            <details className="text-start bg-white border rounded p-3" style={{ fontSize: 12 }}>
-              <summary className="fw-semibold text-danger mb-2" style={{ cursor: "pointer" }}>
-                Error Details (dev only)
-              </summary>
-              <pre className="mb-0 text-danger overflow-auto" style={{ fontSize: 11 }}>
-                {this.state.error.message}
-                {"\n\n"}
-                {this.state.error.stack}
-              </pre>
-            </details>
-          )}
-
         </div>
       </div>
     );
   }
 }
+
+// Convenience wrapper -- use instead of raw ErrorBoundary
+export function withErrorBoundary<T extends object>(
+  Component: React.ComponentType<T>,
+  section?: string
+) {
+  return function Wrapped(props: T) {
+    return (
+      <ErrorBoundary section={section}>
+        <Component {...props} />
+      </ErrorBoundary>
+    );
+  };
+}
+
+export default ErrorBoundary;

@@ -1,18 +1,11 @@
-// PATH: src/routes/AppRoutes.tsx
-// IMPROVED: React.lazy() for all page-level components
-//   Before: All pages in one bundle — slow initial load
-//   After:  Each page = separate chunk — 40-60% smaller initial bundle
-// Suspense fallback = global spinner
+import { Suspense } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { adminRoutes } from '../admin/routes/admin.routes';
+import { authRoutes } from './auth.routes';
+import { userRoutes } from '../user/routes/user.routes';
+import { astrologerRoutes } from '../astrologer/routes/astrologer.routes';
+import { errorRoutes } from './error.routes';
 
-import { lazy, Suspense }                                    from 'react';
-import { createBrowserRouter, RouterProvider, Navigate }     from 'react-router-dom';
-import { adminRoutes }                                        from '../admin/routes/admin.routes';
-import { authRoutes }                                         from './auth.routes';
-import { userRoutes }                                         from '../user/routes/user.routes';
-import { astrologerRoutes }                                   from '../astrologer/routes/astrologer.routes';
-import { errorRoutes }                                        from './error.routes';
-
-/* ── Global page loader ────────────────────────── */
 function PageSpinner() {
   return (
     <div className="d-flex justify-content-center align-items-center min-vh-100">
@@ -23,7 +16,6 @@ function PageSpinner() {
   );
 }
 
-/* Wrap any element with Suspense */
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageSpinner />}>{children}</Suspense>;
 }
@@ -35,7 +27,7 @@ const router = createBrowserRouter([
   userRoutes,
   astrologerRoutes,
   adminRoutes,
-  errorRoutes,
+  ...errorRoutes,
   { path: '*', element: <Navigate to="/404" replace /> },
 ]);
 

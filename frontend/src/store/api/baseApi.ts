@@ -1,5 +1,4 @@
-// PATH: src/store/api/baseApi.ts
-// FIX: tagTypes consistent naming — 'User', 'Role', 'Permission' (not Users/Roles/Permissions)
+// FIX: tagTypes consistent naming -- 'User', 'Role', 'Permission' (not Users/Roles/Permissions)
 //   Mismatched tags = cache never invalidated after CRUD operations
 
 import { createApi }           from '@reduxjs/toolkit/query/react';
@@ -23,6 +22,7 @@ export const baseApi = createApi({
     'ChatMessage',
     'Notification',
     'Wallet',
+    'Favorite',
   ],
 
   endpoints: () => ({}),

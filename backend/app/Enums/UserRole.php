@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Enums/UserRole.php
 
 namespace App\Enums;
 

@@ -1,7 +1,4 @@
 <?php
-// PATH: app/Features/Astrologer/Controllers/UserAstrologerController.php
-// IMPROVED: submitReview() — enforce completed consultation check
-// IMPROVED: Pagination::meta() properly used
 
 namespace App\Features\Astrologer\Controllers;
 
@@ -27,7 +24,7 @@ class UserAstrologerController extends Controller
         protected ReviewService     $reviewService,
     ) {}
 
-    /* ── GET /astrologers ───────────────────────── */
+    /* -- GET /astrologers ------------------------- */
     public function index(Request $request): JsonResponse
     {
         $filters   = $request->only([
@@ -43,14 +40,14 @@ class UserAstrologerController extends Controller
         );
     }
 
-    /* ── GET /astrologers/{id} ──────────────────── */
+    /* -- GET /astrologers/{id} -------------------- */
     public function show(int $id): JsonResponse
     {
         $astrologer = $this->astrologerService->findPublic($id);
         return $this->success('Astrologer fetched', new AstrologerResource($astrologer));
     }
 
-    /* ── GET /astrologers/{id}/reviews ─────────── */
+    /* -- GET /astrologers/{id}/reviews ----------- */
     public function reviews(Request $request, int $id): JsonResponse
     {
         $astrologer = Astrologer::findOrFail($id);
@@ -64,7 +61,7 @@ class UserAstrologerController extends Controller
         );
     }
 
-    /* ── POST /astrologers/{id}/reviews ─────────── */
+    /* -- POST /astrologers/{id}/reviews ----------- */
     public function submitReview(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
@@ -83,7 +80,7 @@ class UserAstrologerController extends Controller
 
         if (!$hasCompleted) {
             return $this->error(
-                'Sirf completed consultation ke baad hi review de sakte hain.',
+                'You can only leave a review after a completed consultation.',
                 422
             );
         }

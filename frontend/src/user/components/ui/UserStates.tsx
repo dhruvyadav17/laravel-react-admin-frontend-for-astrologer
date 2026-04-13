@@ -7,7 +7,7 @@ export function UserLoader({ text = "Loading..." }: Props) {
   return (
     <div className="text-center mt-5">
       <div className="spinner-border text-danger" />
-      <p className="text-muted mt-2 mb-0">{text}</p>
+      <p className="t-muted mt-2 mb-0">{text}</p>
     </div>
   );
 }
@@ -15,7 +15,7 @@ export function UserLoader({ text = "Loading..." }: Props) {
 /* ================= EMPTY ================= */
 export function UserEmpty({ text = "No data found" }: Props) {
   return (
-    <div className="text-center mt-5 text-muted">
+    <div className="text-center mt-5 t-muted">
       <p className="mb-0">{text}</p>
     </div>
   );

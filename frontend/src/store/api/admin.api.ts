@@ -1,18 +1,44 @@
-// PATH: src/store/api/admin.api.ts
-// FIX F7: Tag names inconsistent — 'Users' 'Roles' 'Permissions' → 'User' 'Role' 'Permission'
-//   Mismatched tags = cache never invalidated = stale data after CRUD
-// FIX: getUsers properly typed as PaginatedResponse<User> (was any)
-// FIX: update mutations use flat { id, ...fields } pattern
-
+/**
+ * Admin API -- RTK Query endpoints
+ *
+ * All admin CRUD operations: users, astrologers, roles, permissions,
+ * dashboard stats, and activity log.
+ *
+ * ACCESS: All endpoints require the "admin" or "super-admin" role.
+ * The AdminGuard route guard enforces this on the frontend.
+ *
+ * TO ADD A NEW ADMIN MODULE:
+ * 1. Create a new admin feature folder under features/admin/.
+ * 2. Add the CRUD endpoints here following the existing pattern.
+ * 3. Add routes in admin.routes.tsx and menu items in AdminSidebar.tsx.
+ * 4. Add backend routes + controller under Api/Admin/.
+ */
 import { baseApi }  from './baseApi';
-import type { User, Role, Permission, PaginatedResponse } from '../../types/models';
+import type {
+  User, Role, Permission, PaginatedResponse,
+} from '../../types/models';
 
 export interface DashboardStats {
-  total_users:         number;
-  total_astrologers:   number;
-  total_consultations: number;
-  online_astrologers:  number;
-  revenue:             number;
+  total_users:          number;
+  total_astrologers:    number;
+  total_consultations:  number;
+  online_astrologers:   number;
+  revenue:              number;
+  revenue_today?:       number;
+  revenue_30d?:         number;
+  revenue_chart?:       Array<{ date: string; revenue: number }>;
+  type_breakdown?:      Record<string, number>;
+  consultations_today?: number;
+}
+
+export interface ActivityLog {
+  id:           number;
+  action:       string;
+  subject_type: string | null;
+  subject_id:   number | null;
+  ip_address:   string | null;
+  created_at:   string;
+  user:         { name: string; email: string } | null;
 }
 
 export const adminApi = baseApi.injectEndpoints({
@@ -20,8 +46,7 @@ export const adminApi = baseApi.injectEndpoints({
 
   endpoints: (builder) => ({
 
-    /* ═══════ USERS ═══════ */
-
+    /* ======= USERS ======= */
     getUsers: builder.query<
       PaginatedResponse<User>,
       { search?: string; page?: number; role?: string } | void
@@ -72,12 +97,13 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     assignUserPermissions: builder.mutation<{ assigned: string[] }, { id: number; permissions: string[] }>({
-      query: ({ id, permissions }) => ({ url: `/admin/users/${id}/permissions`, method: 'POST', body: { permissions } }),
+      query: ({ id, permissions }) => ({
+        url: `/admin/users/${id}/permissions`, method: 'POST', body: { permissions },
+      }),
       invalidatesTags: (_r, _e, { id }) => [{ type: 'User', id }],
     }),
 
-    /* ═══════ ROLES ═══════ */
-
+    /* ======= ROLES ======= */
     getRoles: builder.query<Role[], void>({
       query: () => '/admin/roles',
       transformResponse: (res: any): Role[] => res.data ?? [],
@@ -111,12 +137,13 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     assignRolePermissions: builder.mutation<void, { id: number; permissions: string[] }>({
-      query: ({ id, permissions }) => ({ url: `/admin/roles/${id}/permissions`, method: 'POST', body: { permissions } }),
+      query: ({ id, permissions }) => ({
+        url: `/admin/roles/${id}/permissions`, method: 'POST', body: { permissions },
+      }),
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Role', id }, { type: 'Role', id: 'LIST' }],
     }),
 
-    /* ═══════ PERMISSIONS ═══════ */
-
+    /* ======= PERMISSIONS ======= */
     getPermissions: builder.query<Permission[], void>({
       query: () => '/admin/permissions',
       transformResponse: (res: any): Permission[] => res.data ?? [],
@@ -143,19 +170,23 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Permission', id: 'LIST' }],
     }),
 
-    /* ═══════ SIDEBAR ═══════ */
-
+    /* ======= SIDEBAR ======= */
     getSidebar: builder.query<any[], void>({
       query: () => '/admin/sidebar',
       transformResponse: (res: any) => res.data ?? [],
       providesTags: ['Sidebar'],
     }),
 
-    /* ═══════ DASHBOARD ═══════ */
+    /* ======= DASHBOARD ======= */
+    getDashboardStats: builder.query<DashboardStats, void>({
+      query: () => '/admin/dashboard/stats',
+      transformResponse: (res: any): DashboardStats => res.data ?? {},
+      providesTags: ['Dashboard'],
+    }),
 
-
+    /* ======= ACTIVITY LOGS ======= */
     getActivityLogs: builder.query<
-      { data: any[]; pagination: any },
+      { data: ActivityLog[]; pagination: any },
       { page?: number; search?: string; action?: string } | void
     >({
       query: (params) => ({ url: '/admin/activity', params: params ?? {} }),
@@ -165,22 +196,39 @@ export const adminApi = baseApi.injectEndpoints({
       }),
     }),
 
-    getDashboardStats: builder.query<DashboardStats, void>({
-      query: () => '/admin/dashboard/stats',
-      transformResponse: (res: any): DashboardStats => res.data ?? {},
-      providesTags: ['Dashboard'],
-    }),
   }),
 });
 
+/* -- All hooks exported --------------------------------------- */
 export const {
-  useGetUsersQuery, useCreateUserMutation, useUpdateUserMutation,
-  useDeleteUserMutation, useRestoreUserMutation, useAssignUserRolesMutation,
-  useGetUserPermissionsQuery, useAssignUserPermissionsMutation,
-  useGetRolesQuery, useCreateRoleMutation, useUpdateRoleMutation,
-  useDeleteRoleMutation, useGetRolePermissionsQuery, useAssignRolePermissionsMutation,
-  useGetPermissionsQuery, useCreatePermissionMutation, useUpdatePermissionMutation,
-  useDeletePermissionMutation, useGetSidebarQuery, useGetDashboardStatsQuery,
-} = adminApi;
+  // Users
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useRestoreUserMutation,
+  useAssignUserRolesMutation,
+  useGetUserPermissionsQuery,
+  useAssignUserPermissionsMutation,
 
-// ── Activity Logs ──────────────────────────────────────────
+  // Roles
+  useGetRolesQuery,
+  useCreateRoleMutation,
+  useUpdateRoleMutation,
+  useDeleteRoleMutation,
+  useGetRolePermissionsQuery,
+  useAssignRolePermissionsMutation,
+
+  // Permissions
+  useGetPermissionsQuery,
+  useCreatePermissionMutation,
+  useUpdatePermissionMutation,
+  useDeletePermissionMutation,
+
+  // Sidebar + Dashboard
+  useGetSidebarQuery,
+  useGetDashboardStatsQuery,
+
+  // Activity Logs -- FIX: yeh export missing tha
+  useGetActivityLogsQuery,
+} = adminApi;

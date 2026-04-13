@@ -1,4 +1,3 @@
-// PATH: src/components/form/FormModal.tsx
 // FIX: textarea + select field type support add kiya
 //      Original mein sirf text/email/password/number tha
 //      AstrologerRequest mein bio (textarea) aur consultation_type (select) hain
@@ -55,7 +54,7 @@ export default function FormModal<T extends Record<string, any>>({
       {fields.map((field) => {
         const val = values[field.name] ?? "";
 
-        /* ── SELECT ─────────────────────────────────── */
+        /* -- SELECT ----------------------------------- */
         if (field.type === "select" && field.options) {
           return (
             <FormSelect
@@ -70,7 +69,7 @@ export default function FormModal<T extends Record<string, any>>({
           );
         }
 
-        /* ── TEXTAREA ───────────────────────────────── */
+        /* -- TEXTAREA --------------------------------- */
         if (field.type === "textarea") {
           return (
             <div key={String(field.name)} className="mb-2">
@@ -95,7 +94,7 @@ export default function FormModal<T extends Record<string, any>>({
           );
         }
 
-        /* ── DEFAULT: text / email / number / password ── */
+        /* -- DEFAULT: text / email / number / password -- */
         return (
           <FormInput
             key={String(field.name)}

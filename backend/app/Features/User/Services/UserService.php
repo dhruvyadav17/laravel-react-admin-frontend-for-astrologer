@@ -17,14 +17,15 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UserService
 {
-    /* ── List ───────────────────────────────────── */
+    /* -- List ------------------------------------- */
     public function paginate(Request $request): array
     {
         $query = UserQuery::withRoles();
         $query = UserQuery::search($query, $request->search);
         $query = UserQuery::latest($query);
 
-        $paginator = $query->paginate($request->per_page ?? 10);
+        $perPage   = min(max((int) ($request->per_page ?? 10), 5), 100); // clamp 5-100
+        $paginator = $query->paginate($perPage);
 
         return [
             'data' => $paginator->items(),
@@ -32,7 +33,7 @@ class UserService
         ];
     }
 
-    /* ── Create base ────────────────────────────── */
+    /* -- Create base ------------------------------ */
     protected function createBase(array $data): User
     {
         return User::create([
@@ -45,7 +46,7 @@ class UserService
         ]);
     }
 
-    /* ── Create ─────────────────────────────────── */
+    /* -- Create ----------------------------------- */
     public function create(array $data): User
     {
         return DB::transaction(function () use ($data) {
@@ -76,7 +77,7 @@ class UserService
         });
     }
 
-    /* ── Admin Create ───────────────────────────── */
+    /* -- Admin Create ----------------------------- */
     public function createAdmin(array $data): array
     {
         $password = Str::random(12);
@@ -99,24 +100,24 @@ class UserService
         return ['user' => $user, 'password' => $password];
     }
 
-    /* ── Update ─────────────────────────────────── */
-    // FIX BUG-14: pehle ...$data spread tha — sabkuch user model pe jaata tha
-    //             Ab sirf allowed user fields explicitly update karo
+    /* -- Update ----------------------------------- */
+    // FIX BUG-14: used to spread ...$data -- everything went to user model unsafely
+    //             Now explicitly update only allowed user fields
     public function update(User $user, array $data): User
     {
         return DB::transaction(function () use ($user, $data) {
 
-            // Password — only update if provided
+            // Password -- only update if provided
             $userFields = ['name' => $data['name'] ?? $user->name];
 
             if (!empty($data['password'])) {
                 $userFields['password'] = Hash::make($data['password']);
             }
 
-            // FIX: Sirf user-level fields update karo — no spreading
+            // FIX: Update only user-level fields -- no spreading
             $user->update($userFields);
 
-            // Astrologer profile — separate update
+            // Astrologer profile -- separate update
             if ($user->hasRole('astrologer')) {
                 Astrologer::updateOrCreate(
                     ['user_id' => $user->id],
@@ -146,7 +147,7 @@ class UserService
         });
     }
 
-    /* ── Delete / Restore ───────────────────────── */
+    /* -- Delete / Restore ------------------------- */
     public function delete(User $user): void
     {
         $user->delete();
@@ -159,7 +160,7 @@ class UserService
         $this->clearUserCache();
     }
 
-    /* ── Roles ──────────────────────────────────── */
+    /* -- Roles ------------------------------------ */
     public function assignRoles(User $user, array $roles): void
     {
         $user->syncRoles($roles);
@@ -168,7 +169,7 @@ class UserService
         $this->clearUserCache();
     }
 
-    /* ── Permissions ────────────────────────────── */
+    /* -- Permissions ------------------------------ */
     public function assignPermissions(User $user, array $permissions): void
     {
         DB::transaction(function () use ($user, $permissions) {
@@ -188,7 +189,7 @@ class UserService
         ];
     }
 
-    /* ── Cache ──────────────────────────────────── */
+    /* -- Cache ------------------------------------ */
     protected function clearUserCache(): void
     {
         Cache::forget('users_list');

@@ -1,9 +1,14 @@
-// PATH: src/types/models.ts
-// FIX: Consultation + ChatMessage types yahan consolidated
-//   Was duplicated in consultation.api.ts → drift risk
-// FIX: ConsultationStatus type add kiya
-// FIX: Strict readonly for options arrays
-
+/**
+ * Shared TypeScript types for all API models.
+ *
+ * These interfaces mirror the JSON shape returned by the Laravel API.
+ * Keep them in sync with the corresponding Eloquent models and API Resources.
+ *
+ * TO ADD A NEW MODEL:
+ * 1. Define the interface here.
+ * 2. Add RTK Query tags for cache invalidation in the relevant api/*.ts file.
+ * 3. Add the backend model, migration, and resource if needed.
+ */
 export type ID = number;
 
 export type ConsultationStatus =
@@ -12,7 +17,7 @@ export type ConsultationStatus =
 
 export type ConsultationType = 'chat' | 'call' | 'video' | 'all';
 
-/* ── User ──────────────────────────────────── */
+/* -- User ------------------------------------ */
 export interface User {
   id:                ID;
   name:              string;
@@ -28,7 +33,7 @@ export interface User {
   deleted_at:        string | null;
 }
 
-/* ── Astrologer ────────────────────────────── */
+/* -- Astrologer ------------------------------ */
 export interface Astrologer {
   id:                   ID;
   user_id:              ID;
@@ -68,7 +73,7 @@ export interface AstrologerFilters {
   page?:              number;
 }
 
-/* ── Schedule ──────────────────────────────── */
+/* -- Schedule -------------------------------- */
 export interface AstrologerSchedule {
   id:          ID;
   day_of_week: number;
@@ -77,7 +82,7 @@ export interface AstrologerSchedule {
   is_active:   boolean;
 }
 
-/* ── Review ────────────────────────────────── */
+/* -- Review ---------------------------------- */
 export interface Review {
   id:         ID;
   rating:     number;
@@ -90,7 +95,7 @@ export interface Review {
   };
 }
 
-/* ── Consultation (single source of truth) ── */
+/* -- Consultation (single source of truth) -- */
 export interface Consultation {
   id:                ID;
   type:              Exclude<ConsultationType, 'all'>;
@@ -101,13 +106,15 @@ export interface Consultation {
   total_amount?:     number;
   duration_minutes?: number;
   started_at?:       string;
+  room_id?:          string | null;
+  call_status?:      'idle' | 'ringing' | 'active' | 'ended' | null;
   ended_at?:         string;
   created_at:        string;
   user?:             Pick<User, 'id' | 'name' | 'profile_image'>;
   astrologer?:       Pick<Astrologer, 'id' | 'name' | 'profile_image' | 'expertise' | 'price_per_minute'>;
 }
 
-/* ── Chat Message ──────────────────────────── */
+/* -- Chat Message ---------------------------- */
 export interface ChatMessage {
   id:         ID;
   message:    string;
@@ -117,7 +124,7 @@ export interface ChatMessage {
   sender:     Pick<User, 'id' | 'name' | 'profile_image'>;
 }
 
-/* ── Role / Permission ─────────────────────── */
+/* -- Role / Permission ----------------------- */
 export interface Role {
   id:         ID;
   name:       string;
@@ -130,7 +137,7 @@ export interface Permission {
   name: string;
 }
 
-/* ── API Responses ─────────────────────────── */
+/* -- API Responses --------------------------- */
 export interface ApiResponse<T = unknown> {
   success:     boolean;
   message:     string;
@@ -153,7 +160,16 @@ export interface PaginatedResponse<T> {
   pagination: Pagination | null;
 }
 
-/* ── Form ──────────────────────────────────── */
+/* -- Form ------------------------------------ */
+export interface ConsultationRecording {
+  id:               number;
+  type:             'audio' | 'video';
+  duration_seconds: number;
+  size_bytes:       number;
+  url:              string;
+  created_at:       string;
+}
+
 export type FieldType =
   | 'text' | 'email' | 'password' | 'number'
   | 'textarea' | 'select' | 'toggle';
@@ -171,7 +187,7 @@ export interface FieldConfig<T = Record<string, unknown>> {
   rows?:        number;
 }
 
-/* ── Sidebar ───────────────────────────────── */
+/* -- Sidebar --------------------------------- */
 export interface SidebarItem {
   label:       string;
   path?:       string;

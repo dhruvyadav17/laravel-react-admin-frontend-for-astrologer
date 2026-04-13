@@ -1,6 +1,5 @@
 <?php
-// PATH: database/migrations/2026_04_01_000001_create_astrologer_reviews_table.php
-// NEW FILE — Review system ke liye. rating/total_reviews fields the lekin koi reviews table nahi tha.
+// Creates the reviews table -- rating/total_reviews fields existed on astrologers but had no backing table
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

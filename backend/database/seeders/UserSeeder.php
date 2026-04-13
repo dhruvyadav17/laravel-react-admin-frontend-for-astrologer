@@ -1,7 +1,6 @@
 <?php
-// PATH: database/seeders/UserSeeder.php
-// UPDATE: AstrologerFactory use kiya, consultation_type/is_available add kiye, 5 factory astrologers
-// REASON: Pehle hardcoded 1 astrologer tha. Factory se realistic seed data milti hai.
+// Generates test users, astrologers, and a default test customer
+// Uses factories for realistic seed data instead of a single hardcoded astrologer
 
 namespace Database\Seeders;
 
@@ -14,10 +13,10 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ── 10 random customers ─────────────────────────────────
+        // -- 10 random customers ---------------------------------
         User::factory(10)->customer()->create();
 
-        // ── Main test astrologer (deterministic email) ───────────
+        // -- Main test astrologer (deterministic email) -----------
         $aUser = User::updateOrCreate(
             ['email' => 'astrologer@test.com'],
             [
@@ -51,13 +50,13 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // ── 5 factory astrologers (realistic data) ───────────────
-        // NEW: Factory se realistic test astrologers
+        // -- 5 factory astrologers (realistic data) ---------------
+        // Generate 5 realistic test astrologers via factory
         User::factory(5)->astrologer()->create()->each(function ($user) {
             \App\Models\Astrologer::factory()->create(['user_id' => $user->id]);
         });
 
-        // ── Test customer ────────────────────────────────────────
+        // -- Test customer ----------------------------------------
         $cUser = User::updateOrCreate(
             ['email' => 'user@test.com'],
             [

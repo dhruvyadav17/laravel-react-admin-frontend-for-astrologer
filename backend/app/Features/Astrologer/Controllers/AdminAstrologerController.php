@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Features/Astrologer/Controllers/AdminAstrologerController.php
 
 namespace App\Features\Astrologer\Controllers;
 
@@ -18,7 +17,7 @@ class AdminAstrologerController extends Controller
 
     public function __construct(protected AstrologerService $service) {}
 
-    /* ── Index ──────────────────────────────────── */
+    /* -- Index ------------------------------------ */
     public function index(Request $request)
     {
         $list = $this->service->adminList(
@@ -32,7 +31,7 @@ class AdminAstrologerController extends Controller
         );
     }
 
-    /* ── Create ─────────────────────────────────── */
+    /* -- Create ----------------------------------- */
     public function store(AstrologerRequest $request)
     {
         $result = $this->service->createWithUser($request->validated());
@@ -49,28 +48,28 @@ class AdminAstrologerController extends Controller
         );
     }
 
-    /* ── Update ─────────────────────────────────── */
+    /* -- Update ----------------------------------- */
     public function update(AstrologerRequest $request, Astrologer $astrologer)
     {
         $updated = $this->service->update($astrologer, $request->validated());
         return $this->success('Astrologer updated', new AstrologerResource($updated));
     }
 
-    /* ── Soft Delete ────────────────────────────── */
+    /* -- Soft Delete ------------------------------ */
     public function destroy(Astrologer $astrologer)
     {
         $this->service->delete($astrologer);
         return $this->success('Astrologer deleted');
     }
 
-    /* ── Restore ────────────────────────────────── */
+    /* -- Restore ---------------------------------- */
     public function restore(int $id)
     {
         $astrologer = $this->service->restore($id);
         return $this->success('Astrologer restored', new AstrologerResource($astrologer));
     }
 
-    /* ── Verify / Unverify ──────────────────────── */
+    /* -- Verify / Unverify ------------------------ */
     public function verify(Astrologer $astrologer)
     {
         $astrologer->update(['is_verified' => !$astrologer->is_verified]);

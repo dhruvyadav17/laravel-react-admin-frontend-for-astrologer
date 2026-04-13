@@ -1,6 +1,5 @@
 <?php
-// PATH: database/factories/AstrologerFactory.php
-// NEW FILE — Seeders mein hardcoded data tha. Factory se realistic test data milega.
+// Generates realistic astrologer test data for seeding
 
 namespace Database\Factories;
 

@@ -1,6 +1,3 @@
-// PATH: src/pages/errors/NotFound.tsx
-// IMPROVEMENT: Generic error page ko proper 404 UI se replace kiya
-
 import { Link, useNavigate } from "react-router-dom";
 
 export default function NotFound() {
@@ -15,10 +12,10 @@ export default function NotFound() {
           404
         </div>
 
-        <i className="fas fa-search text-muted fa-3x d-block mb-3" style={{ marginTop: -20 }} />
+        <i className="fas fa-search t-muted fa-3x d-block mb-3" style={{ marginTop: -20 }} />
 
         <h3 className="fw-bold mb-2">Page Not Found</h3>
-        <p className="text-muted mb-4">
+        <p className="t-muted mb-4">
           The page you're looking for doesn't exist or has been moved.
         </p>
 

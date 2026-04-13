@@ -37,8 +37,8 @@ export default function Pagination({
   return (
     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
       {/* LEFT INFO */}
-      <div className="text-muted small">
-        Page {current_page} of {last_page} • Total {total}
+      <div className="t-muted small">
+        Page {current_page} of {last_page} * Total {total}
       </div>
 
       {/* RIGHT CONTROLS */}

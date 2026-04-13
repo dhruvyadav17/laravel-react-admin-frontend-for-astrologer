@@ -1,7 +1,16 @@
-// PATH: src/auth/hooks/useAuth.ts
-// FIX F2: isAstrologer helper missing tha — UserGuard needs it
-// IMPROVEMENT: token selector add kiya
-
+/**
+ * useAuth -- reads the current user from the Redux auth slice.
+ *
+ * Returns:
+ *   user         -- full User object or null
+ *   isAuth       -- logged in?
+ *   isAdmin      -- has admin or super-admin role?
+ *   isAstrologer -- has astrologer role?
+ *   token        -- Sanctum Bearer token (for manual fetch() calls)
+ *
+ * Does NOT perform any network requests. The auth state is populated by
+ * LoginForm -> loginThunk -> authSlice.ts.
+ */
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 

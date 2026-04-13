@@ -1,6 +1,5 @@
 <?php
-// PATH: app/Models/AstrologerSchedule.php
-// NEW FILE — Weekly schedule system ke liye model
+// NEW FILE -- Weekly schedule system ke liye model
 
 namespace App\Models;
 

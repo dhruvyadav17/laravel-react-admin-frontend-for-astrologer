@@ -1,67 +1,67 @@
-// PATH: src/user/components/BookingModal.tsx
-// NEW: Booking modal — user astrologer ko book karta hai
-// Type select (chat/call/video), note, price estimate, submit
-
-import { useState }               from "react";
-import { useNavigate }            from "react-router-dom";
-import { useBookConsultationMutation } from "../../store/api/consultation.api";
-import { useAuth }                from "../../auth/hooks/useAuth";
-import { toast }                  from "react-toastify";
+/**
+ * BookingModal -- shown when a user clicks "Talk Now" on an astrologer.
+ *
+ * Lets the user choose consultation type (Chat / Call / Video),
+ * add an optional note, and see their wallet balance vs the rate.
+ *
+ * On confirmation: POST /consultations -- creates the consultation and
+ * sends a notification to the astrologer.
+ *
+ * TO ADD SCHEDULED BOOKING: add a date-time picker here and pass
+ * scheduled_at to the bookConsultation mutation body.
+ * Backend: add scheduled_at column to consultations table.
+ */
+import { useState }                     from "react";
+import { useNavigate }                  from "react-router-dom";
+import { useBookConsultationMutation }  from "../../store/api/consultation.api";
+import { useGetWalletQuery }             from "../../store/api/wallet.api";
+import { useAuth }                        from "../../auth/hooks/useAuth";
+import { toast }                        from "react-toastify";
 
 type Astrologer = {
-  id:               number;
-  name:             string;
-  price_per_minute: number;
+  id:                number;
+  name:              string;
+  price_per_minute:  number;
   consultation_type?: string;
 };
 
-type Props = {
-  astrologer: Astrologer;
-  onClose:    () => void;
-};
+type Props = { astrologer: Astrologer; onClose: () => void };
 
-const TYPE_OPTIONS = [
-  { value: "chat",  icon: "fa-comment", label: "Chat",       desc: "Text message karein" },
-  { value: "call",  icon: "fa-phone",   label: "Voice Call", desc: "Phone pe baat karein" },
+const TYPES = [
+  { value: "chat",  icon: "fa-comment", label: "Chat",       desc: "Send text messages" },
+  { value: "call",  icon: "fa-phone",   label: "Voice Call", desc: "Talk over the phone" },
   { value: "video", icon: "fa-video",   label: "Video Call", desc: "Face-to-face session" },
-];
+] as const;
 
 export default function BookingModal({ astrologer, onClose }: Props) {
-  const navigate              = useNavigate();
+  const navigate = useNavigate();
   const { isAuth }            = useAuth();
+  const { data: wallet }      = useGetWalletQuery(undefined, { skip: !isAuth });
+  const balance               = wallet?.balance ?? 0;
+  const [type, setType]       = useState<"chat" | "call" | "video">("chat");
+  const [note, setNote]       = useState("");
   const [book, { isLoading }] = useBookConsultationMutation();
 
-  const [type, setType]     = useState<"chat" | "call" | "video">("chat");
-  const [note, setNote]     = useState("");
-
-  // Filter available types based on astrologer's consultation_type
-  const availableTypes = TYPE_OPTIONS.filter((t) => {
+  // Filter available types
+  const availableTypes = TYPES.filter(t => {
     const ct = astrologer.consultation_type;
-    return !ct || ct === "all" || ct === t.value;
+    if (!ct || ct === "all") return true;
+    return t.value === ct;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isAuth) {
-      toast.info("Please login to book a consultation");
-      onClose();
-      navigate("/login");
-      return;
-    }
-
     try {
       const result = await book({
         astrologer_id: astrologer.id,
         type,
-        user_note: note.trim() || undefined,
+        user_note: note || undefined,
       }).unwrap();
-
-      toast.success("Booking request sent! Astrologer will accept shortly.");
+      toast.success("Consultation request sent!");
       onClose();
       navigate(`/consultations/${result.id}`);
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Booking failed. Please try again.");
+      toast.error(err?.data?.message ?? "Booking failed. Try again.");
     }
   };
 
@@ -69,58 +69,58 @@ export default function BookingModal({ astrologer, onClose }: Props) {
     /* Backdrop */
     <div
       className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-      style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
-      onClick={onClose}
+      style={{ background: "rgba(0,0,0,0.55)", zIndex: 1050 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
     >
-      {/* Modal box */}
-      <div
-        className="app-card"
-        style={{ width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="rounded-4 shadow-lg p-4"
+        style={{
+          width: "100%", maxWidth: 420,
+          background: "var(--surf)",
+          border: "1px solid var(--bdr)",
+        }}>
+
         {/* Header */}
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h5 className="fw-bold mb-0">Book Consultation</h5>
-            <p className="text-muted small mb-0">with {astrologer.name}</p>
+            <h5 className="fw-bold mb-0 t-main">Book Consultation</h5>
+            <p className="t-muted small mb-0">with {astrologer.name}</p>
           </div>
-          <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>
-            <i className="fas fa-times" />
-          </button>
+          <button className="btn-close" onClick={onClose} />
         </div>
 
         <form onSubmit={handleSubmit}>
           {/* Consultation type */}
           <div className="mb-4">
-            <label className="form-label fw-semibold">Consultation Type</label>
-            <div className="d-flex flex-column gap-2">
-              {availableTypes.map((t) => (
-                <label
-                  key={t.value}
-                  className={`d-flex align-items-center gap-3 p-3 rounded border cursor-pointer
-                    ${type === t.value ? "border-danger bg-danger bg-opacity-10" : "border-secondary"}`}
-                  style={{ cursor: "pointer" }}
-                >
+            <label className="form-label fw-semibold t-muted" style={{ fontSize: 13 }}>
+              Choose Type
+            </label>
+            <div className="d-flex gap-2">
+              {availableTypes.map(t => (
+                <label key={t.value} className="flex-grow-1" style={{ cursor: "pointer" }}>
                   <input
                     type="radio"
                     name="type"
                     value={t.value}
                     checked={type === t.value}
-                    onChange={() => setType(t.value as "chat" | "call" | "video")}
+                    onChange={() => setType(t.value)}
                     className="d-none"
                   />
-                  <div className={`rounded-circle d-flex align-items-center justify-content-center
-                    ${type === t.value ? "bg-danger text-white" : "bg-light text-muted"}`}
-                    style={{ width: 36, height: 36, flexShrink: 0 }}>
-                    <i className={`fas ${t.icon}`} style={{ fontSize: 14 }} />
+                  <div className="text-center p-3 rounded-3 h-100"
+                    style={{
+                      border: `2px solid ${type === t.value ? "var(--primary)" : "var(--bdr2)"}`,
+                      background: type === t.value ? "var(--red-tint)" : "var(--surf2)",
+                      transition: "all .15s",
+                    }}>
+                    <i className={`fas ${t.icon} mb-1 d-block`}
+                      style={{
+                        fontSize: 18,
+                        color: type === t.value ? "var(--primary)" : "var(--txt-m)",
+                      }} />
+                    <div className="fw-semibold" style={{ fontSize: 12, color: type === t.value ? "var(--primary)" : "var(--txt)" }}>
+                      {t.label}
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--txt-m)" }}>{t.desc}</div>
                   </div>
-                  <div className="flex-grow-1">
-                    <div className="fw-semibold small">{t.label}</div>
-                    <div className="text-muted" style={{ fontSize: 11 }}>{t.desc}</div>
-                  </div>
-                  {type === t.value && (
-                    <i className="fas fa-check-circle text-danger" />
-                  )}
                 </label>
               ))}
             </div>
@@ -128,52 +128,55 @@ export default function BookingModal({ astrologer, onClose }: Props) {
 
           {/* Note */}
           <div className="mb-4">
-            <label className="form-label fw-semibold">
-              Your Question <span className="text-muted fw-normal">(optional)</span>
+            <label className="form-label fw-semibold t-muted" style={{ fontSize: 13 }}>
+              Your Note <span className="t-light fw-normal">(optional)</span>
             </label>
             <textarea
               className="form-control"
               rows={3}
+              placeholder="Briefly describe your question or concern..."
               value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Apna sawaal ya concern briefly likhein — astrologer se pehle share ho jaayega..."
+              onChange={e => setNote(e.target.value)}
               maxLength={500}
+              style={{ resize: "none" }}
             />
-            <div className="form-text">{note.length}/500</div>
           </div>
+
+          {/* Wallet balance */}
+          {isAuth && (
+            <div className="d-flex justify-content-between align-items-center mb-3 px-1">
+              <span className="t-muted small">Your wallet balance</span>
+              <span className="fw-semibold" style={{ color: balance >= astrologer.price_per_minute ? "#16a34a" : "#dc2626" }}>
+                ₹{balance.toFixed(2)}
+                {balance < astrologer.price_per_minute && (
+                  <span className="ms-2 small" style={{ color: "#dc2626" }}>
+                    ⚠️ Low
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
 
           {/* Price estimate */}
-          <div className="mb-4 p-3 rounded bg-light">
-            <div className="fw-semibold small mb-2">Price Info</div>
-            <div className="d-flex justify-content-between text-muted small mb-1">
-              <span>Rate</span>
-              <span className="fw-semibold text-dark">₹{astrologer.price_per_minute}/min</span>
-            </div>
-            <div className="d-flex justify-content-between text-muted small mb-1">
-              <span>5 min estimate</span>
-              <span>₹{astrologer.price_per_minute * 5}</span>
-            </div>
-            <div className="d-flex justify-content-between text-muted small">
-              <span>15 min estimate</span>
-              <span>₹{astrologer.price_per_minute * 15}</span>
-            </div>
-            <p className="text-muted mt-2 mb-0" style={{ fontSize: 11 }}>
-              <i className="fas fa-info-circle me-1" />
-              Billing actual duration pe based hoga. Aap kisi bhi time consultation end kar sakte hain.
-            </p>
+          <div className="p-3 rounded-3 mb-4 d-flex justify-content-between align-items-center"
+            style={{ background: "var(--surf2)", border: "1px solid var(--bdr)" }}>
+            <span className="t-muted small">Rate</span>
+            <span className="fw-bold" style={{ color: "var(--primary)", fontSize: 18 }}>
+              ₹{astrologer.price_per_minute}
+              <span className="t-muted fw-normal" style={{ fontSize: 13 }}>/min</span>
+            </span>
           </div>
 
-          {/* Submit */}
+          {/* Actions */}
           <div className="d-flex gap-2">
             <button type="button" className="btn btn-outline-secondary flex-shrink-0" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-call w-100" disabled={isLoading}>
-              {isLoading ? (
-                <><span className="spinner-border spinner-border-sm me-2" />Sending Request...</>
-              ) : (
-                <><i className="fas fa-paper-plane me-2" />Send Booking Request</>
-              )}
+            <button type="submit" className="btn-call btn flex-grow-1 fw-semibold" disabled={isLoading}>
+              {isLoading
+                ? <><span className="spinner-border spinner-border-sm me-2" />Booking...</>
+                : <><i className="fas fa-phone me-2" />Book Now</>
+              }
             </button>
           </div>
         </form>

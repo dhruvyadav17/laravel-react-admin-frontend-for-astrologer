@@ -1,9 +1,8 @@
 <?php
-// PATH: app/Http/Controllers/Api/WalletController.php
 // User wallet: balance, recharge, transaction history
-// GET  /api/v1/wallet          — balance + summary
-// POST /api/v1/wallet/recharge — add money (demo — no payment gateway)
-// GET  /api/v1/wallet/transactions — history
+// GET  /api/v1/wallet          -- balance + summary
+// POST /api/v1/wallet/recharge -- add money (demo -- no payment gateway)
+// GET  /api/v1/wallet/transactions -- history
 
 namespace App\Http\Controllers\Api;
 
@@ -18,7 +17,7 @@ class WalletController extends Controller
 {
     public function __construct(protected WalletService $walletService) {}
 
-    /* ── GET: Balance + summary ─────────────────── */
+    /* -- GET: Balance + summary ------------------- */
     public function show(Request $request): JsonResponse
     {
         $user   = $request->user();
@@ -31,7 +30,7 @@ class WalletController extends Controller
         ]);
     }
 
-    /* ── POST: Recharge (demo — no real payment) ─ */
+    /* -- POST: Recharge (demo -- no real payment) - */
     public function recharge(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -50,7 +49,7 @@ class WalletController extends Controller
         ], [], 201);
     }
 
-    /* ── GET: Transaction history ───────────────── */
+    /* -- GET: Transaction history ----------------- */
     public function transactions(Request $request): JsonResponse
     {
         $paginator = WalletTransaction::where('user_id', $request->user()->id)

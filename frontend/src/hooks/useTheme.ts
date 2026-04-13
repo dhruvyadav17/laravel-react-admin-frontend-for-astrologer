@@ -1,5 +1,4 @@
-// PATH: src/hooks/useTheme.ts
-// Dark mode toggle — Bootstrap data-bs-theme attribute
+// Dark mode toggle -- Bootstrap data-bs-theme attribute
 // Persists in localStorage
 
 import { useState, useEffect } from 'react';

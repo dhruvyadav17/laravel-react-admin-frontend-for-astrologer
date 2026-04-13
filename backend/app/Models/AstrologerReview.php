@@ -1,6 +1,5 @@
 <?php
-// PATH: app/Models/AstrologerReview.php
-// NEW FILE — Review system ke liye model
+// NEW FILE -- Review system ke liye model
 
 namespace App\Models;
 

@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Models/Wallet.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;

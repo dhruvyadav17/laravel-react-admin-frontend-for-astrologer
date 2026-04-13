@@ -1,9 +1,6 @@
-// PATH: src/pages/auth/VerifyEmail.tsx
-// FIX: Pehle bare axios import use karta tha — inconsistent (baaki sab RTK Query use karte hain)
-//      Ab fetch directly use kiya (RTK hooks yahan use nahi ho sakte — no auth token needed)
-// IMPROVEMENT: Loading / success / error states properly handle kiye
+// FIX: Pehle bare axios import use karta tha -- inconsistent (baaki sab RTK Query use karte hain)
+//      Ab fetch directly use kiya (RTK hooks yahan use nahi ho sakte -- no auth token needed)
 //              Pehle koi feedback nahi tha
-// IMPROVEMENT: Link to login after verification
 
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
@@ -19,7 +16,7 @@ export default function VerifyEmail() {
     const id   = params.get("id");
     const hash = params.get("hash");
 
-    /* No params — just show the "check your email" message */
+    /* No params -- just show the "check your email" message */
     if (!id || !hash) {
       setState("missing");
       return;
@@ -47,14 +44,14 @@ export default function VerifyEmail() {
       });
   }, []);
 
-  /* ── Rendering ─────────────────────────────── */
+  /* -- Rendering ------------------------------- */
   return (
     <div className="container mt-5 text-center" style={{ maxWidth: 480 }}>
       {state === "verifying" && (
         <>
           <div className="spinner-border text-primary mb-3" role="status" />
-          <h5>Verifying your email…</h5>
-          <p className="text-muted small">Please wait a moment.</p>
+          <h5>Verifying your email...</h5>
+          <p className="t-muted small">Please wait a moment.</p>
         </>
       )}
 
@@ -62,11 +59,11 @@ export default function VerifyEmail() {
         <>
           <i className="fas fa-envelope-open text-primary fa-3x mb-3 d-block" />
           <h4 className="fw-bold">Check your inbox</h4>
-          <p className="text-muted">
+          <p className="t-muted">
             A verification link has been sent to your email address.
             Click the link to verify your account.
           </p>
-          <p className="text-muted small">
+          <p className="t-muted small">
             Didn't receive the email? Check your spam folder or{" "}
             <Link to="/login">login to resend</Link>.
           </p>
@@ -77,7 +74,7 @@ export default function VerifyEmail() {
         <>
           <i className="fas fa-check-circle text-success fa-3x mb-3 d-block" />
           <h4 className="fw-bold">Email Verified!</h4>
-          <p className="text-muted">{message}</p>
+          <p className="t-muted">{message}</p>
           <Link to="/login" className="btn btn-primary mt-2">
             <i className="fas fa-sign-in-alt me-2" />
             Login to your account
@@ -89,7 +86,7 @@ export default function VerifyEmail() {
         <>
           <i className="fas fa-times-circle text-danger fa-3x mb-3 d-block" />
           <h4 className="fw-bold">Verification Failed</h4>
-          <p className="text-muted">{message}</p>
+          <p className="t-muted">{message}</p>
           <Link to="/login" className="btn btn-outline-primary mt-2">
             Back to Login
           </Link>

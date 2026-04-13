@@ -1,8 +1,5 @@
-// PATH: src/pages/auth/ForgotPassword.tsx
-// IMPROVEMENT: Pehle toast sirf dikhta tha — user baar baar submit karta tha
-//              Ab sent state — "check your email" screen dikhta hai after submit
+//              Ab sent state -- "check your email" screen dikhta hai after submit
 //              Resend option bhi diya
-// IMPROVEMENT: Back to login link add kiya
 
 import { useState }        from "react";
 import { Link }            from "react-router-dom";
@@ -35,18 +32,18 @@ export default function ForgotPassword() {
     }
   };
 
-  /* ── Sent state ───────────────────────────────── */
+  /* -- Sent state --------------------------------- */
   if (sent) {
     return (
       <div className="container mt-5 text-center" style={{ maxWidth: 420 }}>
         <i className="fas fa-envelope-open text-primary fa-3x mb-3 d-block" />
         <h5 className="fw-bold">Check your inbox</h5>
-        <p className="text-muted">
+        <p className="t-muted">
           We've sent a password reset link to{" "}
           <strong>{email}</strong>.
           Click the link in the email to reset your password.
         </p>
-        <p className="text-muted small">
+        <p className="t-muted small">
           Didn't receive it? Check your spam folder or{" "}
           <button
             className="btn btn-link btn-sm p-0 text-decoration-none"
@@ -62,16 +59,16 @@ export default function ForgotPassword() {
     );
   }
 
-  /* ── Form ─────────────────────────────────────── */
+  /* -- Form --------------------------------------- */
   return (
     <div className="container mt-5" style={{ maxWidth: 420 }}>
       <h4 className="mb-1 fw-bold">Forgot Password</h4>
-      <p className="text-muted small mb-4">
+      <p className="t-muted small mb-4">
         Enter your email and we'll send you a reset link.
       </p>
 
       {error && (
-        <div className="alert alert-danger py-2 small">
+        <div className="d-flex align-items-start gap-2 px-3 py-2 rounded-3 small" style={{ background: "rgba(239,68,68,.10)", border: "1px solid rgba(239,68,68,.3)", color: "#dc2626" }}>
           <i className="fas fa-exclamation-circle me-2" />
           {error}
         </div>
@@ -104,7 +101,7 @@ export default function ForgotPassword() {
         </button>
 
         <div className="text-center">
-          <Link to="/login" className="small text-muted">
+          <Link to="/login" className="small t-muted">
             Back to Login
           </Link>
         </div>

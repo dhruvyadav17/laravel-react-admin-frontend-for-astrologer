@@ -1,4 +1,3 @@
-// PATH: src/features/admin/permissions/PermissionsPage.tsx
 // FIX: mutations format aligned with new AdminCrudPage API
 
 import AdminCrudPage  from '../../../admin/components/crud/AdminCrudPage';

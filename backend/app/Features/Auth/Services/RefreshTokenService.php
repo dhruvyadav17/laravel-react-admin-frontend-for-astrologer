@@ -1,8 +1,6 @@
 <?php
-// PATH: app/Features/Auth/Services/RefreshTokenService.php
-// FIX B4: Refresh response mein new refresh_token nahi tha
-//   Old token revoke hota tha, naya nahi milta → next refresh fail → user logout
-// FIX: New refresh_token bhi generate karo (rotation pattern)
+// FIX B4: New refresh_token was missing from refresh response
+//   Old token was revoked but new one not returned → next refresh failed → forced logout
 
 namespace App\Features\Auth\Services;
 
@@ -32,7 +30,7 @@ class RefreshTokenService
 
         $user = $record->user;
 
-        // Purana token revoke karo (single-use)
+        // Revoke old token (single-use)
         $record->update(['revoked_at' => now()]);
 
         // Naya access token

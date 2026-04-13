@@ -1,4 +1,18 @@
-// PATH: src/store/api/wallet.api.ts
+/**
+ * Wallet API -- RTK Query endpoints
+ *
+ * Handles balance fetch, recharge, and transaction history.
+ * The wallet is pre-paid: users must recharge before booking a session.
+ *
+ * PAYMENT GATEWAY INTEGRATION
+ * ----------------------------
+ * To integrate Razorpay / Stripe:
+ * 1. Add a createOrder mutation -> POST /wallet/order (returns order_id).
+ * 2. Open the payment gateway modal with order_id.
+ * 3. On gateway success callback, call verifyPayment mutation
+ *    -> POST /wallet/verify (backend confirms + credits wallet).
+ * 4. Invalidate "Wallet" tag to refresh balance display.
+ */
 import { baseApi } from './baseApi';
 
 export interface WalletSummary {

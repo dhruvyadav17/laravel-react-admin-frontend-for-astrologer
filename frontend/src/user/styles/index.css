@@ -1,275 +1,541 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-/* ================= ROOT ================= */
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS — both modes in one place
+═══════════════════════════════════════════════════ */
 :root {
-  --bg: #f8f9fa;
+  --primary:      #e63946;
+  --primary-dk:   #c92f3a;
+  --accent:       #f1c40f;
 
-  --primary: #e63946;
-  --primary-dark: #c92f3a;
+  --radius:    16px;
+  --radius-sm: 10px;
 
-  --secondary: #1d3557;
-  --accent: #f1c40f;
-
-  --text-dark: #212529;
-  --text-muted: #6c757d;
-  --border: #e5e7eb;
-
-  --radius: 14px;
+  /* light defaults */
+  --bg:        #f2f3f7;
+  --surf:      #ffffff;
+  --surf2:     #f6f7fb;
+  --surf3:     #eef0f5;
+  --bdr:       rgba(0,0,0,0.08);
+  --bdr2:      rgba(0,0,0,0.13);
+  --txt:       #111827;
+  --txt-m:     #4b5563;
+  --txt-l:     #9ca3af;
+  --shadow:    0 2px 16px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  --red-tint:  rgba(230,57,70,0.07);
+  --red-bdr:   rgba(230,57,70,0.20);
 }
 
-/* ================= GLOBAL ================= */
+[data-bs-theme="dark"] {
+  --bg:        #0d0d1a;
+  --surf:      #181828;
+  --surf2:     #1f1f33;
+  --surf3:     #272742;
+  --bdr:       rgba(255,255,255,0.07);
+  --bdr2:      rgba(255,255,255,0.13);
+  --txt:       #eeeeff;
+  --txt-m:     #9499b8;
+  --txt-l:     #5c6080;
+  --shadow:    0 2px 16px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.55);
+  --red-tint:  rgba(230,57,70,0.10);
+  --red-bdr:   rgba(230,57,70,0.28);
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL
+═══════════════════════════════════════════════════ */
+*,*::before,*::after { box-sizing: border-box; }
+
 body {
-  font-family: "Inter", sans-serif;
-  background: var(--bg);
-  color: var(--text-dark);
+  font-family: "Inter", -apple-system, sans-serif;
+  background:  var(--bg);
+  color:       var(--txt);
+  line-height: 1.65;
+  transition:  background .3s, color .3s;
 }
 
-/* ================= TYPO ================= */
+/* text helpers — always use these instead of Bootstrap's */
+.t-main   { color: var(--txt)   !important; }
+.t-muted  { color: var(--txt-m) !important; }
+.t-light  { color: var(--txt-l) !important; }
+.t-red    { color: var(--primary) !important; }
+
+/* ═══════════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════════ */
 .section-title {
   font-weight: 700;
   color: var(--primary);
+  letter-spacing: -.3px;
 }
 
-/* ================= PAGE ================= */
-.page {
-  padding: 20px 0;
-}
-
-/* ================= CARD ================= */
-.app-card {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 20px;
-  border: 1px solid var(--border);
-  transition: 0.3s;
-}
-
-.app-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.08);
-}
-
-/* ================= HEADER ================= */
+/* ═══════════════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════════════ */
 .app-header {
-  position: sticky;
+  position:   sticky;
   top: 0;
-  z-index: 1000;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  backdrop-filter: blur(6px);
+  z-index:    1000;
+  background: linear-gradient(135deg, #e63946, #c92f3a);
+  box-shadow: 0 2px 20px rgba(230,57,70,.35);
 }
 
-/* NAV */
 .nav-link-custom {
-  color: #fff;
+  color: rgba(255,255,255,.9);
   text-decoration: none;
-  position: relative;
-}
-
-.nav-link-custom::after {
-  content: "";
-  height: 2px;
-  width: 0;
-  background: #fff;
-  position: absolute;
-  bottom: -3px;
-  left: 0;
-  transition: 0.3s;
-}
-
-.nav-link-custom:hover::after {
-  width: 100%;
-}
-
-.nav-link-custom.active::after {
-  width: 100%;
-}
-
-/* ================= BUTTON ================= */
-.btn-app {
-  border-radius: 10px;
   font-weight: 500;
-}
-
-.btn-primary-app {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-}
-
-.btn-primary-app:hover {
-  background: var(--primary-dark);
-}
-
-.btn-outline-app {
-  border: 1px solid var(--primary);
-  color: var(--primary);
-}
-
-.btn-outline-app:hover {
-  background: var(--primary);
-  color: #fff;
-}
-
-/* ================= HERO ================= */
-.hero-new {
-  padding: 40px;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, #fff, #f1f3f5);
-}
-
-/* ================= SERVICE ================= */
-.service-card-new {
-  background: #fff;
-  padding: 25px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  transition: 0.3s;
-}
-
-.service-card-new:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-}
-
-.service-icon {
-  font-size: 32px;
-}
-
-/* ================= ASTRO CARD ================= */
-.astro-card-new {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 20px;
-  text-align: center;
-  border: 1px solid var(--border);
-  transition: 0.3s;
-}
-
-.astro-card-new:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-}
-
-/* IMAGE */
-.astro-img-wrap {
-  position: relative;
-  display: inline-block;
-}
-
-.astro-img-wrap img {
-  width: 85px;
-  height: 85px;
-  border-radius: 50%;
-  border: 3px solid var(--primary);
-}
-
-/* ONLINE DOT */
-.online-dot {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ccc;
-  border: 2px solid #fff;
-}
-
-.online-dot.on {
-  background: #2ecc71;
-}
-
-/* RATING */
-.rating-stars {
-  color: var(--accent);
   font-size: 14px;
+  position: relative;
+  transition: color .2s;
+}
+.nav-link-custom:hover { color: #fff; }
+.nav-link-custom::after {
+  content: ""; position: absolute; bottom: -2px; left: 0;
+  width: 0; height: 2px; background: #fff; border-radius: 2px;
+  transition: width .25s;
+}
+.nav-link-custom:hover::after,
+.nav-link-custom.active::after { width: 100%; }
+
+/* ═══════════════════════════════════════════════════
+   CORE CARD
+═══════════════════════════════════════════════════ */
+.app-card {
+  background:    var(--surf);
+  border-radius: var(--radius);
+  padding:       24px;
+  border:        1px solid var(--bdr);
+  box-shadow:    var(--shadow);
+  transition:    transform .25s, box-shadow .25s, background .3s;
+}
+.app-card:hover {
+  transform:  translateY(-3px);
+  box-shadow: var(--shadow-lg);
 }
 
-/* PRICE */
-.price {
+/* ═══════════════════════════════════════════════════
+   SURFACE UTILITIES (replace bg-light everywhere)
+═══════════════════════════════════════════════════ */
+.surf-2 {
+  background:    var(--surf2) !important;
+  border:        1px solid var(--bdr);
+  border-radius: var(--radius-sm);
+}
+.surf-3 {
+  background:    var(--surf3) !important;
+  border:        1px solid var(--bdr);
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════
+   STAT BOX (profile + detail page)
+═══════════════════════════════════════════════════ */
+.stat-box {
+  flex:           1;
+  text-align:     center;
+  padding:        14px 8px;
+  background:     var(--surf2);
+  border:         1px solid var(--bdr);
+  border-radius:  var(--radius-sm);
+}
+.stat-box .num {
+  font-size:   22px;
+  font-weight: 700;
+  color:       var(--txt);
+  line-height: 1;
+}
+.stat-box .lbl {
+  font-size:   11px;
+  font-weight: 500;
+  color:       var(--txt-m);
+  margin-top:  4px;
+  letter-spacing: .3px;
+}
+
+/* ═══════════════════════════════════════════════════
+   INFO ROW (profile account info)
+═══════════════════════════════════════════════════ */
+.info-row {
+  display:       flex;
+  align-items:   center;
+  gap:           14px;
+  padding:       14px 16px;
+  background:    var(--surf2);
+  border:        1px solid var(--bdr);
+  border-radius: var(--radius-sm);
+}
+.info-row .ir-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--red-tint);
+  border: 1px solid var(--red-bdr);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.info-row .ir-icon i { color: var(--primary); font-size: 14px; }
+.info-row .ir-lbl {
+  font-size: 11px; font-weight: 500; color: var(--txt-m);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.info-row .ir-val {
+  font-size: 15px; font-weight: 600; color: var(--txt); margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════
+   QUICK LINK ROW
+═══════════════════════════════════════════════════ */
+.quick-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: var(--radius-sm);
+  text-decoration: none; color: var(--txt);
+  font-size: 14px; font-weight: 500;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.quick-link:hover {
+  background: var(--red-tint);
+  border-color: var(--red-bdr);
   color: var(--primary);
-  font-weight: 600;
+}
+.ql-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--surf2); border: 1px solid var(--bdr);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .2s;
+}
+.quick-link:hover .ql-icon { background: var(--red-tint); border-color: var(--red-bdr); }
+.ql-icon i { color: var(--txt-m); font-size: 13px; transition: color .2s; }
+.quick-link:hover .ql-icon i { color: var(--primary); }
+
+/* ═══════════════════════════════════════════════════
+   ASTROLOGER CARD (listing)
+═══════════════════════════════════════════════════ */
+.astro-card-new {
+  background: var(--surf); border-radius: var(--radius);
+  padding: 22px 18px 18px; border: 1px solid var(--bdr);
+  box-shadow: var(--shadow); transition: transform .25s, box-shadow .25s, border-color .25s;
+  position: relative; overflow: hidden;
+}
+.astro-card-new::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: linear-gradient(90deg, var(--primary), #ff6b7a);
+  opacity: 0; transition: opacity .25s;
+}
+.astro-card-new:hover {
+  transform: translateY(-5px); box-shadow: var(--shadow-lg);
+  border-color: var(--red-bdr);
+}
+.astro-card-new:hover::before { opacity: 1; }
+
+/* avatar ring */
+.astro-img-wrap { position: relative; display: inline-block; }
+.astro-img-wrap img {
+  width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--primary); box-shadow: 0 0 0 3px var(--red-tint);
+  transition: box-shadow .2s;
+}
+.astro-card-new:hover .astro-img-wrap img { box-shadow: 0 0 0 5px var(--red-tint); }
+
+/* online dot */
+.online-dot {
+  position: absolute; bottom: 4px; right: 4px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--bdr2); border: 2.5px solid var(--surf);
+}
+.online-dot.on { background: #22c55e; }
+
+/* ═══════════════════════════════════════════════════
+   SKILL / LANG BADGE — dark-mode safe
+═══════════════════════════════════════════════════ */
+.badge-skill {
+  display: inline-block; padding: 5px 13px; border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+  background: var(--accent); color: #111;
+}
+.badge-lang {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(41, 128, 185, 0.12); color: #2563eb;
+  border: 1px solid rgba(41, 128, 185, 0.3);
+}
+.dark-theme .badge-lang {
+  background: rgba(96, 165, 250, 0.15); color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.badge-consult {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(230, 57, 70, 0.10); color: #e63946;
+  border: 1px solid rgba(230, 57, 70, 0.25);
 }
 
-/* CTA */
+/* ═══════════════════════════════════════════════════
+   REVIEW FORM (dark-mode safe bg)
+═══════════════════════════════════════════════════ */
+.review-form-box {
+  background: var(--surf2);
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════════════
+   REVIEW ITEM
+═══════════════════════════════════════════════════ */
+.review-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bdr);
+}
+.review-item:last-child { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════ */
+.btn-primary-app,
 .btn-call {
-  background: var(--primary);
-  color: #fff;
-  border-radius: 10px;
-  border: none;
-}
-
-.btn-call:hover {
-  background: var(--primary-dark);
-}
-
-/* ================= DETAIL ================= */
-.astro-detail-card {
-  top: 90px;
-}
-
-/* ================= PROFILE ================= */
-.profile-avatar {
-  width: 100px;
-  border-radius: 50%;
-  border: 4px solid var(--primary);
-}
-
-/* ================= PANCHANG ================= */
-.panchang-item {
-  border-radius: var(--radius);
-  padding: 18px;
-  text-align: center;
-  background: #fff;
-  border: 1px solid var(--border);
-}
-
-/* ================= BADGES ================= */
-.badge-accent {
-  background: var(--accent);
-  color: #000;
-}
-
-/* ================= TRUST ================= */
-.trust-card {
-  background: #fff;
-  padding: 30px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-}
-
-/* ================= FOOTER ================= */
-.footer {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: #fff;
-  padding: 50px 0 20px;
-}
-
-.footer-links a {
-  color: #fff;
-  opacity: 0.85;
-}
-
-.footer-links a:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-/* ================= LOADER ================= */
-.layout-loader {
-  height: 100vh;
-  display: flex;
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  font-size: 14px;
+  padding: 10px 20px;
+  box-shadow: 0 4px 14px rgba(230,57,70,.35) !important;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
   align-items: center;
-  justify-content: center;
+}
+.btn-primary-app:hover, .btn-call:hover {
+  background: var(--primary-dk) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(230,57,70,.45) !important;
+  color: #fff !important;
+}
+.btn-outline-app {
+  border: 2px solid var(--primary); color: var(--primary);
+  border-radius: var(--radius-sm); font-weight: 600; background: transparent;
+  transition: all .2s;
+}
+.btn-outline-app:hover { background: var(--primary); color: #fff; }
+
+/* ═══════════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════════ */
+.price { color: var(--primary); font-weight: 700; font-size: 18px; }
+.rating-stars { color: var(--accent); }
+.badge-accent { background: var(--accent); color: #111; font-weight: 600; border-radius: 8px; padding: 5px 12px; font-size: 12px; }
+.astro-detail-card { top: 90px; }
+.profile-avatar { width: 100px; border-radius: 50%; border: 4px solid var(--primary); }
+.hero-new { padding: 40px; border-radius: var(--radius); background: linear-gradient(135deg, var(--surf), var(--surf2)); border: 1px solid var(--bdr); }
+.service-card-new { background: var(--surf); padding: 24px; border-radius: var(--radius); border: 1px solid var(--bdr); transition: transform .25s, box-shadow .25s; text-align: center; }
+.service-card-new:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.service-icon { font-size: 34px; }
+.panchang-item { border-radius: var(--radius); padding: 18px; text-align: center; background: var(--surf); border: 1px solid var(--bdr); }
+.trust-card { background: var(--surf); padding: 28px; border-radius: var(--radius); border: 1px solid var(--bdr); }
+.footer { background: linear-gradient(135deg, #e63946, #c92f3a); color: #fff; padding: 50px 0 20px; }
+.footer-links a { color: #fff; opacity: .85; transition: opacity .2s; }
+.footer-links a:hover { opacity: 1; }
+.layout-loader { height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+@media (max-width: 768px) {
+  .hero-new { padding: 20px; }
+  .app-card  { padding: 16px; }
+  .astro-img-wrap img { width: 76px; height: 76px; }
 }
 
-/* ================= MOBILE ================= */
-@media (max-width: 768px) {
-  .page {
-    padding: 15px 10px;
-  }
+/* Bootstrap .text-muted override — dark mode aware in user portal */
+.text-muted {
+  color: var(--txt-m) !important;
+}
 
-  .hero-new {
-    padding: 25px;
-  }
+/* Bootstrap .border-top override — dark mode aware */
+.border-top {
+  border-top-color: var(--bdr) !important;
+}
+.border-bottom {
+  border-bottom-color: var(--bdr) !important;
+}
+.border {
+  border-color: var(--bdr) !important;
+}
+
+/* ─── Form controls — dark mode aware ─────────────── */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+  background-color: var(--surf2);
+  border-color:     var(--bdr2);
+  color:            var(--txt);
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+  background-color: var(--surf2);
+  border-color:     var(--primary);
+  color:            var(--txt);
+  box-shadow:       0 0 0 3px rgba(230,57,70,0.2);
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+  color: var(--txt-l);
+}
+
+/* Card dark mode */
+[data-bs-theme="dark"] .card {
+  background-color: var(--surf);
+  border-color:     var(--bdr);
+  color:            var(--txt);
+}
+
+[data-bs-theme="dark"] .card-header {
+  background-color: var(--surf2);
+  border-color:     var(--bdr);
+}
+
+/* Table dark mode */
+[data-bs-theme="dark"] .table {
+  color:  var(--txt);
+  border-color: var(--bdr);
+}
+
+[data-bs-theme="dark"] .table-hover tbody tr:hover {
+  background-color: var(--surf2);
+  color:            var(--txt);
+}
+
+[data-bs-theme="dark"] .table > :not(caption) > * > * {
+  border-color: var(--bdr);
+}
+
+/* ── Button color fixes — dark mode safe ──────────
+   Bootstrap btn-link in dark mode becomes invisible
+   (blue link color on dark background)
+   Bare btn with no variant needs explicit color    */
+
+/* btn-link: use theme text color instead of Bootstrap blue */
+.btn-link {
+  color: var(--txt-m) !important;
+  text-decoration: none !important;
+}
+.btn-link:hover {
+  color: var(--txt) !important;
+}
+
+/* Bare btn with border-0: needs explicit text color */
+.btn.border-0:not([class*="btn-"]) {
+  color: var(--txt);
+}
+
+/* btn-close should always be visible */
+.btn-close {
+  filter: var(--bs-btn-close-filter, none);
+}
+[data-bs-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Outline buttons — ensure border uses theme var */
+[data-bs-theme="dark"] .btn-outline-secondary {
+  color:        var(--txt-m);
+  border-color: var(--bdr2);
+}
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+  background-color: var(--surf2);
+  color:            var(--txt);
+  border-color:     var(--bdr2);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  color:        var(--primary);
+  border-color: var(--primary);
+}
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: var(--primary);
+  color:            #fff;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger {
+  color:        #ef4444;
+  border-color: #ef4444;
+}
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+  background-color: #ef4444;
+  color:            #fff;
+}
+
+/* ── Badge & Alert dark mode fixes ──────────────── */
+/* Bootstrap's alert-warning/info have white text on colored bg in dark mode */
+[data-bs-theme="dark"] .alert-warning {
+  background-color: rgba(234,179,8,0.15);
+  border-color:     rgba(234,179,8,0.3);
+  color:            #fbbf24;
+}
+[data-bs-theme="dark"] .alert-info {
+  background-color: rgba(14,165,233,0.15);
+  border-color:     rgba(14,165,233,0.3);
+  color:            #38bdf8;
+}
+[data-bs-theme="dark"] .alert-success {
+  background-color: rgba(34,197,94,0.15);
+  border-color:     rgba(34,197,94,0.3);
+  color:            #4ade80;
+}
+[data-bs-theme="dark"] .alert-danger {
+  background-color: rgba(239,68,68,0.15);
+  border-color:     rgba(239,68,68,0.3);
+  color:            #f87171;
+}
+[data-bs-theme="dark"] .alert-secondary {
+  background-color: var(--surf2);
+  border-color:     var(--bdr);
+  color:            var(--txt-m);
+}
+
+/* Input group text dark mode */
+[data-bs-theme="dark"] .input-group-text {
+  background-color: var(--surf2);
+  border-color:     var(--bdr2);
+  color:            var(--txt-m);
+}
+
+/* Dropdown dark mode */
+[data-bs-theme="dark"] .dropdown-menu {
+  background-color: var(--surf);
+  border-color:     var(--bdr);
+}
+[data-bs-theme="dark"] .dropdown-item {
+  color: var(--txt);
+}
+[data-bs-theme="dark"] .dropdown-item:hover {
+  background-color: var(--surf2);
+  color:            var(--txt);
+}
+
+/* ── User portal: force btn-call visible regardless of AdminLTE ── */
+body .btn-call,
+body .btn-primary-app {
+  background-color: var(--primary) !important;
+  background:       var(--primary) !important;
+  color:            #ffffff !important;
+  border-color:     var(--primary) !important;
+  opacity:          1 !important;
+}
+
+body .btn-call:hover,
+body .btn-primary-app:hover {
+  background-color: var(--primary-dk) !important;
+  background:       var(--primary-dk) !important;
+  color:            #ffffff !important;
+}
+
+/* Ensure astro-detail-card sticky left panel button is always visible */
+.astro-detail-card .btn-call {
+  display: flex !important;
+  width: 100% !important;
+  justify-content: center !important;
 }

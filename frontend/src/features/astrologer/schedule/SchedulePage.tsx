@@ -1,3 +1,19 @@
+/**
+ * SchedulePage -- weekly availability schedule editor.
+ *
+ * The astrologer sets per-day on/off toggles and start/end times.
+ * Data is saved as POST /astrologer/me/schedule (replaces existing schedule).
+ *
+ * Backend model: astrologer_schedules (one row per active day, day_of_week 0-6).
+ *
+ * The schedule is PUBLIC -- users can see it on the astrologer's profile page
+ * to know when to book. It is currently informational only (no booking slots).
+ *
+ * TO ADD SLOT-BASED BOOKING:
+ * 1. Generate 30/60-min slots from the schedule on the backend.
+ * 2. Add a consultations.scheduled_at column.
+ * 3. Show a slot picker in BookingModal before confirming.
+ */
 import { useEffect, useState }         from "react";
 import {
   useMyScheduleQuery,
@@ -23,7 +39,7 @@ function buildDefaults(): DayRow[] {
     day_of_week: i,
     start_time:  "09:00",
     end_time:    "18:00",
-    is_active:   i >= 1 && i <= 5, // Mon–Fri on by default
+    is_active:   i >= 1 && i <= 5, // Mon-Fri on by default
   }));
 }
 
@@ -91,14 +107,14 @@ export default function SchedulePage() {
   return (
     <>
 
-        <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between">
+        <div className="app-card">
+          <div className="d-flex align-items-center justify-content-between p-3" style={{ borderBottom: "1px solid var(--bdr)" }}>
             <div>
-              <h5 className="card-title mb-0">
+              <h5 className="fw-bold t-main mb-0">
                 <i className="fas fa-calendar-alt me-2 text-primary" />
                 Weekly Schedule
               </h5>
-              <small className="text-muted">
+              <small className="t-muted">
                 {activeDays} active day{activeDays !== 1 ? "s" : ""} per week
               </small>
             </div>
@@ -116,10 +132,10 @@ export default function SchedulePage() {
             </button>
           </div>
 
-          <div className="card-body p-0">
+          <div>
             <div className="table-responsive">
               <table className="table table-hover mb-0 align-middle">
-                <thead className="table-light">
+                <thead style={{ background: "var(--surf2)", borderBottom: "2px solid var(--bdr)" }}>
                   <tr>
                     <th style={{ width: 130 }}>Day</th>
                     <th style={{ width: 80 }}>Active</th>
@@ -137,7 +153,7 @@ export default function SchedulePage() {
                         className={!row.is_active ? "opacity-50" : ""}
                       >
                         <td>
-                          <span className={`fw-semibold ${row.is_active ? "" : "text-muted"}`}>
+                          <span className={`fw-semibold ${row.is_active ? "" : "t-muted"}`}>
                             {DAYS[row.day_of_week]}
                           </span>
                         </td>
@@ -180,11 +196,11 @@ export default function SchedulePage() {
                         </td>
                         <td>
                           {row.is_active && dur ? (
-                            <span className="badge bg-success-subtle text-success fw-normal">
+                            <span style={{ background: "rgba(34,197,94,.12)", color: "#16a34a", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
                               {dur}
                             </span>
                           ) : (
-                            <span className="badge bg-secondary-subtle text-secondary fw-normal">
+                            <span style={{ background: "rgba(100,116,139,.12)", color: "#64748b", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
                               Day off
                             </span>
                           )}
@@ -197,7 +213,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="card-footer text-muted small">
+          <div className="t-muted small p-3" style={{ borderTop: "1px solid var(--bdr)" }}>
             <i className="fas fa-info-circle me-1" />
             Changes are visible to users immediately after saving.
           </div>

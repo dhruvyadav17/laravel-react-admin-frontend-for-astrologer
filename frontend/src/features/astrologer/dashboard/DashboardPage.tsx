@@ -1,5 +1,4 @@
-// PATH: src/astrologer/features/dashboard/DashboardPage.tsx
-// REFACTOR: Avatar + PageLoader use kiya
+// REFACTOR: Uses Avatar + PageLoader components
 
 import { Link }                                           from "react-router-dom";
 import { useMyStatsQuery, useToggleAvailabilityMutation } from "../../../store/api/astrologer.api";
@@ -13,13 +12,11 @@ function StatCard({ icon, color, title, value, sub }: {
 }) {
   return (
     <div className="col-6 col-md-3">
-      <div className="card h-100">
-        <div className="card-body text-center py-4">
-          <div className={`text-${color} mb-2`} style={{ fontSize: 32 }}><i className={`fas ${icon}`} /></div>
-          <div className="fw-bold fs-4">{value}</div>
-          <div className="fw-semibold small">{title}</div>
-          <div className="text-muted" style={{ fontSize: 12 }}>{sub}</div>
-        </div>
+      <div className="app-card h-100 text-center py-2" style={{ transition: "none" }}>
+          <div style={{ fontSize: 32, color: color === "warning" ? "#ca8a04" : color === "primary" ? "var(--primary)" : color === "success" ? "#16a34a" : color === "info" ? "#0284c7" : "var(--txt-m)" }}><i className={`fas ${icon}`} /></div>
+          <div className="fw-bold t-main fs-4">{value}</div>
+          <div className="fw-semibold t-main small">{title}</div>
+          <div className="t-muted" style={{ fontSize: 12 }}>{sub}</div>
       </div>
     </div>
   );
@@ -28,8 +25,8 @@ function StatCard({ icon, color, title, value, sub }: {
 function QuickLink({ to, icon, label, color }: { to: string; icon: string; label: string; color: string }) {
   return (
     <div className="col-md-4">
-      <Link to={to} className={`card text-${color} text-decoration-none h-100`}>
-        <div className="card-body d-flex align-items-center gap-3 py-3">
+      <Link to={to} className="app-card text-decoration-none h-100" style={{ transition: "none" }}>
+        <div className="d-flex align-items-center gap-3 py-3">
           <i className={`fas ${icon} fs-4`} />
           <span className="fw-semibold">{label}</span>
           <i className="fas fa-chevron-right ms-auto small opacity-50" />
@@ -57,17 +54,17 @@ export default function DashboardPage() {
     <>
 
 
-        <div className="card mb-4">
-          <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div className="app-card mb-4" style={{ transition: "none" }}>
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div className="d-flex align-items-center gap-3">
               <Avatar name={user?.name} size={48} />
               <div>
                 <h5 className="mb-0 fw-bold">Welcome, {user?.name}</h5>
-                <small className="text-muted">Astrologer Dashboard</small>
+                <small className="t-muted">Astrologer Dashboard</small>
               </div>
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="text-muted small fw-semibold">Go Online:</span>
+              <span className="t-muted small fw-semibold">Go Online:</span>
               <div className="form-check form-switch mb-0">
                 <input className="form-check-input" type="checkbox" role="switch"
                   id="onlineToggle" checked={stats?.is_online ?? false}

@@ -12,11 +12,11 @@ const FAQS = [
       },
       {
         q: "How can I create an account?",
-        a: "Click on the 'Register' button on the homepage. Enter your name, email, and password. Your account will be created instantly — no OTP or waiting required.",
+        a: "Click on the 'Register' button on the homepage. Enter your name, email, and password. Your account will be created instantly -- no OTP or waiting required.",
       },
       {
         q: "Is this platform free?",
-        a: "Registration and browsing astrologers are completely free. For consultations, charges are based on the astrologer’s per-minute rate, which is clearly mentioned on their profile.",
+        a: "Registration and browsing astrologers are completely free. For consultations, charges are based on the astrologer's per-minute rate, which is clearly mentioned on their profile.",
       },
     ],
   },
@@ -29,11 +29,11 @@ const FAQS = [
       },
       {
         q: "What communication modes are available?",
-        a: "Depending on the astrologer’s setup, Chat, Voice Call, or Video Call options are available. These are clearly displayed on each astrologer’s card.",
+        a: "Depending on the astrologer's setup, Chat, Voice Call, or Video Call options are available. These are clearly displayed on each astrologer's card.",
       },
       {
         q: "How long should a consultation be?",
-        a: "It depends on your needs. A specific question can often be answered within 5–10 minutes. For detailed kundli readings, 30–60 minutes is recommended. Pricing is per minute, so you can decide accordingly.",
+        a: "It depends on your needs. A specific question can often be answered within 5-10 minutes. For detailed kundli readings, 30-60 minutes is recommended. Pricing is per minute, so you can decide accordingly.",
       },
       {
         q: "What if the astrologer is offline?",
@@ -86,9 +86,9 @@ export default function FaqPage() {
         <div className="col-lg-8">
 
           {/* Top Text */}
-          <p className="text-muted text-center mb-5">
+          <p className="t-muted text-center mb-5">
             Have a question? Check out our common FAQs.
-            If you can’t find your answer,{" "}
+            If you can't find your answer,{" "}
             <Link to="/contact" className="text-decoration-none">
               contact us
             </Link>.
@@ -127,7 +127,7 @@ export default function FaqPage() {
 
                       {open && (
                         <div
-                          className="px-3 pb-3 text-muted small border-top"
+                          className="px-3 pb-3 t-muted small border-top"
                           style={{ lineHeight: 1.7 }}
                         >
                           {item.a}

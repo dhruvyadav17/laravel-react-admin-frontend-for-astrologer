@@ -1,7 +1,6 @@
 <?php
-// PATH: database/factories/UserFactory.php
-// UPDATE — astrologer() aur customer() states add kiye
-// REASON: Sirf admin() state tha. AstrologerFactory ke liye astrologer() state chahiye tha.
+// UPDATE -- added astrologer() and customer() factory states
+// Added astrologer() and customer() states for use in UserSeeder
 
 namespace Database\Factories;
 
@@ -24,13 +23,13 @@ class UserFactory extends Factory
         ];
     }
 
-    /** Admin user — was already present, kept */
+    /** Admin user -- was already present, kept */
     public function admin(): static
     {
         return $this->afterCreating(fn($u) => $u->assignRole('admin'));
     }
 
-    /** NEW: Astrologer user — needed for AstrologerFactory */
+    /** NEW: Astrologer user -- needed for AstrologerFactory */
     public function astrologer(): static
     {
         return $this->state(['is_verified' => true])

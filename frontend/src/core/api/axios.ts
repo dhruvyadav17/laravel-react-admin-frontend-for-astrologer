@@ -1,10 +1,7 @@
-// PATH: src/core/api/axios.ts
-// Used for: login, register, forgot/reset password (non-RTK calls)
-// RTK Query uses baseQueryWithReauth instead
-
 import axios, { AxiosError } from 'axios';
-import { getStore }          from '../../store/storeAccessor';
-import { logoutThunk }       from '../../store/authSlice';
+import type { AppDispatch, RootState } from '../../store';
+import { getStore } from '../../store/storeAccessor';
+import { logoutThunk } from '../../store/authSlice';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -14,7 +11,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   try {
-    const store = getStore();
+    const store = getStore() as { getState: () => RootState };
     const token = store.getState().auth.token;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -35,9 +32,9 @@ api.interceptors.response.use(
     }
 
     if (status === 403) {
-      const currentPath       = window.location.pathname;
-      const isAdminRoute      = currentPath.startsWith('/admin');
-      const unauthorizedPath  = isAdminRoute ? '/admin/unauthorized' : '/unauthorized';
+      const currentPath = window.location.pathname;
+      const isAdminRoute = currentPath.startsWith('/admin');
+      const unauthorizedPath = isAdminRoute ? '/admin/unauthorized' : '/unauthorized';
 
       if (!currentPath.includes('unauthorized')) {
         window.location.replace(unauthorizedPath);
@@ -50,7 +47,7 @@ api.interceptors.response.use(
 
 function forceLogout() {
   try {
-    const store = getStore();
+    const store = getStore() as { dispatch: AppDispatch };
     store.dispatch(logoutThunk());
   } catch {
     // store may not be ready
@@ -62,7 +59,7 @@ function forceLogout() {
   localStorage.removeItem('permissions');
 
   const currentPath = window.location.pathname;
-  const redirectTo  = currentPath.startsWith('/admin') ? '/admin/login' : '/login';
+  const redirectTo = currentPath.startsWith('/admin') ? '/admin/login' : '/login';
   window.location.replace(redirectTo);
 }
 

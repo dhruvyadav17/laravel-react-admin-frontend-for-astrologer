@@ -1,6 +1,18 @@
-// PATH: src/store/api/notification.api.ts
-// Notification listing, mark read, unread count
-
+/**
+ * Notification API -- RTK Query endpoints
+ *
+ * Reads Laravel database notifications (notifiable_type = User).
+ * Notifications are created server-side in:
+ *   - NewConsultationRequest -- fires to astrologer on booking
+ *   - ConsultationAccepted / Rejected -- fires to user
+ *   - ConsultationCompleted -- fires to user on session end
+ *
+ * TO ADD A NEW NOTIFICATION TYPE:
+ * 1. Create app/Notifications/YourNotification.php.
+ * 2. Call $user->notify(new YourNotification($data)) in the service.
+ * 3. Add the type string to the frontend NotificationBell render logic
+ *    to display a custom icon/message for the new type.
+ */
 import { baseApi } from './baseApi';
 
 export interface AppNotification {

@@ -1,8 +1,17 @@
-// PATH: src/astrologer/features/profile/ProfilePage.tsx
-// NEW FEATURE: ImageUpload component integrate kiya
-// Pehle: profile_image URL manually type karna padta tha
-// Ab: Click/drag to upload → auto-upload → URL store
-
+/**
+ * Astrologer ProfilePage -- editable profile and settings.
+ *
+ * Fields: photo, bio, expertise, consultation type, experience,
+ * price per minute, languages (multi-select), skills (multi-select).
+ *
+ * All changes are submitted as PATCH /astrologer/me.
+ * Photo upload uses POST /upload/image which returns a storage URL.
+ *
+ * TO ADD A NEW PROFILE FIELD:
+ * 1. Add the column to the astrologers migration + $fillable in Astrologer model.
+ * 2. Add the field to AstrologerProfileController@update validation.
+ * 3. Add an input below and include the key in the formData submission.
+ */
 import { useEffect, useState }           from "react";
 import { useMyAstrologerProfileQuery, useUpdateMyProfileMutation } from "../../../store/api/astrologer.api";
 import { toast }                          from "react-toastify";
@@ -82,23 +91,23 @@ export default function ProfilePage() {
   return (
     <>
 
-        <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between">
-            <h5 className="card-title mb-0">
+        <div className="app-card">
+          <div className="d-flex align-items-center justify-content-between pb-3 mb-3" style={{ borderBottom: "1px solid var(--bdr)" }}>
+            <h5 className="fw-bold t-main mb-0">
               <i className="fas fa-user-edit me-2 text-primary" />Edit My Profile
             </h5>
             {isDirty && (
-              <span className="badge bg-warning text-dark">
+              <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:600, background:"rgba(234,179,8,.15)", color:"#ca8a04", border:"1px solid rgba(234,179,8,.3)" }}>
                 <i className="fas fa-circle me-1" style={{ fontSize: 8 }} />Unsaved changes
               </span>
             )}
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="card-body">
+            <div>
               <div className="row g-4">
 
-                {/* Profile image upload — NEW FEATURE */}
+                {/* Profile image upload -- NEW FEATURE */}
                 <div className="col-12 text-center">
                   <label className="form-label fw-semibold d-block mb-3">Profile Photo</label>
                   <ImageUpload
@@ -115,7 +124,7 @@ export default function ProfilePage() {
                   <textarea className="form-control" rows={4} value={form.bio}
                     onChange={(e) => set("bio", e.target.value)}
                     placeholder="Describe your expertise and experience..." minLength={20} required />
-                  <div className={`form-text ${form.bio.length < 20 ? "text-danger" : "text-muted"}`}>
+                  <div className={`form-text ${form.bio.length < 20 ? "text-danger" : "t-muted"}`}>
                     {form.bio.length} characters (min 20)
                   </div>
                 </div>
@@ -169,7 +178,7 @@ export default function ProfilePage() {
                     ))}
                   </div>
                   {form.languages.length === 0 && (
-                    <div className="text-muted small mt-1">Select at least one language</div>
+                    <div className="t-muted small mt-1">Select at least one language</div>
                   )}
                 </div>
 
@@ -187,12 +196,12 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="card-footer d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-3 pt-3 mt-3" style={{ borderTop: "1px solid var(--bdr)" }}>
               <button type="submit" className="btn btn-primary" disabled={saving}>
                 {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving...</>
                         : <><i className="fas fa-save me-2" />Save Profile</>}
               </button>
-              <small className="text-muted">
+              <small className="t-muted">
                 {saving ? "Saving..." : isDirty ? "You have unsaved changes." : "All changes saved."}
               </small>
             </div>

@@ -1,5 +1,4 @@
-// PATH: src/features/admin/dashboard/charts/ConsultationTypeChart.tsx
-// Pie chart — chat/call/video breakdown
+// Pie chart -- chat/call/video breakdown
 
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,

@@ -1,10 +1,24 @@
-// PATH: src/user/components/AstrologerCard.tsx
-// ADD: Heart/favorite button using useFavorites hook
-// ADD: StarRating component
-
-import { Link }         from "react-router-dom";
-import StarRating       from "../../components/ui/StarRating";
-import { useFavorites } from "../../hooks/useFavorites";
+/**
+ * AstrologerCard -- responsive card shown in the astrologer grid.
+ *
+ * Displays: avatar, name, expertise, rating, experience, language badges,
+ * consultation type, online status, price, low-balance warning, and CTA.
+ *
+ * WALLET BALANCE CHECK
+ * ---------------------
+ * If the user is logged in, the card fetches their wallet balance and
+ * disables/replaces the Talk Now button if they cannot afford even 1 minute.
+ *
+ * TO ADD VERIFIED BADGE: check astrologer.is_verified and render a OK icon
+ * next to the name (already shown on AstrologerDetailPage).
+ *
+ * TO CHANGE LANGUAGE BADGE COLORS: edit the LANG_STYLE map.
+ */
+import { Link }             from 'react-router-dom';
+import StarRating            from '../../components/ui/StarRating';
+import { useFavorites }      from '../../hooks/useFavorites';
+import { useGetWalletQuery } from '../../store/api/wallet.api';
+import { useAuth }           from '../../auth/hooks/useAuth';
 
 type Props = {
   astrologer: {
@@ -23,92 +37,185 @@ type Props = {
   };
 };
 
-const CONSULT_ICONS: Record<string, string> = {
-  chat: "fa-comment", call: "fa-phone", video: "fa-video", all: "fa-th-large",
+const TYPE_LABEL: Record<string, string> = {
+  chat: '💬 Chat', call: '📞 Call', video: '🎥 Video', all: '💬📞🎥 All',
 };
+
+// Language colors for variety
+const LANG_COLORS: Record<string, { bg: string; color: string }> = {
+  Hindi:    { bg: 'rgba(234,88,12,.12)',   color: '#ea580c' },
+  English:  { bg: 'rgba(37,99,235,.12)',   color: '#2563eb' },
+  Tamil:    { bg: 'rgba(124,58,237,.12)',  color: '#7c3aed' },
+  Telugu:   { bg: 'rgba(5,150,105,.12)',   color: '#059669' },
+  Marathi:  { bg: 'rgba(220,38,38,.12)',   color: '#dc2626' },
+  Bengali:  { bg: 'rgba(217,119,6,.12)',   color: '#d97706' },
+  Gujarati: { bg: 'rgba(15,118,110,.12)',  color: '#0f766e' },
+  Kannada:  { bg: 'rgba(147,51,234,.12)',  color: '#9333ea' },
+  default:  { bg: 'rgba(71,85,105,.12)',   color: '#475569' },
+};
+
+function LangBadge({ lang }: { lang: string }) {
+  const style = LANG_COLORS[lang] ?? LANG_COLORS.default;
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: 20,
+      fontSize: 10,
+      fontWeight: 600,
+      background: style.bg,
+      color: style.color,
+      border: `1px solid ${style.color}44`,
+    }}>
+      {lang}
+    </span>
+  );
+}
 
 export default function AstrologerCard({ astrologer }: Props) {
   const {
-    id, name = "", profile_image, expertise,
+    id, name = '', profile_image, expertise,
     rating = 0, price_per_minute = 0, experience = 0,
     is_online = false, is_available = false,
-    languages = [], total_reviews = 0, consultation_type = "all",
+    languages = [], total_reviews = 0, consultation_type = 'all',
   } = astrologer;
 
   const { isFavorite, toggle } = useFavorites();
-  const available = is_online && is_available;
-  const avatar    = profile_image ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e63946&color=fff&size=150`;
+  const { isAuth }             = useAuth();
+
+  const { data: wallet } = useGetWalletQuery(undefined, { skip: !isAuth });
+  const balance           = wallet?.balance ?? 0;
+  const available         = is_online && is_available;
+  const hasEnoughBalance  = !isAuth || balance >= price_per_minute;
+
+  const avatar = profile_image?.startsWith('http')
+    ? profile_image
+    : profile_image
+      ? `${import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:8000'}/storage/${profile_image}`
+      : null;
 
   return (
-    <div className="astro-card-new h-100 d-flex flex-column text-center position-relative">
+    <div className="astro-card-new d-flex flex-column text-center h-100">
 
-      {/* Heart button — ADD: save to favorites */}
+      {/* Favorite button */}
       <button
-        className="position-absolute top-0 end-0 m-2 btn btn-sm border-0 p-1"
-        style={{ zIndex: 10, background: "rgba(255,255,255,0.9)", borderRadius: "50%", lineHeight: 1 }}
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(id); }}
-        title={isFavorite(id) ? "Remove from saved" : "Save astrologer"}
+        className="position-absolute border-0 p-0"
+        style={{ top: 10, right: 10, background: 'transparent', cursor: 'pointer', zIndex: 2 }}
+        onClick={(e) => { e.preventDefault(); toggle(id); }}
+        title={isFavorite(id) ? 'Remove from favorites' : 'Save astrologer'}
       >
-        <i className={`fas fa-heart ${isFavorite(id) ? "text-danger" : "text-muted"}`}
-          style={{ fontSize: 14 }} />
+        <i
+          className={`fas fa-heart`}
+          style={{ fontSize: 16, color: isFavorite(id) ? '#e63946' : 'var(--bdr2)' }}
+        />
       </button>
 
       {/* Avatar + online dot */}
       <Link to={`/astrologers/${id}`} className="text-decoration-none d-block">
         <div className="astro-img-wrap mb-2 mx-auto">
-          <img src={avatar} alt={name} />
-          <span className={`online-dot ${available ? "on" : ""}`} />
+          {avatar ? (
+            <img src={avatar} alt={name} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+          ) : (
+            <div style={{
+              width: 88, height: 88, borderRadius: '50%', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              background: 'var(--red-tint)', border: '3px solid var(--primary)',
+              fontSize: 28, fontWeight: 700, color: 'var(--primary)',
+            }}>
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className={`online-dot ${available ? 'on' : ''}`} />
         </div>
 
-        <h6 className="fw-bold mb-1 text-dark">{name}</h6>
-        <p className="text-muted small mb-1">{expertise || "Astrology Expert"}</p>
+        <h6 className="fw-bold mb-0 t-main" style={{ fontSize: 14 }}>{name}</h6>
+        <p className="t-muted mb-1" style={{ fontSize: 12 }}>{expertise || 'Astrology Expert'}</p>
 
-        {/* StarRating — ADD: shared component */}
-        <div className="mb-1"><StarRating rating={rating} size={13} /></div>
-        <div className="small text-muted mb-1">
+        {/* Rating */}
+        <div className="mb-1"><StarRating rating={rating} size={12} /></div>
+        <div className="t-muted mb-1" style={{ fontSize: 12 }}>
           {rating.toFixed(1)} rating
           {total_reviews > 0 && <span className="ms-1">({total_reviews})</span>}
         </div>
+        <div className="t-muted mb-2" style={{ fontSize: 12 }}>{experience}+ years experience</div>
 
-        <div className="small text-muted mb-2">{experience}+ years experience</div>
-
+        {/* Language badges */}
         {languages.length > 0 && (
           <div className="d-flex flex-wrap gap-1 mb-2 justify-content-center">
-            {languages.slice(0, 3).map((l) => (
-              <span key={l} className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{l}</span>
-            ))}
+            {languages.slice(0, 3).map(l => <LangBadge key={l} lang={l} />)}
             {languages.length > 3 && (
-              <span className="badge bg-light text-muted border" style={{ fontSize: 10 }}>+{languages.length - 3}</span>
+              <span style={{
+                display: 'inline-block', padding: '2px 8px', borderRadius: 20,
+                fontSize: 10, fontWeight: 600,
+                background: 'var(--surf2)', color: 'var(--txt-m)',
+                border: '1px solid var(--bdr2)',
+              }}>
+                +{languages.length - 3}
+              </span>
             )}
           </div>
         )}
       </Link>
 
       {/* Footer */}
-      <div className="mt-auto pt-2 border-top">
+      <div className="mt-auto pt-2" style={{ borderTop: '1px solid var(--bdr)' }}>
         <div className="d-flex align-items-center justify-content-between mb-2">
+          {/* Price */}
           <div className="price mb-0">
-            ₹{price_per_minute}<span className="text-muted small fw-normal">/min</span>
+            ₹{price_per_minute}<span className="t-muted fw-normal" style={{ fontSize: 12 }}>/min</span>
           </div>
-          <div className="d-flex gap-1">
-            <span className="badge bg-light text-primary border" style={{ fontSize: 10 }}>
-              <i className={`fas ${CONSULT_ICONS[consultation_type] ?? "fa-th-large"} me-1`} />
-              {consultation_type === "all" ? "All" : consultation_type}
+
+          {/* Badges: type + status */}
+          <div className="d-flex gap-1 align-items-center">
+            {/* Consultation type */}
+            <span style={{
+              display: 'inline-block', padding: '2px 7px', borderRadius: 20,
+              fontSize: 10, fontWeight: 600,
+              background: 'rgba(230,57,70,.10)', color: '#e63946',
+              border: '1px solid rgba(230,57,70,.25)',
+            }}>
+              {TYPE_LABEL[consultation_type] ?? consultation_type}
             </span>
-            <span className={`badge ${available ? "bg-success" : "bg-secondary"}`} style={{ fontSize: 10 }}>
-              {available ? "Online" : "Offline"}
+
+            {/* Online status */}
+            <span style={{
+              display: 'inline-block', padding: '2px 8px', borderRadius: 20,
+              fontSize: 10, fontWeight: 600,
+              background: available ? 'rgba(34,197,94,.12)' : 'rgba(100,116,139,.12)',
+              color: available ? '#16a34a' : '#64748b',
+              border: `1px solid ${available ? 'rgba(34,197,94,.3)' : 'rgba(100,116,139,.3)'}`,
+            }}>
+              {available ? '* Online' : 'o Offline'}
             </span>
           </div>
         </div>
-        <Link to={`/astrologers/${id}`}
-          className={`btn w-100 btn-sm ${available ? "btn-call" : "btn-outline-secondary"}`}>
-          {available
+
+        {/* Low balance warning */}
+        {isAuth && available && !hasEnoughBalance && (
+          <Link to="/wallet" className="btn btn-sm btn-warning w-100 mb-1" style={{ fontSize: 11 }}>
+            <i className="fas fa-wallet me-1" />
+            Low Balance (₹{balance.toFixed(0)}) -- Recharge
+          </Link>
+        )}
+
+        {/* CTA Button */}
+        <Link
+          to={`/astrologers/${id}`}
+          className={`btn w-100 btn-sm ${
+            available && hasEnoughBalance ? 'btn-call' :
+            available && !hasEnoughBalance ? 'btn-outline-warning' :
+            'btn-outline-secondary'
+          }`}
+          style={{ borderRadius: 8 }}
+        >
+          {available && hasEnoughBalance
             ? <><i className="fas fa-phone me-1" />Talk Now</>
-            : <><i className="fas fa-clock me-1" />View Profile</>}
+            : available && !hasEnoughBalance
+            ? <><i className="fas fa-wallet me-1" />Recharge to Talk</>
+            : <><i className="fas fa-clock me-1" />View Profile</>
+          }
         </Link>
       </div>
-
     </div>
   );
 }

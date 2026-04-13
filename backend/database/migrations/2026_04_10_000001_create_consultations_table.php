@@ -1,5 +1,4 @@
 <?php
-// PATH: database/migrations/2026_04_10_000001_create_consultations_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

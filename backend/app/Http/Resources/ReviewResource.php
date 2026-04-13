@@ -1,5 +1,4 @@
 <?php
-// PATH: app/Http/Resources/ReviewResource.php  [NEW]
 
 namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;

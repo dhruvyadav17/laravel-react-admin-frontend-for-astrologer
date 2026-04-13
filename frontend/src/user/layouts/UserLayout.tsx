@@ -11,7 +11,7 @@ export default function UserLayout() {
     return (
       <div className="layout-loader text-center">
         <div className="spinner-border text-danger mb-2" />
-        <p className="text-muted small">Loading...</p>
+        <p className="t-muted small">Loading...</p>
       </div>
     );
   }

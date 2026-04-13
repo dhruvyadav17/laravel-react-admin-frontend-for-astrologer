@@ -1,4 +1,3 @@
-// PATH: src/features/admin/dashboard/charts/RevenueChart.tsx
 // Last 30 days revenue line chart using Recharts
 
 import {

@@ -1,6 +1,26 @@
 <?php
-// PATH: app/Http/Controllers/Api/Astrologer/ProfileController.php
-// IMPROVED: earnings() endpoint added
+/**
+ * AstrologerProfileController -- astrologer self-management endpoints.
+ *
+ * All routes require auth:sanctum + role:astrologer middleware.
+ *
+ * ENDPOINTS
+ * ----------
+ * GET    /astrologer/me              -- own profile (with user, reviews count)
+ * PATCH  /astrologer/me              -- update profile fields
+ * PATCH  /astrologer/me/availability -- toggle is_online / is_available
+ * POST   /astrologer/me/heartbeat    -- keep-alive ping (every 30 s)
+ * GET    /astrologer/me/stats        -- rating, reviews, consultation count
+ * GET    /astrologer/me/earnings     -- earnings summary + recent records
+ * GET    /astrologer/me/reviews      -- approved client reviews
+ * GET    /astrologer/me/schedule     -- weekly schedule
+ * POST   /astrologer/me/schedule     -- save weekly schedule (replaces existing)
+ *
+ * TO ADD A NEW FIELD TO THE PROFILE:
+ * 1. Add it to the validation in update().
+ * 2. Add the column to the astrologers migration.
+ * 3. Add it to $fillable in the Astrologer model.
+ */
 
 namespace App\Http\Controllers\Api\Astrologer;
 
@@ -27,14 +47,14 @@ class ProfileController extends Controller
         protected WalletService     $walletService,
     ) {}
 
-    /* ── GET /astrologer/me ─────────────────────── */
+    /* -- GET /astrologer/me ----------------------- */
     public function me(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->with(['user', 'schedules'])->firstOrFail();
         return $this->success('Profile fetched', new AstrologerResource($astrologer));
     }
 
-    /* ── PATCH /astrologer/me ───────────────────── */
+    /* -- PATCH /astrologer/me --------------------- */
     public function update(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
@@ -57,7 +77,7 @@ class ProfileController extends Controller
         return $this->success('Profile updated', new AstrologerResource($updated->load('user')));
     }
 
-    /* ── PATCH /astrologer/me/availability ─────── */
+    /* -- PATCH /astrologer/me/availability ------- */
     public function toggleAvailability(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
@@ -69,7 +89,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /* ── GET /astrologer/me/reviews ─────────────── */
+    /* -- GET /astrologer/me/reviews --------------- */
     public function myReviews(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
@@ -81,7 +101,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    /* ── GET /astrologer/me/stats ───────────────── */
+    /* -- GET /astrologer/me/stats ----------------- */
     public function stats(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
@@ -96,14 +116,14 @@ class ProfileController extends Controller
         ]);
     }
 
-    /* ── GET /astrologer/me/schedule ────────────── */
+    /* -- GET /astrologer/me/schedule -------------- */
     public function schedule(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
         return $this->success('Schedule fetched', $this->scheduleService->forAstrologer($astrologer));
     }
 
-    /* ── POST /astrologer/me/schedule ──────────── */
+    /* -- POST /astrologer/me/schedule ------------ */
     public function saveSchedule(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
@@ -120,7 +140,26 @@ class ProfileController extends Controller
         return $this->success('Schedule saved', $saved);
     }
 
-    /* ── GET /astrologer/me/earnings ────────────── */
+
+    /* -- POST /astrologer/me/heartbeat ---------------- */
+    // Called every 30s from frontend -- marks astrologer as still online
+    // Artisan command 'astrologer:mark-offline' clears stale ones
+    public function heartbeat(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $astrologer = $request->user()->astrologer()->firstOrFail();
+
+        if ($astrologer->is_online) {
+            // Touch last_heartbeat_at -- reset 5-min timeout
+            $astrologer->update(['last_heartbeat_at' => now()]);
+        }
+
+        return $this->success('Heartbeat received', [
+            'is_online'    => $astrologer->is_online,
+            'is_available' => $astrologer->is_available,
+        ]);
+    }
+
+    /* -- GET /astrologer/me/earnings -------------- */
     public function earnings(Request $request): JsonResponse
     {
         $astrologer = $request->user()->astrologer()->firstOrFail();
