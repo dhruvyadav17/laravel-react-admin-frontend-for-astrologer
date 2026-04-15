@@ -12,7 +12,7 @@ Thumbs.db
 backend/vendor/
 backend/node_modules/
 backend/.env
-backend/.env.*
+# backend/.env.*
 backend/storage/*.key
 backend/storage/app/*
 !backend/storage/app/public
@@ -34,7 +34,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/build/
 frontend/.env
-frontend/.env.*
+# frontend/.env.*
 frontend/.vite/
 frontend/.cache/
 frontend/npm-debug.log*
