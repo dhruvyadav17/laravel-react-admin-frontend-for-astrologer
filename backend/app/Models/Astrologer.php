@@ -40,7 +40,7 @@ class Astrologer extends Model
         'user_id', 'experience', 'price_per_minute', 'bio', 'expertise',
         'languages', 'skills', 'consultation_type',
         'rating', 'total_reviews', 'total_consultations', 'avg_response_time',
-        'is_online', 'is_available', 'last_heartbeat_at', 'is_available', 'is_verified', 'profile_image', 'gallery',
+        'is_online', 'is_available', 'last_heartbeat_at', 'is_verified', 'profile_image', 'gallery',
     ];
 
     protected $casts = [
@@ -50,9 +50,9 @@ class Astrologer extends Model
         'rating'            => 'float',
         'price_per_minute'  => 'float',
         'avg_response_time' => 'float',
-        'is_online', 'is_available'         => 'boolean',
-        'last_heartbeat_at' => 'datetime',
+        'is_online'         => 'boolean',
         'is_available'      => 'boolean',
+        'last_heartbeat_at' => 'datetime',
         'is_verified'       => 'boolean',
     ];
 

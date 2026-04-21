@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Domains\Role\Controllers;
+
+use App\Models\Role;
+use App\Domains\Role\Requests\RoleRequest;
+use App\Domains\Role\Services\RoleService;
+use App\Http\Controllers\Controller;
+use App\Domains\Role\Resources\RoleResource;
+use App\Domains\Permission\Resources\PermissionResource;
+
+class RoleController extends Controller
+{
+    public function __construct(
+        protected RoleService $service
+    ) {}
+
+    /**
+     * 📄 GET /api/v1/admin/roles
+     */
+    public function index()
+    {
+        $roles = $this->service->list();
+
+        return $this->success(
+            'Roles fetched successfully',
+            RoleResource::collection($roles)
+        );
+    }
+
+    /**
+     * ➕ POST /api/v1/admin/roles
+     */
+    public function store(RoleRequest $request)
+    {
+        $role = $this->service->create(
+            $request->validated()
+        );
+
+        return $this->success(
+            'Role created successfully',
+            RoleResource::make($role),
+            [],
+            201
+        );
+    }
+
+    /**
+     * ✏️ PUT /api/v1/admin/roles/{role}
+     */
+    public function update(RoleRequest $request, Role $role)
+    {
+        $role = $this->service->update(
+            $role,
+            $request->validated()
+        );
+
+        return $this->success(
+            'Role updated successfully',
+            RoleResource::make($role)
+        );
+    }
+
+
+    /**
+     * ❌ DELETE /api/v1/admin/roles/{role}
+     */
+    public function destroy(Role $role)
+    {
+        $this->service->delete($role);
+
+        return $this->success('Role deleted successfully');
+    }
+
+    /**
+     * 🔁 PATCH /api/v1/admin/roles/{role}/toggle
+     */
+    public function toggle(Role $role)
+    {
+        $role = $this->service->toggle($role);
+
+        return $this->success(
+            'Role status updated',
+            RoleResource::make($role)
+        );
+    }
+
+    /**
+     * 🔐 GET /api/v1/admin/roles/{role}/permissions
+     */
+    public function permissions(Role $role)
+    {
+        $data = $this->service->permissions($role);
+
+        return $this->success('Role permissions fetched', [
+            'role'        => RoleResource::make($data['role']),
+            'permissions' => PermissionResource::collection($data['permissions']),
+            'assigned'    => $data['assigned'],
+        ]);
+    }
+
+    /**
+     * 🔄 POST /api/v1/admin/roles/{role}/permissions
+     */
+    public function assignPermissions(
+        RoleRequest $request,
+        Role $role
+    ) {
+        $this->service->syncPermissions(
+            $role,
+            $request->validated()['permissions']
+        );
+
+        return $this->success(
+            'Permissions assigned successfully.'
+        );
+    }
+
+}

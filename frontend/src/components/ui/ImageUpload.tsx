@@ -1,10 +1,4 @@
-// NEW FEATURE: Reusable image upload component
-// Usage:
-//   <ImageUpload
-//     currentUrl={form.profile_image}
-//     onUpload={(url) => set("profile_image", url)}
 //     name="Rahul Sharma"
-//   />
 //
 // Features:
 // - Click avatar to open file picker
@@ -16,7 +10,7 @@
 // - Returns public URL to parent
 
 import { useRef, useState, useCallback } from "react";
-import api from "../../core/api/axios";
+import api from "../../api/axios";
 
 type Props = {
   currentUrl?: string | null;

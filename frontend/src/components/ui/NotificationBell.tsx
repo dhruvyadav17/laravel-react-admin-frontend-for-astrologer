@@ -8,7 +8,7 @@ import {
   useMarkAllReadMutation,
   useMarkOneReadMutation,
   type AppNotification,
-} from '../../store/api/notification.api';
+} from '../../store/notification.api';
 
 const COLOR_MAP: Record<string, string> = {
   success: 'text-success',

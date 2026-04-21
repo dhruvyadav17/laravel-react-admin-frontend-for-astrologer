@@ -7,7 +7,7 @@ namespace Database\Seeders;
 use App\Models\AstrologerReview;
 use App\Models\Astrologer;
 use App\Models\User;
-use App\Services\App\ReviewService;
+use App\Services\ReviewService;
 use Illuminate\Database\Seeder;
 
 class ReviewSeeder extends Seeder

@@ -1,5 +1,4 @@
 // NEW FILE -- Shared constants (duplicate arrays hata diye)
-// PROBLEM: EXPERTISE_OPTIONS, LANGUAGE_OPTIONS, SKILL_LIST teen files mein copy-pasted the:
 // SOLUTION: Ek jagah define do, sab import karein
 
 export const EXPERTISE_OPTIONS = [

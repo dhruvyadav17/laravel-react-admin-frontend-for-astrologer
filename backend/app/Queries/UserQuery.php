@@ -9,9 +9,11 @@ class UserQuery
 {
     public static function base(): Builder
     {
+        // FIX BE-D: 'is_verified' and 'is_online' are NOT on users table — they belong to astrologers
+        // Removed to prevent "Unknown column" SQL error
         return User::query()->select([
             'id', 'name', 'email', 'profile_image',
-            'is_active', 'is_verified', 'is_online',
+            'is_active',
             'email_verified_at', 'last_login_at',
             'deleted_at', 'created_at',
         ]);

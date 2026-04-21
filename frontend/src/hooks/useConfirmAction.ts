@@ -1,25 +1,16 @@
-// FIX: ConfirmOptions type mein confirmLabel nahi tha
-//      AdminCrudPage confirmLabel pass karta tha -- silently drop hota tha
-//      window.confirm() ka message confirmLabel include do
-//              abhi simple confirm ke saath kaam karta hai
+// Simple confirm-then-execute hook.
+// Wraps window.confirm so pages don't need to handle the confirm/cancel logic themselves.
 
 type ConfirmOptions = {
   message:       string;
   onConfirm:     () => Promise<void> | void;
-  confirmLabel?: string;  // FIX: missing tha
+  confirmLabel?: string; // appended to the dialog message e.g. "Delete user"
 };
 
 export function useConfirmAction() {
   return async ({ message, onConfirm, confirmLabel }: ConfirmOptions) => {
-
-    // FIX: confirmLabel ko message mein include do agar diya gaya ho
-    const fullMessage = confirmLabel
-      ? `${message}\n\nClick OK to ${confirmLabel}.`
-      : message;
-
-    const confirmed = window.confirm(fullMessage);
-    if (!confirmed) return;
-
+    const dialog = confirmLabel ? `${message}\n\nClick OK to ${confirmLabel}.` : message;
+    if (!window.confirm(dialog)) return;
     await onConfirm();
   };
 }

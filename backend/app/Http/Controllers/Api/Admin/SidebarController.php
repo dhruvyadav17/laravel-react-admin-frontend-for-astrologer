@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 
-use App\Services\Sidebar\SidebarService;
+use App\Services\SidebarService;
 
 class SidebarController extends Controller
 

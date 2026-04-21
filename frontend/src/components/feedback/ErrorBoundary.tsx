@@ -1,4 +1,3 @@
-//   Pehle: sirf ek global ErrorBoundary tha -- koi bhi crash = blank screen
 //   Ab: Har route/section ka alag boundary, fallback UI with retry
 
 import React from 'react';
@@ -25,7 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Production mein Sentry/LogRocket ko bhejdo
+    // TODO: send to Sentry/LogRocket in production
     console.error(`[ErrorBoundary: ${this.props.section ?? 'unknown'}]`, error, info);
   }
 

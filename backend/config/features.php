@@ -1,6 +1,6 @@
 <?php
 return [
-  'refresh_token'        => false,
+  'refresh_token'        => true,   // FIX BUG-1: was false — token refresh never worked
   'email_verification'   => false,
   'password_reset'       => true,
   'audit_logs'           => true,

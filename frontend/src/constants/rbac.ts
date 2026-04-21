@@ -1,5 +1,5 @@
-// CHANGES: PERMISSIONS.ASTROLOGER group add kiya, ROLES constant add kiya
-// REASON: Frontend mein permission strings hardcoded the. Backend config/permissions.php se sync chahiye.
+// Permission and role string constants — kept in sync with config/permissions.php.
+// Use these instead of hardcoded strings to catch typos at compile time.
 
 export const PERMISSIONS = {
   USER: {
@@ -11,7 +11,6 @@ export const PERMISSIONS = {
     ASSIGN_ROLE:       'user-assign-role',
     ASSIGN_PERMISSION: 'user-assign-permission',
   },
-  // NEW: synced with config/permissions.php astrologer group
   ASTROLOGER: {
     VIEW:    'astrologer-view',
     CREATE:  'astrologer-create',
@@ -20,7 +19,7 @@ export const PERMISSIONS = {
     RESTORE: 'astrologer-restore',
     VERIFY:  'astrologer-verify',
   },
-  ROLE:       { MANAGE: 'role-manage', ASSIGN_PERMISSION: 'role-manage'},
+  ROLE:       { MANAGE: 'role-manage' },
   PERMISSION: { MANAGE: 'permission-manage' },
   DASHBOARD:  { VIEW:   'dashboard-view' },
 } as const;

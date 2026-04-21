@@ -1,124 +1,111 @@
 <?php
-// PATH: routes/api/v1.php
-// IMPROVED: Rate limiting added on sensitive endpoints
-//   login: 5 attempts/min — brute force protection
-//   register: 10/min — spam protection
-//   wallet recharge: 10/min — abuse protection
-//   consultation book: 5/min — spam protection
-//   public listing: 60/min — normal browsing
 
-use App\Features\Astrologer\Controllers\AdminAstrologerController;
-use App\Features\Astrologer\Controllers\UserAstrologerController;
-use App\Features\Auth\Controllers\EmailVerificationController;
-use App\Features\Auth\Controllers\LoginController;
-use App\Features\Auth\Controllers\LogoutController;
-use App\Features\Auth\Controllers\ProfileController;
-use App\Features\Auth\Controllers\RefreshTokenController;
-use App\Features\Auth\Controllers\RegisterController;
-use App\Features\Permission\Controllers\PermissionController;
-use App\Features\Role\Controllers\RoleController;
-use App\Features\User\Controllers\AdminUserController;
-use App\Features\User\Controllers\UserController;
+use App\Domains\Astrologer\Controllers\AdminAstrologerController;
+use App\Domains\Astrologer\Controllers\UserAstrologerController;
+use App\Domains\Auth\Controllers\EmailVerificationController;
+use App\Domains\Auth\Controllers\LoginController;
+use App\Domains\Auth\Controllers\LogoutController;
+use App\Domains\Auth\Controllers\ProfileController;
+use App\Domains\Auth\Controllers\RefreshTokenController;
+use App\Domains\Auth\Controllers\RegisterController;
+use App\Domains\Auth\Controllers\UpdateProfileController;
+use App\Domains\Consultation\Controllers\UserConsultationController;
+use App\Domains\Consultation\Controllers\AstrologerConsultationController;
+use App\Domains\Permission\Controllers\PermissionController;
+use App\Domains\Role\Controllers\RoleController;
+use App\Domains\User\Controllers\AdminUserController;
+use App\Domains\User\Controllers\UserController;
 use App\Http\Controllers\Api\Admin\ActivityController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\SidebarController;
-use App\Http\Controllers\Api\App\ConsultationController;
-use App\Http\Controllers\Api\Astrologer\ConsultationController as AstrologerConsultationController;
-use App\Http\Controllers\Api\Astrologer\ProfileController as AstrologerProfileController;
-use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\Shared\FavoriteController;
+use App\Http\Controllers\Api\Shared\NotificationController;
+use App\Http\Controllers\Api\Shared\RecordingController;
+use App\Http\Controllers\Api\Shared\UploadController;
+use App\Http\Controllers\Api\Shared\WalletController;
 use App\Http\Controllers\Api\Password\ForgotPasswordController;
 use App\Http\Controllers\Api\Password\ResetPasswordController;
-use App\Http\Controllers\Api\UploadController;
-use App\Http\Controllers\Api\FavoriteController;
-use App\Http\Controllers\Api\WalletController;
+use App\Domains\Astrologer\Controllers\AstrologerProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    /* ── PUBLIC — with rate limits ──────────────────────────── */
+    /* ── PUBLIC ─────────────────────────────────────────────────────────── */
+    Route::post('/login',           LoginController::class)->middleware('throttle:5,1');
+    Route::post('/register',        RegisterController::class)->middleware('throttle:10,1');
+    Route::post('/forgot-password', ForgotPasswordController::class)->middleware('throttle:5,1');
+    Route::post('/reset-password',  ResetPasswordController::class)->middleware('throttle:5,1');
+    Route::post('/token/refresh',   RefreshTokenController::class)->middleware('throttle:30,1');
 
-    // Auth: strict rate limiting
-    Route::post('/login',           LoginController::class)
-        ->middleware('throttle:5,1');    // 5 attempts per minute
-
-    Route::post('/register',        RegisterController::class)
-        ->middleware('throttle:10,1');   // 10 per minute
-
-    Route::post('/forgot-password', ForgotPasswordController::class)
-        ->middleware('throttle:5,1');
-
-    Route::post('/reset-password',  ResetPasswordController::class)
-        ->middleware('throttle:5,1');
-
-    Route::post('/token/refresh',   RefreshTokenController::class)
-        ->middleware('throttle:30,1');
-
-    // Public listings: generous limit
     Route::middleware('throttle:60,1')->group(function () {
         Route::get('/astrologers',              [UserAstrologerController::class, 'index']);
         Route::get('/astrologers/{id}',         [UserAstrologerController::class, 'show']);
         Route::get('/astrologers/{id}/reviews', [UserAstrologerController::class, 'reviews']);
     });
 
-    /* ── AUTHENTICATED ──────────────────────────────────────── */
+    /* ── PUBLIC SETTINGS (no auth) ─────────────────────────────────────── */
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/settings/{group}', [App\Http\Controllers\Api\Admin\SiteSettingsController::class, 'publicGroup']);
+    });
+    Route::post('/contact', [App\Http\Controllers\Api\Admin\SiteSettingsController::class, 'submitContact'])->middleware('throttle:5,1');
+    Route::post('/newsletter/subscribe', [App\Http\Controllers\Api\Shared\NewsletterController::class, 'subscribe'])->middleware('throttle:5,1');
+
+    /* ── AUTHENTICATED ──────────────────────────────────────────────────── */
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/logout', LogoutController::class);
         Route::get('/me',      ProfileController::class);
-        Route::patch('/me',    \App\Features\Auth\Controllers\UpdateProfileController::class);
+        Route::patch('/me',    UpdateProfileController::class);
 
         Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify']);
-        Route::post('/email/resend',            [EmailVerificationController::class, 'resend'])
-            ->middleware('throttle:3,1');
+        Route::post('/email/resend',            [EmailVerificationController::class, 'resend'])->middleware('throttle:3,1');
 
-        Route::post('/upload/image', [UploadController::class, 'image'])
-            ->middleware('throttle:20,1');
+        Route::post('/upload/image', [UploadController::class, 'image'])->middleware('throttle:20,1');
 
-        // Favorites
-        Route::get('/favorites',          [FavoriteController::class, 'index']);
-        Route::post('/favorites/{id}',    [FavoriteController::class, 'toggle']);
+        Route::get('/favorites',       [FavoriteController::class, 'index']);
+        Route::post('/favorites/{id}', [FavoriteController::class, 'toggle']);
 
-        // Notifications
         Route::prefix('notifications')->group(function () {
-            Route::get('/',        [NotificationController::class, 'index']);
-            Route::patch('/read',  [NotificationController::class, 'markAllRead']);
-            Route::patch('/{id}',  [NotificationController::class, 'markRead']);
+            Route::get('/',       [NotificationController::class, 'index']);
+            Route::patch('/read', [NotificationController::class, 'markAllRead']);
+            Route::patch('/{id}', [NotificationController::class, 'markRead']);
         });
 
-        // Wallet — rate limited
+        /* ── Payments (Razorpay) ─────────────────────────────────── */
+        Route::prefix('payment')->middleware('throttle:10,1')->group(function () {
+            Route::post('/create-order', [App\Http\Controllers\Api\Shared\PaymentController::class, 'createOrder']);
+            Route::post('/verify',       [App\Http\Controllers\Api\Shared\PaymentController::class, 'verify']);
+        });
+
         Route::prefix('wallet')->group(function () {
             Route::get('/',             [WalletController::class, 'show']);
-            Route::post('/recharge',    [WalletController::class, 'recharge'])
-                ->middleware('throttle:10,1');
+            Route::post('/recharge',    [WalletController::class, 'recharge'])->middleware('throttle:10,1');
             Route::get('/transactions', [WalletController::class, 'transactions']);
         });
 
-        // Review submit — rate limited
         Route::post('/astrologers/{id}/reviews', [UserAstrologerController::class, 'submitReview'])
             ->middleware(['role:user', 'throttle:5,1']);
 
-        /* ── USER: Consultations ────────────────────────────── */
+        /* ── USER: Consultations ─────────────────────────────────────── */
         Route::prefix('consultations')->middleware('role:user')->group(function () {
-            Route::get('/stats',                      [ConsultationController::class, 'stats']);
-            Route::get('/',                         [ConsultationController::class, 'index']);
-            Route::post('/',                        [ConsultationController::class, 'store'])
-                ->middleware('throttle:5,1');  // prevent spam booking
-            Route::get('/{consultation}',           [ConsultationController::class, 'show']);
-            Route::delete('/{consultation}/cancel', [ConsultationController::class, 'cancel']);
-            Route::get('/{consultation}/messages',  [ConsultationController::class, 'messages']);
-            Route::post('/{consultation}/messages', [ConsultationController::class, 'sendMessage'])
-                ->middleware('throttle:60,1');
-            Route::get('/{consultation}/receipt',  [ConsultationController::class, 'receipt']);
-            Route::get('/{consultation}/recordings',  [\App\Http\Controllers\Api\RecordingController::class, 'index']);
-            Route::post('/{consultation}/recordings', [\App\Http\Controllers\Api\RecordingController::class, 'store']);
-            Route::post('/{consultation}/signal',     [ConsultationController::class, 'sendSignal'])
-                ->middleware('throttle:120,1');
-            Route::get('/{consultation}/signals',     [ConsultationController::class, 'getSignals'])
-                ->middleware('throttle:120,1');
-            Route::patch('/{consultation}/call-status', [ConsultationController::class, 'updateCallStatus']);
+            Route::get('/stats',                     [UserConsultationController::class, 'stats']);
+            Route::get('/',                          [UserConsultationController::class, 'index']);
+            Route::post('/',                         [UserConsultationController::class, 'store'])->middleware('throttle:5,1');
+            Route::get('/{consultation}',            [UserConsultationController::class, 'show']);
+            Route::delete('/{consultation}/cancel',  [UserConsultationController::class, 'cancel']);
+            Route::get('/{consultation}/messages',   [UserConsultationController::class, 'messages']);
+            Route::post('/{consultation}/messages',  [UserConsultationController::class, 'sendMessage'])->middleware('throttle:60,1');
+            Route::get('/{consultation}/receipt',    [UserConsultationController::class, 'receipt']);
+            Route::get('/{consultation}/recordings', [RecordingController::class, 'index']);
+            Route::post('/{consultation}/recordings',[RecordingController::class, 'store']);
+            Route::post('/{consultation}/signal',    [UserConsultationController::class, 'sendSignal'])->middleware('throttle:120,1');
+            Route::post('/{consultation}/typing',     [UserConsultationController::class, 'typing'])->middleware('throttle:30,1');
+            Route::get('/{consultation}/typing',      [UserConsultationController::class, 'getTyping'])->middleware('throttle:30,1');
+            Route::get('/{consultation}/signals',    [UserConsultationController::class, 'getSignals'])->middleware('throttle:120,1');
+            Route::patch('/{consultation}/call-status', [UserConsultationController::class, 'updateCallStatus']);
         });
 
-        /* ── ASTROLOGER PORTAL ──────────────────────────────── */
+        /* ── ASTROLOGER PORTAL ──────────────────────────────────────── */
         Route::prefix('astrologer')->middleware('role:astrologer')->name('astrologer.')->group(function () {
             Route::get('/me',                [AstrologerProfileController::class, 'me']);
             Route::patch('/me',              [AstrologerProfileController::class, 'update']);
@@ -128,40 +115,34 @@ Route::prefix('v1')->group(function () {
             Route::get('/me/earnings',       [AstrologerProfileController::class, 'earnings']);
             Route::post('/me/heartbeat',     [AstrologerProfileController::class, 'heartbeat']);
             Route::get('/me/schedule',       [AstrologerProfileController::class, 'schedule']);
-            Route::get('/consultations/{consultation}/recordings',  [\App\Http\Controllers\Api\RecordingController::class, 'index']);
-            Route::post('/consultations/{consultation}/recordings', [\App\Http\Controllers\Api\RecordingController::class, 'store']);
             Route::post('/me/schedule',      [AstrologerProfileController::class, 'saveSchedule']);
 
             Route::prefix('consultations')->group(function () {
-                Route::get('/',                             [AstrologerConsultationController::class, 'index']);
-                Route::get('/{consultation}',               [AstrologerConsultationController::class, 'show']);
-                Route::patch('/{consultation}/accept',      [AstrologerConsultationController::class, 'accept']);
-                Route::patch('/{consultation}/reject',      [AstrologerConsultationController::class, 'reject']);
-                Route::patch('/{consultation}/start',       [AstrologerConsultationController::class, 'start']);
-                Route::patch('/{consultation}/end',         [AstrologerConsultationController::class, 'end']);
-                Route::get('/{consultation}/messages',      [AstrologerConsultationController::class, 'messages']);
-                Route::post('/{consultation}/messages',     [AstrologerConsultationController::class, 'sendMessage'])
-                    ->middleware('throttle:60,1');
-                // WebRTC signaling routes
-                Route::post('/{consultation}/signal',       [AstrologerConsultationController::class, 'sendSignal'])
-                    ->middleware('throttle:120,1');
-                Route::get('/{consultation}/signals',       [AstrologerConsultationController::class, 'getSignals'])
-                    ->middleware('throttle:120,1');
-                Route::patch('/{consultation}/call-status', [AstrologerConsultationController::class, 'updateCallStatus']);
+                Route::get('/',                                  [AstrologerConsultationController::class, 'index']);
+                Route::get('/{consultation}',                    [AstrologerConsultationController::class, 'show']);
+                Route::patch('/{consultation}/accept',           [AstrologerConsultationController::class, 'accept']);
+                Route::patch('/{consultation}/reject',           [AstrologerConsultationController::class, 'reject']);
+                Route::patch('/{consultation}/start',            [AstrologerConsultationController::class, 'start']);
+                Route::patch('/{consultation}/end',              [AstrologerConsultationController::class, 'end']);
+                Route::get('/{consultation}/messages',           [AstrologerConsultationController::class, 'messages']);
+                Route::post('/{consultation}/messages',          [AstrologerConsultationController::class, 'sendMessage'])->middleware('throttle:60,1');
+                Route::post('/{consultation}/signal',            [AstrologerConsultationController::class, 'sendSignal'])->middleware('throttle:120,1');
+                Route::post('/{consultation}/typing',             [AstrologerConsultationController::class, 'typing'])->middleware('throttle:30,1');
+                Route::get('/{consultation}/typing',              [AstrologerConsultationController::class, 'getTyping'])->middleware('throttle:30,1');
+                Route::get('/{consultation}/signals',            [AstrologerConsultationController::class, 'getSignals'])->middleware('throttle:120,1');
+                Route::patch('/{consultation}/call-status',      [AstrologerConsultationController::class, 'updateCallStatus']);
+                Route::get('/{consultation}/recordings',         [RecordingController::class, 'index']);
+                Route::post('/{consultation}/recordings',        [RecordingController::class, 'store']);
             });
         });
 
-        /* ── ADMIN ──────────────────────────────────────────── */
-        Route::prefix('admin')->name('admin.')->group(function () {
-
+        /* ── ADMIN ──────────────────────────────────────────────────── */
+        Route::prefix('admin')->name('admin.')->middleware('role:admin|manager|super-admin')->group(function () {
             Route::get('/sidebar',         SidebarController::class);
             Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
             Route::get('/activity',        [ActivityController::class, 'index']);
+            Route::post('/admins',         [AdminUserController::class, 'store'])->middleware('permission:role-manage');
 
-            Route::post('/admins', [AdminUserController::class, 'store'])
-                ->middleware('permission:role-manage');
-
-            // Users
             Route::prefix('users')->group(function () {
                 Route::get('/',                    [UserController::class, 'index'])->middleware('permission:user-view');
                 Route::post('/',                   [UserController::class, 'store'])->middleware('permission:user-create');
@@ -171,9 +152,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('/{user}/assign-role', [UserController::class, 'assignRole'])->middleware('permission:user-assign-role');
                 Route::post('/{user}/permissions', [UserController::class, 'assignPermissions'])->middleware('permission:user-assign-permission');
                 Route::get('/{user}/permissions',  [UserController::class, 'permissions'])->middleware('permission:user-view');
+                Route::post('/{user}/wallet-credit', [UserController::class, 'walletCredit'])->middleware(['permission:user-update', 'throttle:10,1']);
             });
 
-            // Astrologers
             Route::prefix('astrologers')->group(function () {
                 Route::get('/',                      [AdminAstrologerController::class, 'index'])->middleware('permission:astrologer-view');
                 Route::post('/',                     [AdminAstrologerController::class, 'store'])->middleware('permission:astrologer-create');
@@ -183,7 +164,6 @@ Route::prefix('v1')->group(function () {
                 Route::patch('/{astrologer}/verify', [AdminAstrologerController::class, 'verify'])->middleware('permission:astrologer-verify');
             });
 
-            // Roles
             Route::prefix('roles')->middleware('permission:role-manage')->group(function () {
                 Route::get('/',                    [RoleController::class, 'index']);
                 Route::post('/',                   [RoleController::class, 'store']);
@@ -193,7 +173,44 @@ Route::prefix('v1')->group(function () {
                 Route::post('/{role}/permissions', [RoleController::class, 'assignPermissions']);
             });
 
-            // Permissions
+            /* ── Reviews ────────────────────────────────────── */
+            Route::prefix('reviews')->group(function () {
+                Route::get('/',               [App\Http\Controllers\Api\Admin\ReviewController::class, 'index']);
+                Route::post('/{id}/approve',  [App\Http\Controllers\Api\Admin\ReviewController::class, 'approve'])->middleware('throttle:20,1');
+                Route::post('/{id}/reject',   [App\Http\Controllers\Api\Admin\ReviewController::class, 'reject'])->middleware('throttle:20,1');
+            });
+
+            /* ── Payouts ────────────────────────────────────── */
+            Route::prefix('payouts')->group(function () {
+                Route::get('/',         [App\Http\Controllers\Api\Admin\PayoutController::class, 'index']);
+                Route::get('/summary',  [App\Http\Controllers\Api\Admin\PayoutController::class, 'summary']);
+                Route::post('/settle',  [App\Http\Controllers\Api\Admin\PayoutController::class, 'settle'])->middleware('throttle:10,1');
+            });
+
+            /* ── Broadcast ─────────────────────────────────── */
+            Route::post('/broadcast', [App\Http\Controllers\Api\Admin\BroadcastController::class, 'send'])
+                ->middleware(['permission:dashboard-view', 'throttle:5,1']);
+
+            /* ── Email Config ─────────────────────────────── */
+            Route::prefix('email')->group(function () {
+                Route::get('/config', [App\Http\Controllers\Api\Admin\EmailTestController::class, 'config']);
+                Route::post('/test',  [App\Http\Controllers\Api\Admin\EmailTestController::class, 'test'])->middleware('throttle:3,1');
+            });
+
+            /* ── Newsletter ─────────────────────────────── */
+            Route::get('/newsletter', [App\Http\Controllers\Api\Admin\NewsletterController::class, 'index'])
+                ->middleware('permission:dashboard-view');
+
+            /* ── Consultations Report ──────────────────── */
+            Route::get('/consultations', [App\Http\Controllers\Api\Admin\ConsultationsController::class, 'index'])
+                ->middleware('permission:dashboard-view');
+
+            /* ── Site Settings ─────────────────────────── */
+            Route::prefix('settings')->group(function () {
+                Route::get('/{group}',  [App\Http\Controllers\Api\Admin\SiteSettingsController::class, 'getGroup']);
+                Route::put('/{group}',  [App\Http\Controllers\Api\Admin\SiteSettingsController::class, 'updateGroup']);
+            });
+
             Route::prefix('permissions')->middleware('permission:permission-manage')->group(function () {
                 Route::get('/',                [PermissionController::class, 'index']);
                 Route::post('/',               [PermissionController::class, 'store']);

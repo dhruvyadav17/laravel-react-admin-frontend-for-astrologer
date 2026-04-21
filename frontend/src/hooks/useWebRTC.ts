@@ -1,32 +1,12 @@
-/**
- * useWebRTC -- peer-to-peer video/voice call hook
- *
- * HOW IT WORKS
- * -------------
- * SDP signaling is relayed through the database (chat_messages table with
- * signal_type field). Both parties poll /signals every 1 s. No WebSocket
- * server is needed.
- *
- * SDP is base64-encoded before storing because MySQL JSON columns strip \r
- * from \r\n, which corrupts SDP line endings and breaks parsing.
- *
- * ICE gathering waits for "complete" state before sending the SDP offer/answer
- * (non-trickle ICE). This avoids candidate trickle complexity and works fine
- * on localhost where gathering is instant.
- *
- * TIMER RULES
- * ------------
- * - Starts  : when RTCPeerConnection state = "connected"
- * - Syncs   : to backend consultation.started_at when available
- * - Continues even when the tab is hidden/minimised
- * - Stops   : when the call ends or the connection fails
- *
- * RECORDING
- * ----------
- * MediaRecorder captures the local stream once connected. On hang-up the
- * blob is uploaded to POST /consultations/:id/recordings (or the astrologer
- * equivalent). Recordings are listed in the ReceiptModal.
- */
+// WebRTC hook for peer-to-peer audio/video calls.
+//
+// Signaling is done via database polling (GET /signals every 1s) — no WebSocket needed.
+// SDP is base64-encoded before storage because MySQL JSON strips \r from \r\n in SDP.
+// ICE gathering waits for 'complete' before sending offer/answer (non-trickle ICE).
+//
+// Timer syncs to consultation.started_at when available, otherwise counts locally.
+// Recording uploads to the correct endpoint based on isAstrologer (not isInitiator).
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const IS_LOCALHOST =
@@ -50,21 +30,16 @@ const ICE_SERVERS: RTCConfiguration = {
 };
 
 export type WebRTCState =
-  | 'idle'
-  | 'requesting'
-  | 'calling'
-  | 'ringing'
-  | 'connected'
-  | 'ended'
-  | 'error';
+  | 'idle' | 'requesting' | 'calling' | 'ringing' | 'connected' | 'ended' | 'error';
 
 interface UseWebRTCOptions {
   consultationId: number;
-  callType: 'call' | 'video';
-  isInitiator: boolean;
-  startedAt?: string | null;
-  onSendSignal: (type: string, data: object) => Promise<void>;
-  onCallEnd?: () => void;
+  callType:       'call' | 'video';
+  isInitiator:    boolean;
+  isAstrologer:   boolean;
+  startedAt?:     string | null;
+  onSendSignal:   (type: string, data: object) => Promise<void>;
+  onCallEnd?:     () => void;
 }
 
 function encodeSdp(sdp: string): string {
@@ -104,8 +79,7 @@ async function uploadRecording(
   blob: Blob,
   callType: 'call' | 'video',
   durationSeconds: number,
-  isAstrologer: boolean
-): Promise<void> {
+  isAstrologer: boolean  ): Promise<void> {
   try {
     const formData = new FormData();
     formData.append('recording', blob, `recording-${consultationId}.webm`);
@@ -125,48 +99,44 @@ async function uploadRecording(
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-    devLog('[WebRTC] Recording uploaded');
   } catch (e) {
     devLog('[WebRTC] Recording upload failed:', e);
   }
 }
 
 export function useWebRTC({
-  consultationId, callType, isInitiator, startedAt, onSendSignal, onCallEnd,
+  consultationId, callType, isInitiator, isAstrologer, startedAt, onSendSignal, onCallEnd,
 }: UseWebRTCOptions) {
-  const [state, setState] = useState<WebRTCState>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isCamOff, setIsCamOff] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [state, setState]           = useState<WebRTCState>('idle');
+  const [error, setError]           = useState<string | null>(null);
+  const [isMuted, setIsMuted]       = useState(false);
+  const [isCamOff, setIsCamOff]     = useState(false);
+  const [duration, setDuration]     = useState(0);
   const [isRecording, setIsRecording] = useState(false);
 
   const onSendSignalRef = useRef(onSendSignal);
-  const onCallEndRef = useRef(onCallEnd);
+  const onCallEndRef    = useRef(onCallEnd);
   useEffect(() => { onSendSignalRef.current = onSendSignal; }, [onSendSignal]);
-  useEffect(() => { onCallEndRef.current = onCallEnd; }, [onCallEnd]);
+  useEffect(() => { onCallEndRef.current = onCallEnd; },    [onCallEnd]);
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pcRef             = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef    = useRef<MediaStream | null>(null);
+  const timerRef          = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionStartedRef = useRef(false);
-  const endedRef = useRef(false);
-  const remoteSetRef = useRef(false);
-  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
-  const realEndRef = useRef<(send: boolean) => void>(() => {});
-
-  const timerRunningRef = useRef(false);
-  const connectedRef = useRef(false);
-  const durationRef = useRef(0);
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingChunks = useRef<Blob[]>([]);
+  const endedRef          = useRef(false);
+  const remoteSetRef      = useRef(false);
+  const pendingIceRef     = useRef<RTCIceCandidateInit[]>([]);
+  const realEndRef        = useRef<(send: boolean) => void>(() => {});
+  const timerRunningRef   = useRef(false);
+  const connectedRef      = useRef(false);
+  const durationRef       = useRef(0);
+  const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
+  const recordingChunks   = useRef<Blob[]>([]);
 
   const syncDurationFromServer = useCallback(() => {
     if (!startedAt) return false;
     const startMs = new Date(startedAt).getTime();
     if (Number.isNaN(startMs)) return false;
-
     const nextDuration = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
     durationRef.current = nextDuration;
     setDuration(nextDuration);
@@ -174,41 +144,26 @@ export function useWebRTC({
   }, [startedAt]);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     timerRunningRef.current = false;
-    devLog('[WebRTC] Timer STOPPED at', durationRef.current, 's');
   }, []);
 
   const startTimer = useCallback(() => {
     stopTimer();
     timerRunningRef.current = true;
-
     const tick = () => {
       if (!syncDurationFromServer()) {
         durationRef.current += 1;
         setDuration(prev => prev + 1);
       }
     };
-
-    if (syncDurationFromServer()) {
-      devLog('[WebRTC] Timer STARTED (server synced)');
-    } else {
-      devLog('[WebRTC] Timer STARTED (local)');
-    }
-
+    syncDurationFromServer();
     timerRef.current = setInterval(tick, 1000);
   }, [stopTimer, syncDurationFromServer]);
 
   useEffect(() => {
-    if (connectedRef.current && timerRunningRef.current) {
-      startTimer();
-    } else if (!connectedRef.current && !startedAt) {
-      durationRef.current = 0;
-      setDuration(0);
-    }
+    if (connectedRef.current && timerRunningRef.current) startTimer();
+    else if (!connectedRef.current && !startedAt) { durationRef.current = 0; setDuration(0); }
   }, [startedAt, startTimer]);
 
   const startRecording = useCallback((stream: MediaStream) => {
@@ -217,17 +172,13 @@ export function useWebRTC({
       const mimeType = callType === 'video'
         ? (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : 'video/webm')
         : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm');
-
       const mr = new MediaRecorder(stream, { mimeType });
       recordingChunks.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.current.push(e.data); };
       mr.start(5000);
       mediaRecorderRef.current = mr;
       setIsRecording(true);
-      devLog('[WebRTC] Recording started:', mimeType);
-    } catch (e) {
-      devLog('[WebRTC] MediaRecorder init failed:', e);
-    }
+    } catch (e) { devLog('[WebRTC] MediaRecorder init failed:', e); }
   }, [callType]);
 
   const stopRecordingAndUpload = useCallback(() => {
@@ -237,15 +188,14 @@ export function useWebRTC({
       setIsRecording(false);
       if (recordingChunks.current.length === 0) return;
       const blob = new Blob(recordingChunks.current, { type: mr.mimeType });
-      devLog('[WebRTC] Recording blob:', Math.round(blob.size / 1024), 'KB');
       if (blob.size > 1024) {
-        await uploadRecording(consultationId, blob, callType, durationRef.current, isInitiator);
+        await uploadRecording(consultationId, blob, callType, durationRef.current, isAstrologer);
       }
       recordingChunks.current = [];
       mediaRecorderRef.current = null;
     };
     mr.stop();
-  }, [consultationId, callType, isInitiator]);
+  }, [consultationId, callType, isAstrologer]);
 
   const getMedia = useCallback(async (): Promise<MediaStream> => {
     const constraints = callType === 'video'
@@ -256,7 +206,7 @@ export function useWebRTC({
     } catch (e: any) {
       throw new Error(
         e.name === 'NotAllowedError' ? 'Camera/microphone access denied.' :
-        e.name === 'NotFoundError' ? 'No camera/microphone found.' :
+        e.name === 'NotFoundError'   ? 'No camera/microphone found.' :
         `Media error: ${e.message}`
       );
     }
@@ -264,13 +214,8 @@ export function useWebRTC({
 
   const createPC = useCallback((remoteEl: HTMLVideoElement | null) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
-
-    pc.ontrack = ({ streams }) => {
-      if (remoteEl && streams[0]) remoteEl.srcObject = streams[0];
-    };
-
+    pc.ontrack = ({ streams }) => { if (remoteEl && streams[0]) remoteEl.srcObject = streams[0]; };
     pc.onconnectionstatechange = () => {
-      devLog('[WebRTC] Connection state:', pc.connectionState);
       switch (pc.connectionState) {
         case 'connected':
           connectedRef.current = true;
@@ -281,7 +226,6 @@ export function useWebRTC({
         case 'disconnected':
           connectedRef.current = false;
           stopTimer();
-          devLog('[WebRTC] Disconnected -- timer paused, waiting for reconnect');
           break;
         case 'failed':
           connectedRef.current = false;
@@ -290,7 +234,6 @@ export function useWebRTC({
           break;
       }
     };
-
     return pc;
   }, [startTimer, stopTimer, startRecording]);
 
@@ -333,30 +276,18 @@ export function useWebRTC({
       setError(null);
       endedRef.current = false;
       sessionStartedRef.current = true;
-
       const stream = await getMedia();
       localStreamRef.current = stream;
-      if (localEl) {
-        localEl.srcObject = stream;
-        localEl.muted = true;
-      }
-
+      if (localEl) { localEl.srcObject = stream; localEl.muted = true; }
       const pc = createPC(remoteEl);
       pcRef.current = pc;
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       setState('calling');
-
       const desc = await waitForIceGathering(pc);
-      await onSendSignalRef.current('offer', {
-        type: desc.type,
-        sdp: encodeSdp(sanitizeSDP(desc.sdp!)),
-      });
-      devLog('[WebRTC] Offer sent');
+      await onSendSignalRef.current('offer', { type: desc.type, sdp: encodeSdp(sanitizeSDP(desc.sdp!)) });
     } catch (err: any) {
-      devLog('[WebRTC] startCall error:', err);
       sessionStartedRef.current = false;
       setError(err.message);
       setState('error');
@@ -373,35 +304,21 @@ export function useWebRTC({
       setError(null);
       endedRef.current = false;
       sessionStartedRef.current = true;
-
       const stream = await getMedia();
       localStreamRef.current = stream;
-      if (localEl) {
-        localEl.srcObject = stream;
-        localEl.muted = true;
-      }
-
+      if (localEl) { localEl.srcObject = stream; localEl.muted = true; }
       const pc = createPC(remoteEl);
       pcRef.current = pc;
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
       const rawSdp = decodeSdp(offerData.sdp);
-      await pc.setRemoteDescription(
-        new RTCSessionDescription({ type: offerData.type, sdp: sanitizeSDP(rawSdp) })
-      );
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: offerData.type, sdp: sanitizeSDP(rawSdp) }));
       remoteSetRef.current = true;
       await applyPendingIce(pc);
-
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       const desc = await waitForIceGathering(pc);
-      await onSendSignalRef.current('answer', {
-        type: desc.type,
-        sdp: encodeSdp(sanitizeSDP(desc.sdp!)),
-      });
-      devLog('[WebRTC] Answer sent');
+      await onSendSignalRef.current('answer', { type: desc.type, sdp: encodeSdp(sanitizeSDP(desc.sdp!)) });
     } catch (err: any) {
-      devLog('[WebRTC] answerCall error:', err.message);
       sessionStartedRef.current = false;
       setError(err.message);
       setState('error');
@@ -414,49 +331,34 @@ export function useWebRTC({
     remoteEl: HTMLVideoElement | null,
   ) => {
     const { signal_type, signal_data } = signal;
-    devLog('[WebRTC] Signal received:', signal_type);
-
     if (signal_type === 'offer' && !isInitiator) {
       setState('ringing');
       await answerCall(signal_data, localEl, remoteEl);
       return;
     }
-
     if (signal_type === 'answer' && isInitiator) {
       const pc = pcRef.current;
       if (!pc || pc.signalingState !== 'have-local-offer') return;
       try {
         const rawSdp = decodeSdp(signal_data.sdp);
-        await pc.setRemoteDescription(
-          new RTCSessionDescription({ type: signal_data.type, sdp: sanitizeSDP(rawSdp) })
-        );
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: signal_data.type, sdp: sanitizeSDP(rawSdp) }));
         remoteSetRef.current = true;
         await applyPendingIce(pc);
-        devLog('[WebRTC] Remote description set (answer)');
-      } catch (e: any) {
-        devLog('[WebRTC] setRemoteDescription error:', e.message);
-        setError(e.message);
-        setState('error');
-      }
+      } catch (e: any) { setError(e.message); setState('error'); }
       return;
     }
-
     if (signal_type === 'ice-candidate' && signal_data?.candidate) {
       const pc = pcRef.current;
       if (!pc) return;
-      if (!remoteSetRef.current) {
-        pendingIceRef.current.push(signal_data.candidate);
-        return;
-      }
+      if (!remoteSetRef.current) { pendingIceRef.current.push(signal_data.candidate); return; }
       try { await pc.addIceCandidate(new RTCIceCandidate(signal_data.candidate)); } catch {}
       return;
     }
-
     if (signal_type === 'hang-up') realEnd(false);
   }, [isInitiator, answerCall, applyPendingIce, realEnd]);
 
-  const hangUp = useCallback(() => realEnd(true), [realEnd]);
-  const toggleMute = useCallback(() => {
+  const hangUp       = useCallback(() => realEnd(true), [realEnd]);
+  const toggleMute   = useCallback(() => {
     localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
     setIsMuted(prev => !prev);
   }, []);
@@ -472,9 +374,5 @@ export function useWebRTC({
     sessionStartedRef.current = false;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return {
-    state, error, isMuted, isCamOff, duration, isRecording,
-    startCall, handleSignal, hangUp, toggleMute, toggleCamera,
-  };
+  return { state, error, isMuted, isCamOff, duration, isRecording, startCall, handleSignal, hangUp, toggleMute, toggleCamera };
 }
-

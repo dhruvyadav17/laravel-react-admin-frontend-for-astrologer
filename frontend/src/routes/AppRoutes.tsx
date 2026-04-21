@@ -1,36 +1,25 @@
 import { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import { adminRoutes } from '../admin/routes/admin.routes';
-import { authRoutes } from './auth.routes';
-import { userRoutes } from '../user/routes/user.routes';
-import { astrologerRoutes } from '../astrologer/routes/astrologer.routes';
-import { errorRoutes } from './error.routes';
+import { adminRoutes }      from '../modules/admin/routes';
+import { authRoutes }       from '../modules/auth/routes';
+import { userRoutes }       from '../modules/user/routes';
+import { astrologerRoutes } from '../modules/astrologer/routes';
+import { errorRoutes }      from './error.routes';
 
-function PageSpinner() {
-  return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100">
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </div>
-    </div>
-  );
+function Spinner() {
+  return <div className="d-flex justify-content-center align-items-center min-vh-100"><div className="spinner-border text-danger" /></div>;
 }
-
-function S({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageSpinner />}>{children}</Suspense>;
-}
-
-export { S as SuspenseWrap };
+export { Spinner as SuspenseWrap };
 
 const router = createBrowserRouter([
   authRoutes,
   userRoutes,
-  astrologerRoutes,
   adminRoutes,
+  astrologerRoutes,
   ...errorRoutes,
   { path: '*', element: <Navigate to="/404" replace /> },
 ]);
 
 export default function AppRoutes() {
-  return <RouterProvider router={router} />;
+  return <Suspense fallback={<Spinner />}><RouterProvider router={router} /></Suspense>;
 }

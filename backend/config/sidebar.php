@@ -30,7 +30,20 @@ return [
         'label' => 'Reports',
         'icon'  => 'fas fa-chart-bar',
         'children' => [
-            ['label' => 'Activity Log','route' => '/admin/activity',    'permission' => 'dashboard-view'],
+            ['label' => 'Activity Log',    'route' => '/admin/activity',       'permission' => 'dashboard-view'],
+            ['label' => 'Consultations',    'route' => '/admin/consultations',  'permission' => 'dashboard-view'],
+            ['label' => 'Payouts',         'route' => '/admin/payouts',        'permission' => 'dashboard-view'],
+            ['label' => 'Reviews',         'route' => '/admin/reviews',        'permission' => 'dashboard-view'],
+        ],
+    ],
+    [
+        'label' => 'Content',
+        'icon'  => 'fas fa-edit',
+        'children' => [
+            ['label' => 'Site Settings', 'route' => '/admin/settings',     'permission' => 'dashboard-view'],
+            ['label' => 'Newsletter',    'route' => '/admin/newsletter',  'permission' => 'dashboard-view'],
+            ['label' => 'Email Settings', 'route' => '/admin/email',        'permission' => 'dashboard-view'],
+            ['label' => 'Broadcast',      'route' => '/admin/broadcast',    'permission' => 'dashboard-view'],
         ],
     ],
     [

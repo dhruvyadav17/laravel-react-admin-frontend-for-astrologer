@@ -4,21 +4,20 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
+
 class AuthServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        // Clear Spatie permission cache on boot.
+        // Wrapped in try/catch so composer dump-autoload doesn't fail
+        // when the database isn't available (e.g. fresh install, CI).
+        try {
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+        } catch (\Throwable) {
+            // DB not ready — cache will be cleared on first real request
+        }
     }
 }

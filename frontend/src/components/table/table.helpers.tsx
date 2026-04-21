@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useDebounce }          from "../../core/hooks/useDebounce";
+import { useDebounce }          from "../../hooks/useDebounce";
 
 /* -- Table Search (Debounced) ----------------------- */
 export function TableSearch({ value, onChange, placeholder = "Search..." }: {

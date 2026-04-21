@@ -1,6 +1,3 @@
-// FIX: textarea + select field type support add kiya
-//      Original mein sirf text/email/password/number tha
-//      AstrologerRequest mein bio (textarea) aur consultation_type (select) hain
 
 import { useEffect, useState } from "react";
 import CrudModal  from "./CrudModal";

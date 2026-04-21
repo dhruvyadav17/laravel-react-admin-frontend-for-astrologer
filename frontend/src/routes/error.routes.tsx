@@ -1,11 +1,9 @@
-// FIX: Removed wildcard here -- only one * kept in AppRoutes
-
-import NotFound     from '../pages/errors/NotFound';
-import Unauthorized from '../pages/errors/Unauthorized';
+import { Navigate } from 'react-router-dom';
+import NotFound     from './NotFound';
+import Unauthorized from './Unauthorized';
 
 export const errorRoutes = [
+  { path: '/404',          element: <NotFound /> },
+  { path: '/unauthorized', element: <Unauthorized /> },
   { path: '/admin/unauthorized', element: <Unauthorized /> },
-  { path: '/404',                element: <NotFound />     },
-  // Removed duplicate: { path: '*', element: <NotFound /> }
-  // In AppRoutes: { path: '*', element: <Navigate to="/404" /> } handles it
 ];
